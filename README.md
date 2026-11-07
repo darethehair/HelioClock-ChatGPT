@@ -49,3 +49,9 @@ Project-specific experimental prototype; no license granted by default.
 ## Star atlas provenance
 
 Star positions, brightness and constellation-line shapes are converted at build time from [D3-Celestial](https://github.com/ofrohn/d3-celestial) datasets, originally based on Hipparcos and curated constellation representations. The PWA includes local JSON data and functions entirely offline once installed; no sky-atlas service is called at runtime. Coordinates are J2000 approximations and currently omit precession, proper motion, nutation, atmospheric refraction, and extinction. A sidereal-day demonstration is consequently educational rather than an observatory-grade forecast.
+
+## SChronos-inspired full celestial horizon (Version 17)
+
+The rectangular sky projection covers **altitudes +90° through −90°** with the astronomical horizon at 0° halfway down; white magnitude-scaled catalogue stars and solar/lunar trajectories can be shown below the horizon using the new checkbox. The lower half of the plot is black. Above the horizon, daylight mode uses a Sun-azimuth-dependent radial atmosphere glow (with wrap at the north/south azimuth seam) that fades toward black through twilight. Black-sky mode removes atmospheric colour; neither mode changes the simulated positions. The polar projection remains an above-horizon compass.
+
+The gradient approach is adapted from the author's Python/PyCairo SChronos project (2011–2024), using simplified illustrative rather than radiometrically calibrated atmospheric colours. The original Python application's GNU GPL notice remains applicable to its source; this JavaScript implementation is a newly authored rendering approach rather than a source translation.
