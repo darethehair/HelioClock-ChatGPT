@@ -1,0 +1,19 @@
+{
+  "id": "./",
+  "name": "HelioClock — Independent Observatory",
+  "short_name": "HelioClock II",
+  "description": "An independent astronomical observatory for daylight, sky, Moon and orbits.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#070d19",
+  "theme_color": "#080f20",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
