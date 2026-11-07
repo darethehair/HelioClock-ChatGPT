@@ -1,0 +1,87 @@
+import {geoEqualEarth,geoOrthographic,geoMercator,geoPath,geoGraticule10} from 'd3-geo';
+import {feature,mesh} from 'topojson-client';
+import atlas from 'world-atlas/countries-110m.json';
+import {RAD,wrap,solar,clamp} from './astronomy.js';
+
+const land=feature(atlas,atlas.objects.land);
+const borders=mesh(atlas,atlas.objects.countries,(a,b)=>a!==b);
+const graticule=geoGraticule10();
+const memoCanvas=document.createElement('canvas');
+const memoCtx=memoCanvas.getContext('2d');
+const modeConstructors={equal:geoEqualEarth,globe:geoOrthographic,mercator:geoMercator};
+const normLon=(v)=>wrap(v+180,360)-180;
+
+/** Draw an Earth projection with per-pixel physically computed twilight and mapped land boundaries.
+ * No third-party map services or remote tile downloads are required.
+ */
+export function renderEarth(context,width,height,date,state){
+ const {earthProjection='equal',earthZoom=1,earthLon=0,earthLat=0,lat,lon}=state;
+ const projection=modeConstructors[earthProjection]||geoEqualEarth;
+ const map=projection()
+   .rotate([-earthLon,-earthLat])
+   .fitExtent([[9,9],[width-9,height-9]],{type:'Sphere'})
+   .scale(1); // overwritten just below by d3's fitted scale
+ // Create a stable base fit first, THEN apply user zoom.
+ map.fitExtent([[9,9],[width-9,height-9]],{type:'Sphere'});
+ map.scale(map.scale()*earthZoom);
+ if(earthProjection==='globe')map.clipAngle(90);
+ const d=solar(date);
+ const utcMinutes=date.getUTCHours()*60+date.getUTCMinutes()+date.getUTCSeconds()/60;
+ const sunLon=normLon((720-utcMinutes-d.eq)/4),sunLat=d.decl*RAD;
+ const sunSin=Math.sin(sunLat),sunCos=Math.cos(sunLat);
+ // Rendering twilight into a lower-resolution buffer is dramatically faster during dragging.
+ const rw=Math.max(120,Math.ceil(width*.68)),rh=Math.max(90,Math.ceil(height*.68));
+ memoCanvas.width=rw;memoCanvas.height=rh;
+ const image=memoCtx.createImageData(rw,rh);
+ const midnight=[7,14,34],astronomical=[23,39,77],nautical=[36,72,110],
+       civil=[63,123,151],sunrise=[212,138,93],day=[24,111,153];
+ const stops=[[-90,midnight],[-18,astronomical],[-12,nautical],[-6,civil],[-.833,sunrise],[5,day],[90,day]];
+ function sample(alt){
+   let k=1;while(k<stops.length-1&&alt>stops[k][0])k++;
+   const [a,A]=stops[k-1],[b,B]=stops[k];
+   const t=clamp((alt-a)/(b-a),0,1);
+   return [A[0]+(B[0]-A[0])*t,A[1]+(B[1]-A[1])*t,A[2]+(B[2]-A[2])*t];
+ }
+ for(let y=0;y<rh;y++){
+  for(let x=0;x<rw;x++){
+   const p=map.invert([(x+.5)/rw*width,(y+.5)/rh*height]);
+   const i=(y*rw+x)*4;
+   if(!p||!Number.isFinite(p[0])||!Number.isFinite(p[1])){
+      image.data[i+3]=0;continue;
+   }
+   const P=p[1]*RAD,lambda=normLon(p[0]-sunLon)*RAD;
+   const altitude=Math.asin(clamp(Math.sin(P)*sunSin+Math.cos(P)*sunCos*Math.cos(lambda),-1,1))/RAD;
+   const [r,g,b]=sample(altitude);
+   image.data[i]=r;image.data[i+1]=g;image.data[i+2]=b;image.data[i+3]=255;
+  }
+ }
+ memoCtx.putImageData(image,0,0);
+ context.save();
+ context.clearRect(0,0,width,height);
+ context.fillStyle='#071324';context.fillRect(0,0,width,height);
+ context.imageSmoothingEnabled=true;context.drawImage(memoCanvas,0,0,width,height);
+ const path=geoPath(map,context);
+ context.lineWidth=.65;
+ context.beginPath();path(graticule);context.strokeStyle='#d4e6fb28';context.stroke();
+ context.beginPath();path(land);
+ context.fillStyle='#9abd9470';context.fill();
+ context.strokeStyle='#b9d3b068';context.lineWidth=.7;context.stroke();
+ if(earthZoom>=1.25){
+   context.beginPath();path(borders);context.lineWidth=.35;
+   context.strokeStyle='#b1e8d64f';context.stroke();
+ }
+ const spot=map([sunLon,d.decl]);
+ if(spot){
+  context.strokeStyle='#ffd580';context.lineWidth=1.25;
+  context.beginPath();context.arc(spot[0],spot[1],8,0,Math.PI*2);context.stroke();
+  context.fillStyle='#ffd580';context.beginPath();context.arc(spot[0],spot[1],3,0,Math.PI*2);context.fill();
+ }
+ const user=map([lon,lat]);
+ if(user){
+  context.save();context.shadowColor='#fff9e3';context.shadowBlur=12;
+  context.fillStyle='#fff7d8';context.beginPath();context.arc(user[0],user[1],4,0,Math.PI*2);context.fill();context.restore();
+  context.beginPath();context.arc(user[0],user[1],8,0,Math.PI*2);context.strokeStyle='#fff9e9b0';context.stroke();
+ }
+ context.restore();
+ return {sunLon,sunDecl:d.decl};
+}
