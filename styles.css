@@ -165,3 +165,11 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 .precession-toggle{white-space:nowrap}
 .precession-toggle input{accent-color:#b8d9ff}
 .sky-observatory-toolbar .precession-status{color:#f0cf91;font-size:10px;white-space:normal}
+
+/* SChronos-inspired full-sphere wide projection: +90° to -90°. */
+#below-horizon-setting[hidden]{display:none!important}
+.sky-panel:has([data-sky-projection="rect"].selected) #sky{height:400px}
+.sky-panel:has([data-sky-projection="rect"].selected) .sky-legend{margin-top:10px}
+@media(max-width:750px){
+ .sky-panel:has([data-sky-projection="rect"].selected) #sky{height:330px}
+}
