@@ -22,6 +22,7 @@ jobs:
           node --check --experimental-default-type=module app.js
           node --check --experimental-default-type=module solar-chart.js
           node --check --experimental-default-type=module moon-renderer.js
+          node --check --experimental-default-type=module sky-atlas.js
           node --check sw.js
           node --experimental-default-type=module tests/astronomy.test.mjs
       - name: Bundle independent visualizations
@@ -54,6 +55,18 @@ jobs:
           assert p.read_bytes()[:2] == bytes.fromhex('ffd8'), 'Invalid JPEG lunar mosaic'
           print('LRO lunar photo:',p.stat().st_size,'bytes')
           PY
+      - name: Bundle offline star catalogue and constellation stick figures
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/helioclock-atlas
+          curl --fail --location --retry 3 --max-time 120 --silent --show-error \
+            https://raw.githubusercontent.com/ofrohn/d3-celestial/master/data/stars.8.json \
+            --output /tmp/helioclock-atlas/stars.8.json
+          curl --fail --location --retry 3 --max-time 120 --silent --show-error \
+            https://raw.githubusercontent.com/ofrohn/d3-celestial/master/data/constellations.lines.json \
+            --output /tmp/helioclock-atlas/constellations.lines.json
+          python3 scripts/build-sky-data.py /tmp/helioclock-atlas dist
       - name: Stage static files for browser test
         run: cp index.html styles.css astronomy.js manifest.webmanifest sw.js icon.svg dist/ && echo '{"test":true}' > dist/build-info.json
       - name: Install Firefox for browser checks
