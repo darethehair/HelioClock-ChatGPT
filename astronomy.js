@@ -34,6 +34,31 @@ export function sidereal(date,lon=0){
  const J=jd(date),T=(J-2451545)/36525;
  return wrap(280.46061837+360.98564736629*(J-2451545)+.000387933*T*T-T*T*T/38710000+lon);
 }
+/**
+ * Precess equatorial coordinates from the mean J2000 equator/equinox to the
+ * mean equator/equinox at the requested epoch. IAU 1976 (Lieske) / Meeus
+ * Chapter 21, angles in arcseconds, time measured in Julian centuries of
+ * 36525 TT days from J2000. For this educational application UTC is used as
+ * a close approximation to TT; the small TT-UTC difference is negligible
+ * for precession at ordinary historical and present-day epochs.
+ *
+ * Does NOT include nutation, stellar proper motion, annual aberration or
+ * atmospheric refraction. The polynomial is intended for centuries around
+ * J2000, NOT extreme multi-millennial dates.
+ */
+export function precessJ2000(ra,decl,date){
+ const T=(jd(date)-2451545)/36525;
+ if(Math.abs(T)<1e-14)return {ra:wrap(ra),decl};
+ const arcsecToRad=RAD/3600;
+ const zeta=(2306.2181*T+0.30188*T*T+0.017998*T*T*T)*arcsecToRad;
+ const z=(2306.2181*T+1.09468*T*T+0.018203*T*T*T)*arcsecToRad;
+ const theta=(2004.3109*T-0.42665*T*T-0.041833*T*T*T)*arcsecToRad;
+ const a=ra*RAD+zeta,d=decl*RAD;
+ const A=Math.cos(d)*Math.sin(a);
+ const B=Math.cos(theta)*Math.cos(d)*Math.cos(a)-Math.sin(theta)*Math.sin(d);
+ const C=Math.sin(theta)*Math.cos(d)*Math.cos(a)+Math.cos(theta)*Math.sin(d);
+ return {ra:wrap((Math.atan2(A,B)+z)/RAD),decl:Math.asin(clamp(C,-1,1))/RAD};
+}
 export function horizontal(ra,decl,date,lat,lon){
  const h=wrap(sidereal(date,lon)-ra+180)-180;
  const phi=lat*RAD, d=decl*RAD, H=h*RAD;
