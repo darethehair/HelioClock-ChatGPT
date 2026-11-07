@@ -4,6 +4,18 @@ test('dashboard controls work in Firefox',async({page})=>{
  page.on('pageerror',error=>errors.push(error.message));
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#sunrise')).not.toHaveText('—');
+ await expect(page.locator('#solar-chart-readout')).toContainText('DAYLIGHT');
+ await expect(page.locator('#solar-chart-date')).not.toHaveText('—');
+ const moonCanvas=page.locator('#moon');
+ const moonPixels=await moonCanvas.evaluate(el=>{
+  const c=el.getContext('2d'),w=el.width,h=el.height;
+  const pixel=(x,y)=>Array.from(c.getImageData(x,y,1,1).data);
+  return {center:pixel(Math.floor(w/2),Math.floor(h/2)),farLeft:pixel(Math.floor(w*.12),Math.floor(h/2)),width:w,height:h};
+ });
+ expect(moonPixels.width).toBeGreaterThan(0);
+ expect(moonPixels.center[3]).toBeGreaterThan(0);
+ expect(moonPixels.farLeft[3]).toBe(0);
+
  await expect(page.locator('[data-projection="equal"]')).toHaveAttribute('aria-pressed','true');
  await page.locator('[data-projection="globe"]').click();
  await expect(page.locator('[data-projection="globe"]')).toHaveAttribute('aria-pressed','true');
