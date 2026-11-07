@@ -57,3 +57,16 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 .earth-map-stage canvas{border:0;border-radius:0}
 .earth-map-credit{position:absolute;right:8px;bottom:7px;padding:4px 7px;border-radius:4px;background:#050e1cbd;color:#d8ebfb;font-size:9px;letter-spacing:.3px;pointer-events:none}
 @media(max-width:750px){.earth-tools{gap:10px}.earth-projections{width:100%;justify-content:space-around}.earth-projection{padding:8px 10px;flex:1;font-size:11px}.earth-zoom-buttons{width:100%;justify-content:flex-end}.earth-map-credit{font-size:8px}}
+
+/* Solar ephemeris: local mean solar clock, vertically banded daylight/twilight */
+#daylight-chart{height:330px;cursor:crosshair}
+.chart-panel{background:linear-gradient(150deg,#1a2b4b,#101e36 65%)}
+.solar-chart-legend{display:flex;flex-wrap:wrap;gap:9px 14px;margin:1px 0 14px;color:#c2d7ed;font-size:10px}
+.solar-chart-legend span{display:flex;align-items:center;gap:5px}
+.solar-chart-legend i{display:inline-block;width:11px;height:9px;border-radius:2px}
+.legend-sun{background:#80c9ec}.legend-civil{background:#519bd1}.legend-nautical{background:#3664a3}
+.legend-astronomical{background:#253b72}.legend-night{background:#081329;border:1px solid #4d5b78}
+.solar-chart-summary{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 4px 3px;border-top:1px solid #40516b;margin-top:9px}
+.solar-chart-summary strong{color:#ffd58b;font-size:12px;white-space:nowrap}
+.solar-chart-summary span{color:#c7deef;font-size:11px;line-height:1.5}
+@media(max-width:750px){#daylight-chart{height:290px}.solar-chart-legend{gap:8px}.solar-chart-summary span{font-size:10px}}
