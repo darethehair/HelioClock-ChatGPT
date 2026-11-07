@@ -1,3 +1,4 @@
+import {rectGeometry,projectRect,rectHorizonY,paintRectAtmosphere} from './sky-projection.js';
 import {drawSkyAtlas,skyAtlasStatus} from './sky-atlas.js';
 import {renderMoon} from './moon-renderer.js';
 import {drawSolarYear} from './solar-chart.js';
@@ -77,7 +78,8 @@ function sky(){
  const o=canvas($('sky'));if(!o)return;const{c,w,h}=o;
  const X=w/2,Y=h/2,rad=(Math.min(w-35,h-20)/2-14)*state.skyZoom;
  const skySun=sunHorizontal(state.date,state.lat,state.lon);
- fillSkyBackground(c,w,h,skySun.alt);
+ if(state.skyProjection==='rect')paintRectAtmosphere(c,w,h,skySun,{black:state.skyLight==='black',heading:state.skyHeading});
+ else fillSkyBackground(c,w,h,skySun.alt);
  $('sky-light-status').textContent=state.skyLight==='black'?'Pure black background':(skySun.alt>=0?'Daylight':skySun.alt>=-6?'Civil twilight':skySun.alt>=-12?'Nautical twilight':skySun.alt>=-18?'Astronomical twilight':'Night')+' · Sun '+skySun.alt.toFixed(1)+'°';
  c.save();
  if(state.skyProjection==='polar'){
@@ -96,25 +98,26 @@ function sky(){
   const p=(a-90-state.skyHeading)*RAD;label(c,t,X+Math.cos(p)*(rad+11),Y+Math.sin(p)*(rad+11)+4,'#c7d7ea',11,'center');
  });
  } else {
-  const L=w*.06,R=w*.94,T=h*.10,B=h*.90;
-  c.strokeStyle='#b8d4ec77';c.strokeRect(L,T,R-L,B-T);
-  for(let alt=0;alt<=90;alt+=15){
-   const y=B-alt/90*(B-T);line(c,L,y,R,y,'#8db5df40',1);
-   label(c,alt+'°',L-4,y+3,'#d0e6fa',10,'right');
+  const g=rectGeometry(w,h),L=g.left,R=g.right,T=g.top,B=g.bottom;
+  const horizon=rectHorizonY(w,h);
+  c.strokeStyle='#d6e8fa66';c.strokeRect(L,T,R-L,B-T);
+  for(let alt=-90;alt<=90;alt+=15){
+   const y=projectRect(0,alt,w,h,state.skyHeading)[1];
+   line(c,L,y,R,y,alt===0?'#e8f3ff':'#8db5df40',alt===0?1.7:.8);
+   label(c,(alt>0?'+':'')+alt+'°',L-4,y+3,'#d0e6fa',10,'right');
   }
-  for(let az=0;az<=360;az+=45){
+  for(let az=0;az<=360;az+=30){
    const x=L+az/360*(R-L);
-   line(c,x,T,x,B,'#8db5df40',1);
+   line(c,x,T,x,B,'#9ebbd250',.75);
    label(c,az===360?'N':az===0?'N':az===90?'E':az===180?'S':az===270?'W':az+'°',x,B+14,'#d0e6fa',10,'center');
   }
  }
  const sun=sunHorizontal(state.date,state.lat,state.lon),m=moon(state.date,state.lat,state.lon);
  const place=(obj,col,name)=>{
-  if(obj.alt<=0)return;
+  if(obj.alt<0&&(state.skyProjection!=='rect'||!$('show-below-horizon').checked))return;
   let x,y;
   if(state.skyProjection==='rect'){
-   x=w*.06+wrap(obj.az-state.skyHeading,360)/360*w*.88;
-   y=h*.90-obj.alt/90*h*.80;
+   [x,y]=projectRect(obj.az,obj.alt,w,h,state.skyHeading);
   }else{
    const distance=rad*(1-obj.alt/90),angle=(obj.az-90-state.skyHeading)*RAD;
    x=X+distance*Math.cos(angle);y=Y+distance*Math.sin(angle);
@@ -128,11 +131,10 @@ function sky(){
    for(let hour=-12;hour<=12;hour+=.25){
     const time=new Date(state.date.getTime()+hour*3600000);
     const obj=body==='sun'?sunHorizontal(time,state.lat,state.lon):moon(time,state.lat,state.lon);
-    if(obj.alt<0){first=true;continue}
+    if(obj.alt<0&&(state.skyProjection!=='rect'||!$('show-below-horizon').checked)){first=true;continue}
     let xx,yy;
     if(state.skyProjection==='rect'){
-     xx=w*.06+wrap(obj.az-state.skyHeading,360)/360*w*.88;
-     yy=h*.90-obj.alt/90*h*.80;
+     [xx,yy]=projectRect(obj.az,obj.alt,w,h,state.skyHeading);
     }else{
      const theta=(obj.az-90-state.skyHeading)*RAD,r=rad*(1-obj.alt/90);
      xx=X+r*Math.cos(theta);yy=Y+r*Math.sin(theta);
@@ -151,6 +153,7 @@ function sky(){
   showLabels:$('show-labels').checked&&state.magLimit<=4.5,
   showConstellations:$('show-constellations').checked,
   precession:state.usePrecession,
+  showBelowHorizon:state.skyProjection==='rect'&&$('show-below-horizon').checked,
   brightSky:state.skyLight==='daylight' && skySun.alt>=-6
  });
  const status=skyAtlasStatus();
@@ -381,6 +384,7 @@ for(const button of document.querySelectorAll('[data-sky-light]')){
 for(const button of document.querySelectorAll('[data-sky-projection]')){
  button.addEventListener('click',()=>{
   state.skyProjection=button.dataset.skyProjection;
+  $('below-horizon-setting').hidden=state.skyProjection!=='rect';
   for(const other of document.querySelectorAll('[data-sky-projection]')){
    const active=other===button;other.classList.toggle('selected',active);other.setAttribute('aria-pressed',String(active));
   }render();
@@ -401,7 +405,7 @@ for(const [id,sign] of [['sky-prev-sidereal',-1],['sky-next-sidereal',1]]){
   state.live=false;setDateInputs();render();
  });
 }
-for(const id of ['show-stars','show-labels','show-sky-paths'])$(id).addEventListener('change',render);
+for(const id of ['show-stars','show-labels','show-sky-paths','show-below-horizon'])$(id).addEventListener('change',render);
 function reset(id,defaults){
  $(id).addEventListener('click',()=>{for(const [key,value] of Object.entries(defaults))state[key]=value;
  const controls={skyZoom:'sky-zoom',skyHeading:'sky-heading',earthZoom:'earth-zoom',orreryZoom:'orrery-zoom'};
