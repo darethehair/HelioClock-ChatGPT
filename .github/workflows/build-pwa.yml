@@ -24,6 +24,12 @@ jobs:
           node --experimental-default-type=module tests/astronomy.test.mjs
       - name: Bundle independent visualizations
         run: npm run build
+      - name: Stage static files for browser test
+        run: cp index.html styles.css astronomy.js manifest.webmanifest sw.js icon.svg dist/ && echo '{"test":true}' > dist/build-info.json
+      - name: Install Firefox for browser checks
+        run: npx playwright install --with-deps firefox
+      - name: Exercise browser controls in Firefox
+        run: npm run test:browser
       - name: Assemble standalone distribution
         shell: bash
         run: |
