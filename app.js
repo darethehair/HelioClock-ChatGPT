@@ -109,7 +109,8 @@ function sky(){
   for(let az=0;az<=360;az+=30){
    const x=L+az/360*(R-L);
    line(c,x,T,x,B,'#9ebbd250',.75);
-   label(c,az===360?'N':az===0?'N':az===90?'E':az===180?'S':az===270?'W':az+'°',x,B+14,'#d0e6fa',10,'center');
+   const actual=wrap(az+state.skyHeading,360),name=actual===0?'N':actual===90?'E':actual===180?'S':actual===270?'W':Math.round(actual)+'°';
+   label(c,name,x,B+14,'#d0e6fa',10,'center');
   }
  }
  const sun=sunHorizontal(state.date,state.lat,state.lon),m=moon(state.date,state.lat,state.lon);
