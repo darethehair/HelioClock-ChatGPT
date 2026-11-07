@@ -5,7 +5,7 @@ import {renderEarth} from './earth-renderer.js';
 import {starsAbove} from './sky-catalog.js';
 import {RAD,PI,wrap,clamp,solar,sunHorizontal,sunEvents,moon,orbitPositions,sidereal,utcTime,durationText} from './astronomy.js';
 const $=id=>document.getElementById(id);
-const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyHeading:0,earthZoom:1,earthLon:0,earthLat:0,earthProjection:'equal',orreryZoom:1,moonZoom:1,orbitMode:'inner',skyLight:'daylight',skyProjection:'polar',magLimit:3.5,playing:false};
+const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyHeading:0,earthZoom:1,earthLon:0,earthLat:0,earthProjection:'equal',orreryZoom:1,moonZoom:1,orbitMode:'inner',skyLight:'daylight',skyProjection:'polar',magLimit:3.5,usePrecession:true,playing:false};
 const fmt=d=>d.toISOString().slice(0,10);
 function setDateInputs(){$('observe-date').value=fmt(state.date);$('observe-time').value=utcTime(state.date)}
 function selectDate(){
@@ -149,10 +149,12 @@ function sky(){
   mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
   magLimit:state.magLimit,showStars:$('show-stars').checked,
   showLabels:$('show-labels').checked&&state.magLimit<=4.5,
-  showConstellations:$('show-constellations').checked
+  showConstellations:$('show-constellations').checked,
+  precession:state.usePrecession
  });
  const status=skyAtlasStatus();
  $('sky-atlas-count').textContent=(status.ready?plotted||0:'Loading')+' stars'+(status.ready?' visible':' · catalog loading');
+ $('precession-status').textContent=state.usePrecession?'Precession on · mean equinox of date':'Precession off · fixed J2000 coordinates';
  place(sun,'#ffca7d','Sun');place(m,'#e1ebff','Moon');
  c.restore();
 }
@@ -389,6 +391,7 @@ $('star-magnitude').addEventListener('change',e=>{
  render();
 });
 $('show-constellations').addEventListener('change',render);
+$('use-precession').addEventListener('change',e=>{state.usePrecession=e.target.checked;render()});
 window.addEventListener('helioclock-sky-atlas-ready',render);
 const SIDEREAL_DAY_MS=86164090.5;
 for(const [id,sign] of [['sky-prev-sidereal',-1],['sky-next-sidereal',1]]){
