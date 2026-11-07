@@ -35,7 +35,7 @@ jobs:
           from pathlib import Path
           p=Path('dist/earth-blue-marble.png')
           assert p.stat().st_size > 100000, 'Satellite Earth texture is missing or too small'
-          assert p.read_bytes()[:8] == b'\\x89PNG\\r\\n\\x1a\\n', 'Invalid PNG texture'
+          assert p.read_bytes()[:8] == bytes.fromhex('89504e470d0a1a0a'), 'Invalid PNG texture'
           print('Satellite texture validated:',p.stat().st_size,'bytes')
           PY
       - name: Stage static files for browser test
