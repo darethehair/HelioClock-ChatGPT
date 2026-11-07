@@ -19,10 +19,8 @@ export function renderEarth(context,width,height,date,state){
  const projection=modeConstructors[earthProjection]||geoEqualEarth;
  const map=projection()
    .rotate([-earthLon,-earthLat])
-   .fitExtent([[9,9],[width-9,height-9]],{type:'Sphere'})
-   .scale(1); // overwritten just below by d3's fitted scale
- // Create a stable base fit first, THEN apply user zoom.
- map.fitExtent([[9,9],[width-9,height-9]],{type:'Sphere'});
+   .fitExtent([[9,9],[width-9,height-9]],{type:'Sphere'});
+ // Fit a stable base projection before applying user zoom.
  map.scale(map.scale()*earthZoom);
  if(earthProjection==='globe')map.clipAngle(90);
  const d=solar(date);
