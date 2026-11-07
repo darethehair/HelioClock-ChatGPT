@@ -6,12 +6,12 @@ An original, independently implemented astronomical dashboard, created for compa
 
 - Solar altitude and azimuth; sunrise, sunset, solar noon, daylight duration and equation of time.
 - Interactive yearly daylight chart with date selection.
-- Live worldwide solar illumination map showing day, civil, nautical and astronomical twilight.
-- Local horizon sky compass with Sun and approximate Moon positions.
+- Interactive worldwide solar illumination map with local offline world geography, smooth twilight shading, Equal Earth / orthographic globe / Mercator projections, coordinate grid, observer/subsolar markers, drag-pan and wheel zoom.
+- Local horizon sky compass with Sun and approximate Moon positions, selectable Sun/Moon paths, a compact J2000 bright-star catalogue with names, zoom and rotation.
 - Moon phase and approximate synodic age.
 - Schematic inner-planet orrery.
 - Offline PWA with local files and no required backend.
-- No JavaScript framework or npm install required.
+- No runtime JavaScript framework or external API required. GitHub Actions uses npm/esbuild to bundle the map libraries and local world atlas directly into the ZIP; nothing needs installing on Apache.
 
 ## Download and deploy to Apache
 
@@ -26,13 +26,13 @@ The ZIP uses relative resource paths, so it can be hosted at the domain root **o
 
 ## Development
 
-No build step required. Serve these files with any static HTTP server, e.g. `python3 -m http.server 8080`. The browser requires HTTP(S) rather than `file://` for service-worker and module features.
+Run `npm install && npm run build` to bundle the app, then copy `index.html`, `styles.css`, `astronomy.js`, `manifest.webmanifest`, `sw.js` and `icon.svg` to `dist/`. Run `python3 -m http.server --directory dist 8080` to test. GitHub Actions runs these steps automatically. The browser requires HTTP(S) rather than `file://` for service-worker and module features.
 
 ## Accuracy and limitations
 
-Solar outputs use standard approximate NOAA/Meeus-style formulae and are suitable for general visualization, not navigation or eclipse prediction. Sunrise/sunset use a nominal -0.833° altitude and simple iteration. Polar day/night is supported. Moon position is a low-precision orbital approximation; lunar phase and planetary orrery are approximate. This version intentionally shows sunrise/noon/sunset in **UTC** and does not guess legal civil time zones from longitude. This avoids an especially common class of time-zone errors. A future release can add explicit IANA zone selection with tested timezone data.
+Solar outputs use standard approximate NOAA/Meeus-style formulae and are suitable for general visualization, not navigation or eclipse prediction. Sunrise/sunset use a nominal -0.833° altitude and simple iteration. Polar day/night is supported. Moon position is a low-precision orbital approximation; lunar phase and planetary orrery are approximate. Sunrise/noon/sunset are displayed in **UTC** and does not guess legal civil time zones from longitude. This avoids an especially common class of time-zone errors. A future release can add explicit IANA zone selection with tested timezone data. Star catalogue positions are J2000 approximations without precession or nutation, and are not navigation grade.
 
-The world map intentionally renders *twilight geometry* without geopolitical boundaries rather than relying on a third-party map service. The orrery uses simplified, roughly circular orbits and is **not suitable for precision conjunctions**.
+The world map bundles Natural Earth-derived World Atlas geographic shapes from the world-atlas npm package. It renders simplified boundaries and geometrically computed twilight with no network requests. The orrery uses simplified, roughly circular orbits and is **not suitable for precision conjunctions**.
 
 ## Safety boundary
 
