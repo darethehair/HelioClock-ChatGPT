@@ -4,7 +4,7 @@ import {renderEarth} from './earth-renderer.js';
 import {starsAbove} from './sky-catalog.js';
 import {RAD,PI,wrap,clamp,solar,sunHorizontal,sunEvents,moon,orbitPositions,utcTime,durationText} from './astronomy.js';
 const $=id=>document.getElementById(id);
-const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyHeading:0,earthZoom:1,earthLon:0,earthLat:0,earthProjection:'equal',orreryZoom:1,playing:false};
+const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyHeading:0,earthZoom:1,earthLon:0,earthLat:0,earthProjection:'equal',orreryZoom:1,moonZoom:1,orbitMode:'inner',playing:false};
 const fmt=d=>d.toISOString().slice(0,10);
 function setDateInputs(){$('observe-date').value=fmt(state.date);$('observe-time').value=utcTime(state.date)}
 function selectDate(){
@@ -104,8 +104,9 @@ function sky(){
  c.restore();
 }
 function drawMoon(){
- const info=renderMoon($('moon'),state.date,state.lat,state.lon);
+ const info=renderMoon($('moon'),state.date,state.lat,state.lon,state.moonZoom);
  const m=moon(state.date,state.lat,state.lon);
+ $('moon-zoom-value').textContent=state.moonZoom.toFixed(1)+'×';
  $('moon-progress-fill').style.width=(m.phase*100).toFixed(1)+'%';
  if(info){
   $('moon-tilt').textContent='Bright limb from zenith: '+(info.fromZenith>0?'+':'')+info.fromZenith.toFixed(1)+'°';
@@ -113,22 +114,27 @@ function drawMoon(){
  }
 }
 function orrery(){
- const o=canvas($('orrery'));if(!o)return;const{c,w,h}=o,X=w/2,Y=h/2;
- const scale=Math.min(w*.43,h*.43)/1.524*state.orreryZoom;
+ const o=canvas($('orrery'));if(!o)return;
+ const {c,w,h}=o,X=w/2,Y=h/2,outer=state.orbitMode==='outer';
+ const all=orbitPositions(state.date),planets=outer?all:all.slice(0,4);
+ const maximum=outer?30.07:1.524;
+ const scale=Math.min(w*.44,h*.43)/maximum*state.orreryZoom;
  for(let i=0;i<140;i++){
   const x=(i*73.7%1000)/1000*w,y=(i*137.3%1000)/1000*h;
   dot(c,x,y,.55,i%3?'#fff5dd42':'#fff5dd88');
  }
- const planets=orbitPositions(state.date);
  planets.forEach(p=>{
-  const r=p.radius*scale;c.beginPath();c.ellipse(X,Y,r,r,0,0,2*PI);c.strokeStyle='#40526b88';c.lineWidth=1;c.stroke();
+  const r=p.radius*scale;
+  c.beginPath();c.arc(X,Y,r,0,2*PI);c.strokeStyle='#40526b88';c.lineWidth=1;c.stroke();
  });
- dot(c,X,Y,12,'#ffcd7d',22);
+ dot(c,X,Y,outer?5:12,'#ffcd7d',22);
  planets.forEach(p=>{
   const a=(p.angle-90)*RAD,x=X+p.radius*scale*Math.cos(a),y=Y+p.radius*scale*Math.sin(a);
-  dot(c,x,y,p.r,p.color,9);
-  label(c,p.name,x+8,y-7,p.color,10);
+  dot(c,x,y,outer?Math.max(2.6,p.r*.75):p.r,p.color,9);
+  if(outer||p.radius*scale>20)label(c,p.name,x+8,y-7,p.color,10);
  });
+ const legend=$('planet-legend');
+ legend.innerHTML=planets.map(p=>'<span style="color:'+p.color+'">● '+p.name+'</span>').join('');
 }
 function formatCoord(n,positive,negative){return Math.abs(n).toFixed(2)+'° '+(n>=0?positive:negative)}
 function render(){
@@ -139,6 +145,7 @@ function render(){
  const delta=Math.round((next.duration-ev.duration)*60);
  const paused=$('live-indicator');paused.classList.toggle('paused',!state.live);paused.innerHTML=state.live?'<i></i> LIVE SKY':'<i></i> TIME TRAVEL';
  $('utc-clock').textContent=state.date.toISOString().slice(11,19)+' UTC';
+ updateLocalDisplay();
  $('date-label').textContent=state.date.toLocaleDateString('en-CA',{year:'numeric',month:'long',day:'numeric',timeZone:'UTC'}).toUpperCase();
  $('place-summary').textContent=formatCoord(state.lat,'N','S')+'  ·  '+formatCoord(state.lon,'E','W');
  $('sunrise').textContent=ev.polar?(ev.polar==='day'?'ALL DAY':'NO SUNRISE'):utcTime(ev.sunrise);
@@ -165,6 +172,39 @@ function render(){
  $('time-scrubber').value=String(state.date.getUTCHours()*60+state.date.getUTCMinutes());
  $('scrub-readout').textContent=utcTime(state.date)+' UTC';
  daylightChart();worldMap();sky();drawMoon();orrery();
+}
+function browserZone(){
+ return Intl.DateTimeFormat().resolvedOptions().timeZone||'Device local time';
+}
+function localParts(date){
+ const pad=n=>String(n).padStart(2,'0');
+ return {date:date.getFullYear()+'-'+pad(date.getMonth()+1)+'-'+pad(date.getDate()),
+  time:pad(date.getHours())+':'+pad(date.getMinutes())};
+}
+function localLabel(date){
+ const zone=browserZone();
+ const time=new Intl.DateTimeFormat('en-CA',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:zone}).format(date);
+ const tz=new Intl.DateTimeFormat('en-CA',{timeZone:zone,timeZoneName:'short'}).formatToParts(date).find(x=>x.type==='timeZoneName')?.value||zone;
+ const offset=-date.getTimezoneOffset(),sign=offset>=0?'+':'−',pad=n=>String(n).padStart(2,'0');
+ const offsetStr='UTC'+sign+pad(Math.floor(Math.abs(offset)/60))+':'+pad(Math.abs(offset)%60);
+ return {time,tz,zone,offsetStr};
+}
+function updateLocalDisplay(){
+ const v=localLabel(state.date),p=localParts(state.date);
+ $('local-clock').textContent=v.time+' '+v.tz;
+ $('dock-local-time').textContent=v.time;
+ $('dock-time-zone').textContent=v.zone+' · '+v.offsetStr;
+ $('dock-date').value=p.date;$('dock-time').value=p.time;
+ $('dock-scrubber').value=state.date.getHours()*60+state.date.getMinutes();
+ $('dock-play').textContent=state.playing?'Ⅱ':'▶';
+ $('dock-live').classList.toggle('is-live',state.live);
+}
+function selectDockLocal(){
+ const date=$('dock-date').value,time=$('dock-time').value;
+ if(!date||!time)return;
+ const next=new Date(date+'T'+time+':00');
+ if(!Number.isFinite(next.getTime()))return;
+ pausePlayback();state.date=next;state.live=false;setDateInputs();render();
 }
 function updateCoords(){
  const lat=Number($('latitude').value),lon=Number($('longitude').value);
@@ -205,6 +245,21 @@ setInterval(()=>{if(state.playing)shiftTime(15)},180);
 function viewRange(id,key){$(id).addEventListener('input',e=>{state[key]=Number(e.target.value);render()})}
 viewRange('sky-zoom','skyZoom');viewRange('sky-heading','skyHeading');
 viewRange('earth-zoom','earthZoom');viewRange('orrery-zoom','orreryZoom');
+viewRange('moon-zoom','moonZoom');
+for(const button of document.querySelectorAll('[data-orbit-mode]')){
+ button.addEventListener('click',()=>{
+  state.orbitMode=button.dataset.orbitMode;
+  for(const other of document.querySelectorAll('[data-orbit-mode]')){
+   const selected=other===button;other.classList.toggle('selected',selected);other.setAttribute('aria-pressed',String(selected));
+  }
+  state.orreryZoom=1;$('orrery-zoom').value=1;render();
+ });
+}
+function changeMoonZoom(factor){state.moonZoom=clamp(Math.round(state.moonZoom*factor*10)/10,.7,2.8);$('moon-zoom').value=state.moonZoom;render()}
+$('moon-zoom-in').addEventListener('click',()=>changeMoonZoom(1.25));
+$('moon-zoom-out').addEventListener('click',()=>changeMoonZoom(.8));
+$('moon-reset').addEventListener('click',()=>{state.moonZoom=1;$('moon-zoom').value=1;render()});
+
 
 function selectEarthProjection(next){
  state.earthProjection=next;
@@ -245,6 +300,7 @@ function wheelZoom(canvasId,controlId,key,lo,hi){
 wheelZoom('sky','sky-zoom','skyZoom',1,3);
 wheelZoom('earth-map','earth-zoom','earthZoom',1,4);
 wheelZoom('orrery','orrery-zoom','orreryZoom',.7,3);
+wheelZoom('moon','moon-zoom','moonZoom',.7,2.8);
 function dragCanvas(id,onMove){
  const el=$(id);let start=null;
  el.style.cursor='grab';el.style.touchAction='none';
@@ -261,6 +317,37 @@ dragCanvas('sky',(dx)=>{state.skyHeading=clamp(state.skyHeading+dx*.8,-180,180);
 dragCanvas('earth-map',(dx,dy,el)=>{
  state.earthLon=wrap(state.earthLon-dx/el.clientWidth*360/state.earthZoom+180,360)-180;
  state.earthLat=clamp(state.earthLat+dy/el.clientHeight*180/state.earthZoom,-75,75);
+});
+
+for(const [id,minutes] of [['dock-prev-day',-1440],['dock-prev-hour',-60],['dock-next-hour',60],['dock-next-day',1440]]){
+ $(id).addEventListener('click',()=>{pausePlayback();shiftTime(minutes)});
+}
+$('dock-date').addEventListener('change',selectDockLocal);
+$('dock-time').addEventListener('change',selectDockLocal);
+$('dock-scrubber').addEventListener('input',e=>{
+ pausePlayback();const minutes=Number(e.target.value);
+ const d=state.date;
+ state.date=new Date(d.getFullYear(),d.getMonth(),d.getDate(),Math.floor(minutes/60),minutes%60);
+ state.live=false;setDateInputs();render();
+});
+$('dock-play').addEventListener('click',()=>$('play-time').click());
+$('dock-live').addEventListener('click',()=>$('now').click());
+for(const button of document.querySelectorAll('[data-fullscreen]')){
+ button.addEventListener('click',async()=>{
+  const panel=button.closest('.panel');
+  try{
+   if(document.fullscreenElement===panel)await document.exitFullscreen();
+   else if(document.fullscreenElement){await document.exitFullscreen();await panel.requestFullscreen()}
+   else await panel.requestFullscreen();
+  }catch(e){notice('Fullscreen could not be opened: '+e.message)}
+ });
+}
+document.addEventListener('fullscreenchange',()=>{
+ for(const button of document.querySelectorAll('[data-fullscreen]')){
+  const active=document.fullscreenElement===button.closest('.panel');
+  button.textContent=active?'⤢ Exit':'⛶ Expand';button.setAttribute('aria-pressed',String(active));
+ }
+ requestAnimationFrame(render);
 });
 let resizeTimer;
 window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(render,140)});
