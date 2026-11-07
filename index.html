@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080f20"><meta name="description" content="An independent astronomical dashboard for the Sun, Moon, sky and planets.">
+<link rel="icon" type="image/svg+xml" href="./icon.svg"><link rel="manifest" href="./manifest.webmanifest">
+<title>HelioClock • Independent Observatory</title>
+<link rel="stylesheet" href="./styles.css">
+<script type="module" src="./app.js"></script>
+</head>
+<body>
+<div class="app">
+<header class="topbar">
+  <div class="identity"><div class="mark">☼</div><div><div class="eyebrow">PERSONAL OBSERVATORY <span class="edition">/ CHATGPT EDITION</span></div><h1>Helio<span>Clock</span></h1></div></div>
+  <div class="header-right"><span id="live-indicator" class="live-pill"><i></i> LIVE SKY</span><span id="utc-clock" class="utc-clock">—</span></div>
+</header>
+<section class="toolbar" aria-label="Observation controls">
+  <div class="control"><label for="latitude">LATITUDE</label><input id="latitude" type="number" min="-90" max="90" step=".0001" value="49.19"></div>
+  <div class="control"><label for="longitude">LONGITUDE</label><input id="longitude" type="number" min="-180" max="180" step=".0001" value="-98.10"></div>
+  <button id="locate" class="action-button" title="Use browser geolocation">⌖ <span>Locate me</span></button>
+  <div class="control date-control"><label for="observe-date">OBSERVATION DATE</label><input id="observe-date" type="date"></div>
+  <div class="control time-control"><label for="observe-time">UTC TIME</label><input id="observe-time" type="time" step="60"></div>
+  <button id="now" class="action-button accent">↻ <span>Return to live</span></button>
+</section>
+<div id="message" class="notice" role="status" hidden></div>
+<main>
+<section class="hero panel">
+  <div class="hero-main">
+    <div class="section-kicker"><span class="kicker-dot"></span> SOLAR EPHEMERIS <span class="separator">/</span> <span id="date-label">—</span></div>
+    <div class="hero-heading">A day on <em>Earth.</em></div>
+    <div class="hero-subtitle" id="place-summary">49.19° N · 98.10° W</div>
+    <div class="sun-readings">
+      <div><span class="metric-label">SUNRISE <span class="metric-unit">UTC</span></span><strong id="sunrise">—</strong></div>
+      <div><span class="metric-label">SOLAR NOON <span class="metric-unit">UTC</span></span><strong id="solar-noon">—</strong></div>
+      <div><span class="metric-label">SUNSET <span class="metric-unit">UTC</span></span><strong id="sunset">—</strong></div>
+    </div>
+    <div class="dayline" id="dayline"><span class="dayline-now" id="dayline-now"></span></div>
+    <div class="dayline-labels"><span>00:00 UTC</span><span id="daylength">DAYLIGHT —</span><span>24:00 UTC</span></div>
+  </div>
+  <div class="sun-disc-wrap"><div class="sun-rings"><div class="sun-disc"></div></div><div class="solar-readout"><span id="solar-alt">—</span><small>SOLAR ALTITUDE</small></div></div>
+</section>
+<section class="stat-strip" aria-label="Astronomical readings">
+ <div><span class="metric-label">SUN AZIMUTH</span><b id="azimuth">—</b></div>
+ <div><span class="metric-label">EQUATION OF TIME</span><b id="eot">—</b></div>
+ <div><span class="metric-label">EARTH–SUN DISTANCE</span><b id="earth-distance">—</b></div>
+ <div><span class="metric-label">MOON ILLUMINATION</span><b id="moon-illumination">—</b></div>
+ <div><span class="metric-label">LUNAR AGE</span><b id="moon-age">—</b></div>
+</section>
+<div class="dashboard">
+ <section class="panel chart-panel"><div class="panel-heading"><div><div class="section-kicker">01 / SEASONAL CYCLE</div><h2>The daylight year</h2><p>Hours of daylight at your latitude · select any day</p></div><span class="panel-note" id="chart-year">—</span></div><canvas id="daylight-chart" aria-label="Interactive yearly daylight duration chart"></canvas><div class="chart-footer"><span>JAN</span><span>MAR</span><span>MAY</span><span>JUL</span><span>SEP</span><span>NOV</span><span>DEC</span></div></section>
+ <section class="panel earth-panel"><div class="panel-heading"><div><div class="section-kicker">02 / GLOBAL LIGHT</div><h2>Earth, illuminated</h2><p>Solar terminator and twilight bands · equirectangular projection</p></div><span class="panel-note" id="subsolar">—</span></div><canvas id="earth-map" aria-label="World map showing daylight and twilight by solar geometry"></canvas><div class="map-legend"><span><i style="background:#f0b765"></i> Day</span><span><i style="background:#7087b4"></i> Civil</span><span><i style="background:#475780"></i> Nautical</span><span><i style="background:#253250"></i> Astronomical</span><span><i style="background:#101b31"></i> Night</span></div></section>
+ <section class="panel sky-panel"><div class="panel-heading"><div><div class="section-kicker">03 / YOUR HORIZON</div><h2>Sky compass</h2><p>Local sky · north up · east right</p></div><span class="panel-note">AZ / ALT</span></div><canvas id="sky" aria-label="Local sky compass with approximate Sun and Moon positions"></canvas><div class="sky-legend"><span><i class="sun-key"></i> Sun</span><span><i class="moon-key"></i> Moon</span><span>Inner circle = 45° altitude</span></div></section>
+ <section class="panel moon-panel"><div class="panel-heading"><div><div class="section-kicker">04 / LUNAR CYCLE</div><h2>Our Moon</h2><p id="moon-phase">—</p></div><span class="panel-note">SYNODIC CYCLE</span></div><div class="moon-stage"><canvas id="moon" aria-label="Illuminated Moon phase drawing"></canvas></div><div class="moon-bottom"><span>NEW MOON</span><div class="moon-progress"><div id="moon-progress-fill"></div></div><span>FULL CYCLE</span></div></section>
+ <section class="panel orrery-panel"><div class="panel-heading"><div><div class="section-kicker">05 / SOLAR SYSTEM</div><h2>Inner orrery</h2><p>Approximate heliocentric positions · schematic orbit scales</p></div><span class="panel-note">NOT TO SCALE</span></div><canvas id="orrery" aria-label="Solar system inner planets orbit view"></canvas><div class="planet-legend"><span>● Mercury</span><span>● Venus</span><span>● Earth</span><span>● Mars</span></div></section>
+ <section class="panel details-panel"><div class="panel-heading"><div><div class="section-kicker">06 / OBSERVATION NOTES</div><h2>Under the sky</h2><p>Context for the selected instant</p></div></div><div class="notes-grid">
+ <div><span>Solar declination</span><strong id="declination">—</strong></div>
+ <div><span>Sun position</span><strong id="sun-status">—</strong></div>
+ <div><span>Moon altitude</span><strong id="moon-alt">—</strong></div>
+ <div><span>Moon azimuth</span><strong id="moon-az">—</strong></div>
+ <div><span>Daylight change tomorrow</span><strong id="daylight-delta">—</strong></div>
+ <div><span>Observer location</span><strong id="observer">—</strong></div>
+ </div><div class="fineprint">Solar calculations use NOAA-style approximate equations. Lunar and planetary positions use simplified models, not precision ephemerides. Times are shown in UTC to avoid ambiguous local clock offsets; no network location or astronomy service is required.</div></section>
+</div>
+</main>
+<footer><span>HELIOCLOCK <strong>INDEPENDENT EDITION</strong></span><span>Designed to explore time, light and motion · <a href="https://github.com/darethehair/HelioClock-ChatGPT" target="_blank" rel="noopener">Source on GitHub ↗</a></span></footer>
+</div></body></html>
