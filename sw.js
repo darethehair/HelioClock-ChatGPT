@@ -1,4 +1,4 @@
-const CACHE='helioclock-chatgpt-v6';
+const CACHE='helioclock-chatgpt-v7';
 const ASSETS=['./','./index.html','./styles.css','./app.js','./astronomy.js','./earth-blue-marble.png','./moon-nearside-lro.jpg','./icon.svg','./manifest.webmanifest','./build-info.json'];
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));
