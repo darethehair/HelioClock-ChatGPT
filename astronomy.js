@@ -128,7 +128,11 @@ export function orbitPositions(date){
  {name:"Mercury",radius:.387,period:87.969,phase:252.25,color:"#b5bac1",r:3.7},
  {name:"Venus",radius:.723,period:224.701,phase:181.98,color:"#e5b88e",r:5},
  {name:"Earth",radius:1,period:365.256,phase:100.46,color:"#76bde6",r:5.4},
- {name:"Mars",radius:1.524,period:686.98,phase:355.45,color:"#d88969",r:4.3}
+ {name:"Mars",radius:1.524,period:686.98,phase:355.45,color:"#d88969",r:4.3},
+ {name:"Jupiter",radius:5.203,period:4332.59,phase:34.40,color:"#dfb38c",r:6.8},
+ {name:"Saturn",radius:9.537,period:10759.22,phase:49.94,color:"#e0c99a",r:6.1},
+ {name:"Uranus",radius:19.191,period:30688.5,phase:313.23,color:"#91d8de",r:5.2},
+ {name:"Neptune",radius:30.07,period:60182,phase:304.88,color:"#587fef",r:5.2}
  ].map(p=>({...p,angle:wrap(p.phase+360*days/p.period)}));
 }
 export function utcTime(date){return date?date.toISOString().slice(11,16):"—";}
