@@ -150,7 +150,8 @@ function sky(){
   magLimit:state.magLimit,showStars:$('show-stars').checked,
   showLabels:$('show-labels').checked&&state.magLimit<=4.5,
   showConstellations:$('show-constellations').checked,
-  precession:state.usePrecession
+  precession:state.usePrecession,
+  brightSky:state.skyLight==='daylight' && skySun.alt>=-6
  });
  const status=skyAtlasStatus();
  $('sky-atlas-count').textContent=(status.ready?plotted||0:'Loading')+' stars'+(status.ready?' visible':' · catalog loading');
