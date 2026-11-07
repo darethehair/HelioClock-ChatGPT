@@ -64,18 +64,12 @@ export function drawSkyAtlas(c,{
   // This is an educational coordinate chart, not a naked-eye sky simulation.
   // In daylight use dark ink, rather than nearly-white semi-transparent stars
   // that effectively vanish against the light blue background.
-  const r=Math.max(brightSky?1.9:.85,3.6-(star.mag+1)*.36)*Math.max(.9,Math.min(1.45,zoom**.35));
-  if(brightSky){
-   // Full-opacity, high-contrast ink with a pale 1px halo makes star positions
-   // unambiguously visible on blue, both for J2000 and precessed coordinates.
-   c.globalAlpha=1;
-   c.beginPath();c.arc(x,y,r+1.2,0,2*Math.PI);
-   c.fillStyle='#d8f4ff';c.fill();
-   drawDot(c,x,y,r,'#061323');
-  }else{
-   c.globalAlpha=clamp((8.5-star.mag)/8.5,.2,1);
-   drawDot(c,x,y,r,'#e9f4ff');
-  }
+  // Consistent white star symbols on both the illuminated and black sky.
+  // A solid core (not an outlined circle) maintains a simple atlas aesthetic.
+  // Brightness is represented by size; keep points fully opaque on blue.
+  const r=Math.max(.9,3.6-(star.mag+1)*.36)*Math.max(.9,Math.min(1.45,zoom**.35));
+  c.globalAlpha=1;
+  drawDot(c,x,y,r,'#ffffff');
   total++;
  }
  c.globalAlpha=1;
@@ -86,7 +80,7 @@ export function drawSkyAtlas(c,{
    if(star.mag>Math.min(magLimit,3.4))continue;
    const h=toAltAz(star,date,lat,lon,precession),p=project(h.az,h.alt);
    if(!p||p[0]<8||p[0]>width-40||p[1]<10||p[1]>height-9)continue;
-   c.fillStyle=brightSky?'#071b30':'#bedaf7';c.font='10px sans-serif';c.fillText(star.name,p[0]+5,p[1]-6);
+   c.fillStyle='#ffffff';c.font='10px sans-serif';c.fillText(star.name,p[0]+5,p[1]-6);
   }
  }
  c.restore();
