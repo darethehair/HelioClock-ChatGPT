@@ -1,6 +1,6 @@
 import {RAD,PI,wrap,clamp,solar,sunHorizontal,sunEvents,moon,orbitPositions,utcTime,durationText} from './astronomy.js';
 const $=id=>document.getElementById(id);
-const state={lat:49.19,lon:-98.10,date:new Date(),live:true};
+const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyHeading:0,earthZoom:1,earthLon:0,earthLat:0,orreryZoom:1,playing:false};
 const fmt=d=>d.toISOString().slice(0,10);
 function setDateInputs(){$('observe-date').value=fmt(state.date);$('observe-time').value=utcTime(state.date)}
 function selectDate(){
@@ -8,7 +8,7 @@ function selectDate(){
  if(!d)return;
  const next=new Date(d+'T'+t+':00Z');
  if(!Number.isFinite(next.getTime()))return;
- state.date=next;state.live=false;render();
+ pausePlayback();state.date=next;state.live=false;render();
 }
 function notice(msg){$('message').hidden=!msg;$('message').textContent=msg||''}
 function canvas(el){
@@ -59,9 +59,9 @@ function worldMap(){
  const colors=[[14,25,44],[32,47,76],[57,74,107],[94,112,146],[193,155,104],[228,190,125]];
  const ll=state.lat*RAD,lo=state.lon*RAD;
  for(let y=0;y<image.height;y++){
-  const lat=(90-(y+.5)/h*180)*RAD,sinLat=Math.sin(lat),cosLat=Math.cos(lat);
+  const lat=clamp(90-(((y+.5)/h-.5)/state.earthZoom+.5)*180+state.earthLat,-90,90)*RAD,sinLat=Math.sin(lat),cosLat=Math.cos(lat);
   for(let x=0;x<image.width;x++){
-   const lon=((x+.5)/w*360-180-sublon)*RAD;
+   const lon=(wrap((((x+.5)/w-.5)/state.earthZoom)*360+state.earthLon-sublon+180,360)-180)*RAD;
    const cosZ=sinLat*Math.sin(s.decl*RAD)+cosLat*Math.cos(s.decl*RAD)*Math.cos(lon);
    const alt=Math.asin(clamp(cosZ,-1,1))/RAD;
    let color;
@@ -72,35 +72,42 @@ function worldMap(){
   }
  }
  c.putImageData(image,0,0);
- for(let lat=-60;lat<=60;lat+=30){const y=(90-lat)/180*h;line(c,0,y,w,y,'#d9e6f526',.7)}
- for(let lon=-150;lon<=180;lon+=30){const x=(lon+180)/360*w;line(c,x,0,x,h,'#d9e6f526',.7)}
- const x=(state.lon+180)/360*w,y=(90-state.lat)/180*h;dot(c,x,y,4,'#fff7e0',10);
- c.beginPath();c.arc(x,y,8,0,2*PI);c.strokeStyle='#fff7e0a0';c.lineWidth=1;c.stroke();
+ for(let lat=-60;lat<=60;lat+=30){
+  const y=((.5-(lat-state.earthLat)/180)*state.earthZoom+.5)*h;
+  if(y>=0&&y<=h)line(c,0,y,w,y,'#f4e6ca36',.7);
+ }
+ for(let lon=-180;lon<=180;lon+=30){
+  const x=((lon-state.earthLon)/360*state.earthZoom+.5)*w;
+  if(x>=0&&x<=w)line(c,x,0,x,h,'#f4e6ca36',.7);
+ }
+ const x=((wrap(state.lon-state.earthLon+180,360)-180)/360*state.earthZoom+.5)*w;
+ const y=((.5-(state.lat-state.earthLat)/180)*state.earthZoom+.5)*h;
+ if(x>=0&&x<w&&y>=0&&y<h){dot(c,x,y,4,'#fff7e0',10);c.beginPath();c.arc(x,y,8,0,2*PI);c.strokeStyle='#fff7e0a0';c.lineWidth=1;c.stroke()}
  // Rectangular projection intentionally shows illumination, not invented coastlines.
  label(c,'180°W',5,h-7,'#edf2ff99',10);label(c,'0°',w/2,h-7,'#edf2ff99',10,'center');
  label(c,'180°E',w-5,h-7,'#edf2ff99',10,'right');
 }
 function sky(){
  const o=canvas($('sky'));if(!o)return;const{c,w,h}=o;
- const X=w/2,Y=h/2,rad=Math.min(w-35,h-20)/2-14;
+ const X=w/2,Y=h/2,rad=(Math.min(w-35,h-20)/2-14)*state.skyZoom;
  c.save();c.strokeStyle='#395270';c.lineWidth=1.3;c.beginPath();c.arc(X,Y,rad,0,2*PI);c.stroke();
  for(let a=0;a<360;a+=10){
-  const p=(a-90)*RAD;line(c,X+Math.cos(p)*(rad-5),Y+Math.sin(p)*(rad-5),X+Math.cos(p)*rad,Y+Math.sin(p)*rad,'#59708e',a%30?0.6:1.3);
+  const p=(a-90-state.skyHeading)*RAD;line(c,X+Math.cos(p)*(rad-5),Y+Math.sin(p)*(rad-5),X+Math.cos(p)*rad,Y+Math.sin(p)*rad,'#59708e',a%30?0.6:1.3);
  }
  for(let altitude=30;altitude<=90;altitude+=30){
   c.beginPath();c.arc(X,Y,rad*(1-altitude/90),0,2*PI);
   c.strokeStyle='#344965';c.lineWidth=1;c.stroke();
  }
  for(let a=0;a<360;a+=45){
-  const p=(a-90)*RAD;line(c,X,Y,X+Math.cos(p)*rad,Y+Math.sin(p)*rad,'#2b4059');
+  const p=(a-90-state.skyHeading)*RAD;line(c,X,Y,X+Math.cos(p)*rad,Y+Math.sin(p)*rad,'#2b4059');
  }
  [['N',0],['E',90],['S',180],['W',270]].forEach(([t,a])=>{
-  const p=(a-90)*RAD;label(c,t,X+Math.cos(p)*(rad+11),Y+Math.sin(p)*(rad+11)+4,'#c7d7ea',11,'center');
+  const p=(a-90-state.skyHeading)*RAD;label(c,t,X+Math.cos(p)*(rad+11),Y+Math.sin(p)*(rad+11)+4,'#c7d7ea',11,'center');
  });
  const sun=sunHorizontal(state.date,state.lat,state.lon),m=moon(state.date,state.lat,state.lon);
  const place=(obj,col,name)=>{
   if(obj.alt<=0)return;
-  const distance=rad*(1-obj.alt/90),angle=(obj.az-90)*RAD;
+  const distance=rad*(1-obj.alt/90),angle=(obj.az-90-state.skyHeading)*RAD;
   const x=X+distance*Math.cos(angle),y=Y+distance*Math.sin(angle);
   dot(c,x,y,name==='Sun'?8:6,col,15);
   label(c,name,x+11,y-8,col,11);
@@ -133,7 +140,7 @@ function drawMoon(){
 }
 function orrery(){
  const o=canvas($('orrery'));if(!o)return;const{c,w,h}=o,X=w/2,Y=h/2;
- const scale=Math.min(w*.43,h*.43)/1.524;
+ const scale=Math.min(w*.43,h*.43)/1.524*state.orreryZoom;
  for(let i=0;i<140;i++){
   const x=(i*73.7%1000)/1000*w,y=(i*137.3%1000)/1000*h;
   dot(c,x,y,.55,i%3?'#fff5dd42':'#fff5dd88');
@@ -181,6 +188,8 @@ function render(){
  $('moon-alt').textContent=m.alt.toFixed(1)+'°';$('moon-az').textContent=m.az.toFixed(1)+'°';
  $('daylight-delta').textContent=(delta>0?'+':'')+delta+' min';
  $('observer').textContent=formatCoord(state.lat,'N','S')+' / '+formatCoord(state.lon,'E','W');
+ $('time-scrubber').value=String(state.date.getUTCHours()*60+state.date.getUTCMinutes());
+ $('scrub-readout').textContent=utcTime(state.date)+' UTC';
  daylightChart();worldMap();sky();drawMoon();orrery();
 }
 function updateCoords(){
@@ -191,7 +200,7 @@ function updateCoords(){
 $('latitude').addEventListener('change',updateCoords);$('longitude').addEventListener('change',updateCoords);
 $('observe-date').addEventListener('change',selectDate);
 $('observe-time').addEventListener('change',selectDate);
-$('now').addEventListener('click',()=>{state.date=new Date();state.live=true;setDateInputs();render()});
+$('now').addEventListener('click',()=>{pausePlayback();state.date=new Date();state.live=true;setDateInputs();render()});
 $('locate').addEventListener('click',()=>{
  if(!navigator.geolocation){notice('Geolocation is unavailable in this browser. Enter coordinates manually.');return}
  notice('Requesting your location...');
@@ -200,6 +209,59 @@ $('locate').addEventListener('click',()=>{
   $('latitude').value=state.lat.toFixed(4);$('longitude').value=state.lon.toFixed(4);
   notice('');render();
  },error=>notice('Unable to determine location: '+error.message+'. You can enter coordinates manually.'),{enableHighAccuracy:false,timeout:12000});
+});
+function shiftTime(minutes){
+ state.date=new Date(state.date.getTime()+minutes*60000);state.live=false;setDateInputs();render();
+}
+function pausePlayback(){state.playing=false;$('play-time').textContent='▶ Play'}
+for(const [id,minutes] of [['step-back-day',-1440],['step-back-hour',-60],['step-forward-hour',60],['step-forward-day',1440]]){
+ $(id).addEventListener('click',()=>{pausePlayback();shiftTime(minutes)});
+}
+$('time-scrubber').addEventListener('input',e=>{
+ pausePlayback();
+ const minutes=Number(e.target.value);
+ state.date=new Date(Date.UTC(state.date.getUTCFullYear(),state.date.getUTCMonth(),state.date.getUTCDate(),Math.floor(minutes/60),minutes%60));
+ state.live=false;setDateInputs();render();
+});
+$('play-time').addEventListener('click',()=>{
+ state.playing=!state.playing;state.live=false;setDateInputs();
+ $('play-time').textContent=state.playing?'Ⅱ Pause':'▶ Play';render();
+});
+setInterval(()=>{if(state.playing)shiftTime(15)},180);
+function viewRange(id,key){$(id).addEventListener('input',e=>{state[key]=Number(e.target.value);render()})}
+viewRange('sky-zoom','skyZoom');viewRange('sky-heading','skyHeading');
+viewRange('earth-zoom','earthZoom');viewRange('orrery-zoom','orreryZoom');
+function reset(id,defaults){
+ $(id).addEventListener('click',()=>{for(const [key,value] of Object.entries(defaults))state[key]=value;
+ const controls={skyZoom:'sky-zoom',skyHeading:'sky-heading',earthZoom:'earth-zoom',orreryZoom:'orrery-zoom'};
+ for(const [key,value] of Object.entries(defaults)){if(controls[key])$(controls[key]).value=value}
+ render()});
+}
+reset('sky-reset',{skyZoom:1,skyHeading:0});
+reset('earth-reset',{earthZoom:1,earthLon:0,earthLat:0});
+reset('orrery-reset',{orreryZoom:1});
+function wheelZoom(canvasId,controlId,key,lo,hi){
+ $(canvasId).addEventListener('wheel',e=>{e.preventDefault();state[key]=clamp(state[key]*(e.deltaY>0?.88:1.14),lo,hi);$(controlId).value=state[key];render()},{passive:false});
+}
+wheelZoom('sky','sky-zoom','skyZoom',1,3);
+wheelZoom('earth-map','earth-zoom','earthZoom',1,4);
+wheelZoom('orrery','orrery-zoom','orreryZoom',.7,3);
+function dragCanvas(id,onMove){
+ const el=$(id);let start=null;
+ el.style.cursor='grab';el.style.touchAction='none';
+ el.addEventListener('pointerdown',e=>{start={x:e.clientX,y:e.clientY};el.setPointerCapture(e.pointerId);el.style.cursor='grabbing'});
+ el.addEventListener('pointermove',e=>{
+  if(!start)return;
+  const dx=e.clientX-start.x,dy=e.clientY-start.y;start={x:e.clientX,y:e.clientY};
+  onMove(dx,dy,el);render();
+ });
+ const end=()=>{start=null;el.style.cursor='grab'};
+ el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);el.addEventListener('lostpointercapture',end);
+}
+dragCanvas('sky',(dx)=>{state.skyHeading=clamp(state.skyHeading+dx*.8,-180,180);$('sky-heading').value=state.skyHeading});
+dragCanvas('earth-map',(dx,dy,el)=>{
+ state.earthLon=wrap(state.earthLon-dx/el.clientWidth*360/state.earthZoom+180,360)-180;
+ state.earthLat=clamp(state.earthLat+dy/el.clientHeight*180/state.earthZoom,-75,75);
 });
 let resizeTimer;
 window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(render,140)});
