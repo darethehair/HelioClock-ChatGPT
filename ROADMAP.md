@@ -34,6 +34,13 @@ The experimental application already contains: Sun events and annual twilight ch
 - [ ] **Improve planetary and lunar ephemerides.** Current schematic/circular orbits and simplified lunar model should not be represented as precise. Seek a compact offline high-quality solution before implementing conjunction or observing alerts.
 - [ ] **Define date range.** JS Date has limitations for ancient dates, BCE labels and astronomical year numbering. Decide on robust Julian Date/time-scale handling for epochs spanning millennia.
 
+## Completed SChronos-inspired visual upgrade (Version 17)
+
+- [x] Full rectangular sky chart spanning +90° to −90° altitude with a prominent horizon line, black below the horizon, and optional below-horizon stars and Sun/Moon trails.
+- [x] Sun-centred illustrative radial glow, adapting the SChronos PyCairo concept for an offline browser canvas, with automatic day/twilight fade and azimuth-seam continuity.
+- [x] Retain polar compass and separate pure-black mode, white magnitude-scaled stars, sidereal steps and optional precession.
+- [ ] Additional SChronos concepts for future iteration: ecliptic overlay, richer event annotations, seasonal solar paths, and refined typography to avoid crowded labels.
+
 ## Priority B: Enhanced sky observatory
 
 - [ ] **Milky Way overlay — user requested.** Independent controls for (a) outline, (b) softly shaded brightness, and (c) galactic-centre marker. Use actual galactic coordinates and an appropriately licensed map/model; project into both polar and rectangular sky views.
