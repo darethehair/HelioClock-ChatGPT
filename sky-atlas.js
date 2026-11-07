@@ -1,3 +1,4 @@
+import {projectRect,rectGeometry} from './sky-projection.js';
 import {RAD,wrap,clamp,horizontal,precessJ2000} from './astronomy.js';
 import {BRIGHT_STARS} from './sky-catalog.js';
 
@@ -24,16 +25,13 @@ const toAltAz=(star,date,latitude,longitude,precession)=> {
 function drawDot(c,x,y,r,color){c.beginPath();c.arc(x,y,r,0,2*Math.PI);c.fillStyle=color;c.fill();}
 export function drawSkyAtlas(c,{
  date,lat,lon,width,height,mode='polar',zoom=1,heading=0,magLimit=3.5,
- showLabels=true,showStars=true,showConstellations=false,precession=true,brightSky=false
+ showLabels=true,showStars=true,showConstellations=false,precession=true,brightSky=false,showBelowHorizon=true
 }){
  const X=width/2,Y=height/2,radius=(Math.min(width-35,height-20)/2-14)*zoom;
  const project=(az,alt)=>{
-  if(alt<0)return null;
+  if(alt<0&&(mode!=='rect'||!showBelowHorizon))return null;
   if(mode==='rect'){
-   const ax=mod(az-heading,360);
-   const xx=width*.06+ax/360*width*.88;
-   const yy=height*.90-alt/90*height*.80;
-   return [xx,yy];
+   return projectRect(az,alt,width,height,heading);
   }
   const angle=(az-90-heading)*RAD,distance=radius*(1-alt/90);
   return [X+distance*Math.cos(angle),Y+distance*Math.sin(angle)];
