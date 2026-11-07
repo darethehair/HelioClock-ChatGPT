@@ -4,6 +4,23 @@ test('dashboard controls work in Firefox',async({page})=>{
  page.on('pageerror',error=>errors.push(error.message));
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#sunrise')).not.toHaveText('—');
+ await expect(page.locator('#local-clock')).not.toHaveText('—');
+ await expect(page.locator('#dock-time-zone')).toContainText('UTC');
+ await expect(page.locator('#dock-local-time')).not.toHaveText('—');
+ await expect(page.locator('.panel-fullscreen')).toHaveCount(6);
+ await page.locator('[data-orbit-mode="outer"]').click();
+ await expect(page.locator('[data-orbit-mode="outer"]')).toHaveAttribute('aria-pressed','true');
+ await expect(page.locator('#planet-legend')).toContainText('Neptune');
+ await page.locator('[data-orbit-mode="inner"]').click();
+ await expect(page.locator('#planet-legend')).not.toContainText('Neptune');
+ await page.locator('#moon-zoom-in').click();
+ await expect(page.locator('#moon-zoom-value')).not.toHaveText('1.0×');
+ await page.locator('#moon-reset').click();
+ await expect(page.locator('#moon-zoom-value')).toHaveText('1.0×');
+ await page.locator('#dock-next-hour').click();
+ await expect(page.locator('#dock-local-time')).not.toHaveText('—');
+ await page.locator('#dock-live').click();
+
  await expect(page.locator('#solar-chart-readout')).toContainText('DAYLIGHT');
  await expect(page.locator('#solar-chart-time')).toContainText('Selected Sun:');
  await expect(page.locator('#solar-chart-time')).toContainText('mean solar time');
@@ -55,5 +72,16 @@ test('dashboard controls work in Firefox',async({page})=>{
    expect(dimensions.width).toBeGreaterThan(0);
    expect(dimensions.height).toBeGreaterThan(0);
  }
+ const scrollCheck=await page.evaluate(()=>{
+   window.scrollTo(0,document.body.scrollHeight);
+   const rect=document.getElementById('time-dock').getBoundingClientRect();
+   return {top:rect.top,bottom:rect.bottom,viewport:window.innerHeight};
+ });
+ expect(scrollCheck.bottom).toBeLessThanOrEqual(scrollCheck.viewport+2);
+ expect(scrollCheck.top).toBeGreaterThanOrEqual(-2);
+ await page.locator('[data-fullscreen="chart-panel"]').click();
+ await expect.poll(()=>page.evaluate(()=>!!document.fullscreenElement)).toBe(true);
+ await page.evaluate(()=>document.exitFullscreen());
+ await expect.poll(()=>page.evaluate(()=>!!document.fullscreenElement)).toBe(false);
  expect(errors).toEqual([]);
 });
