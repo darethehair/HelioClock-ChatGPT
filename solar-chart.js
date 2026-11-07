@@ -1,4 +1,4 @@
-import {RAD,clamp,solar} from './astronomy.js';
+import {RAD,clamp,solar,sunHorizontal,wrap} from './astronomy.js';
 
 /**
  * Daily solar horizon bands. The vertical time coordinate is LOCAL MEAN SOLAR
@@ -103,6 +103,25 @@ export function drawSolarYear(canvas,{year,lat,lon,selectedDate,onSelect}){
  const index=clamp((Date.UTC(year,selectedDate.getUTCMonth(),selectedDate.getUTCDate())-Date.UTC(year,0,1))/86400000,0,days-1);
  const selected=data[index],markerX=x(index);
  drawLine(c,markerX,g.top,markerX,g.bottom,'#ffe4aa',1.4);
+ // The selected instant is placed at its actual local mean solar hour.
+ // This is a vertical position on the existing 0–24h axis, not solar altitude.
+ const utcHours=selectedDate.getUTCHours()+selectedDate.getUTCMinutes()/60+selectedDate.getUTCSeconds()/3600;
+ const meanSolarHour=wrap(utcHours+lon/15,24);
+ const timeY=y(meanSolarHour);
+ const actualSun=sunHorizontal(selectedDate,lat,lon);
+ const sunny=actualSun.alt>=-.833;
+ c.save();
+ c.beginPath();c.arc(markerX,timeY,7,0,Math.PI*2);
+ c.fillStyle=sunny?'#ffbd4a':'#d9e9ff';c.shadowColor=sunny?'#ffc46c':'#b7c7ff';
+ c.shadowBlur=14;c.fill();
+ c.lineWidth=1.5;c.strokeStyle='#ffffff';c.stroke();c.restore();
+ drawLine(c,markerX-17,timeY,markerX+17,timeY,'#ffffffbb',.8);
+ const nowLabel=stamp(meanSolarHour)+' LMT';
+ const labelY=timeY<g.top+29?timeY+22:timeY-12;
+ drawText(c,nowLabel,clamp(markerX,g.left+39,g.right-39),labelY,'#ffffff',10,'center');
+ const timeText=document.getElementById('solar-chart-time');
+ if(timeText)timeText.textContent='Selected Sun: '+stamp(meanSolarHour)+' mean solar time · '+actualSun.alt.toFixed(1)+'° altitude'+(sunny?' (above horizon)':' (below horizon)');
+
  for(const edge of ['dawn','dusk']){
   const yy=y(selected.levels.sun[edge]);
   if(yy>=g.top&&yy<=g.bottom){
