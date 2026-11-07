@@ -31,6 +31,8 @@ export function renderEarth(context,width,height,date,state){
  const rw=Math.max(120,Math.ceil(width*.68)),rh=Math.max(90,Math.ceil(height*.68));
  memoCanvas.width=rw;memoCanvas.height=rh;
  const image=memoCtx.createImageData(rw,rh);
+ const globe=earthProjection==='globe';
+ const center=map.translate(),radius=map.scale();
  const midnight=[7,14,34],astronomical=[23,39,77],nautical=[36,72,110],
        civil=[63,123,151],sunrise=[212,138,93],day=[24,111,153];
  const stops=[[-90,midnight],[-18,astronomical],[-12,nautical],[-6,civil],[-.833,sunrise],[5,day],[90,day]];
@@ -42,6 +44,8 @@ export function renderEarth(context,width,height,date,state){
  }
  for(let y=0;y<rh;y++){
   for(let x=0;x<rw;x++){
+   const sx=(x+.5)/rw*width,sy=(y+.5)/rh*height;
+   if(globe&&(sx-center[0])**2+(sy-center[1])**2>radius*radius)continue;
    const p=map.invert([(x+.5)/rw*width,(y+.5)/rh*height]);
    const i=(y*rw+x)*4;
    if(!p||!Number.isFinite(p[0])||!Number.isFinite(p[1])){
@@ -57,7 +61,9 @@ export function renderEarth(context,width,height,date,state){
  context.save();
  context.clearRect(0,0,width,height);
  context.fillStyle='#071324';context.fillRect(0,0,width,height);
- context.imageSmoothingEnabled=true;context.drawImage(memoCanvas,0,0,width,height);
+ context.imageSmoothingEnabled=true;
+ if(globe){context.beginPath();context.arc(center[0],center[1],radius,0,Math.PI*2);context.clip()}
+ context.drawImage(memoCanvas,0,0,width,height);
  const path=geoPath(map,context);
  context.lineWidth=.65;
  context.beginPath();path(graticule);context.strokeStyle='#d4e6fb28';context.stroke();
