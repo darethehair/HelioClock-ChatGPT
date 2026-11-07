@@ -53,9 +53,20 @@ test('dashboard controls work in Firefox',async({page})=>{
  await expect(page.locator('#dock-time-zone')).toContainText('UTC');
  await expect(page.locator('#dock-local-time')).not.toHaveText('—');
  await expect(page.locator('.panel-fullscreen')).toHaveCount(6);
+ await expect(page.locator('#show-au-rings')).toBeChecked();
+ const orreryBackground=await page.locator('#orrery').evaluate(el=>{
+  const c=el.getContext('2d');
+  return Array.from(c.getImageData(2,2,1,1).data).slice(0,3);
+ });
+ expect(orreryBackground).toEqual([0,0,0]);
+ await page.locator('#show-au-rings').uncheck();
+ await expect(page.locator('#show-au-rings')).not.toBeChecked();
+ await page.locator('#show-au-rings').check();
  await page.locator('[data-orbit-mode="outer"]').click();
  await expect(page.locator('[data-orbit-mode="outer"]')).toHaveAttribute('aria-pressed','true');
  await expect(page.locator('#planet-legend')).toContainText('Neptune');
+ await expect(page.locator('#au-scale-description')).toContainText('5 AU');
+
  await page.locator('[data-orbit-mode="inner"]').click();
  await expect(page.locator('#planet-legend')).not.toContainText('Neptune');
  await page.locator('#moon-zoom-in').click();
