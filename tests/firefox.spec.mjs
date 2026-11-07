@@ -18,6 +18,19 @@ test('dashboard controls work in Firefox',async({page})=>{
  await expect(page.locator('#sky-light-status')).toContainText('Daylight');
  const sunnySky=await page.locator('#sky').evaluate(el=>Array.from(el.getContext('2d').getImageData(2,2,1,1).data));
  expect(sunnySky[2]).toBeGreaterThan(80);
+ // Stars remain drawn in educational daylight mode with precession enabled.
+ // Check actual canvas pixels, not merely the computed star count.
+ await page.locator('#use-precession').check();
+ const snapshot=()=>page.locator('#sky').evaluate(el=>{
+  const ctx=el.getContext('2d');
+  return Array.from(ctx.getImageData(0,0,el.width,el.height).data);
+ });
+ const dayStarsOn=await snapshot();
+ await page.locator('#show-stars').uncheck();
+ const dayStarsOff=await snapshot();
+ const changed=dayStarsOn.reduce((n,v,i)=>n+(Math.abs(v-dayStarsOff[i])>25?1:0),0);
+ expect(changed).toBeGreaterThan(100);
+ await page.locator('#show-stars').check();
  // At a fixed midwinter date, daylight and night must produce different sky backgrounds.
  await page.locator('#observe-date').fill('2026-12-21');
  await page.locator('#observe-time').fill('06:00');
