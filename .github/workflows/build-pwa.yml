@@ -20,6 +20,7 @@ jobs:
         run: |
           node --check --experimental-default-type=module astronomy.js
           node --check --experimental-default-type=module app.js
+          node --check --experimental-default-type=module solar-chart.js
           node --check sw.js
           node --experimental-default-type=module tests/astronomy.test.mjs
       - name: Bundle independent visualizations
