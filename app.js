@@ -1,10 +1,11 @@
+import {drawSkyAtlas,skyAtlasStatus} from './sky-atlas.js';
 import {renderMoon} from './moon-renderer.js';
 import {drawSolarYear} from './solar-chart.js';
 import {renderEarth} from './earth-renderer.js';
 import {starsAbove} from './sky-catalog.js';
-import {RAD,PI,wrap,clamp,solar,sunHorizontal,sunEvents,moon,orbitPositions,utcTime,durationText} from './astronomy.js';
+import {RAD,PI,wrap,clamp,solar,sunHorizontal,sunEvents,moon,orbitPositions,sidereal,utcTime,durationText} from './astronomy.js';
 const $=id=>document.getElementById(id);
-const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyHeading:0,earthZoom:1,earthLon:0,earthLat:0,earthProjection:'equal',orreryZoom:1,moonZoom:1,orbitMode:'inner',skyLight:'daylight',playing:false};
+const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyHeading:0,earthZoom:1,earthLon:0,earthLat:0,earthProjection:'equal',orreryZoom:1,moonZoom:1,orbitMode:'inner',skyLight:'daylight',skyProjection:'polar',magLimit:3.5,playing:false};
 const fmt=d=>d.toISOString().slice(0,10);
 function setDateInputs(){$('observe-date').value=fmt(state.date);$('observe-time').value=utcTime(state.date)}
 function selectDate(){
@@ -78,7 +79,9 @@ function sky(){
  const skySun=sunHorizontal(state.date,state.lat,state.lon);
  fillSkyBackground(c,w,h,skySun.alt);
  $('sky-light-status').textContent=state.skyLight==='black'?'Pure black background':(skySun.alt>=0?'Daylight':skySun.alt>=-6?'Civil twilight':skySun.alt>=-12?'Nautical twilight':skySun.alt>=-18?'Astronomical twilight':'Night')+' · Sun '+skySun.alt.toFixed(1)+'°';
- c.save();c.strokeStyle='#395270';c.lineWidth=1.3;c.beginPath();c.arc(X,Y,rad,0,2*PI);c.stroke();
+ c.save();
+ if(state.skyProjection==='polar'){
+  c.strokeStyle='#395270';c.lineWidth=1.3;c.beginPath();c.arc(X,Y,rad,0,2*PI);c.stroke();
  for(let a=0;a<360;a+=10){
   const p=(a-90-state.skyHeading)*RAD;line(c,X+Math.cos(p)*(rad-5),Y+Math.sin(p)*(rad-5),X+Math.cos(p)*rad,Y+Math.sin(p)*rad,'#59708e',a%30?0.6:1.3);
  }
@@ -92,42 +95,64 @@ function sky(){
  [['N',0],['E',90],['S',180],['W',270]].forEach(([t,a])=>{
   const p=(a-90-state.skyHeading)*RAD;label(c,t,X+Math.cos(p)*(rad+11),Y+Math.sin(p)*(rad+11)+4,'#c7d7ea',11,'center');
  });
+ } else {
+  const L=w*.06,R=w*.94,T=h*.10,B=h*.90;
+  c.strokeStyle='#b8d4ec77';c.strokeRect(L,T,R-L,B-T);
+  for(let alt=0;alt<=90;alt+=15){
+   const y=B-alt/90*(B-T);line(c,L,y,R,y,'#8db5df40',1);
+   label(c,alt+'°',L-4,y+3,'#d0e6fa',10,'right');
+  }
+  for(let az=0;az<=360;az+=45){
+   const x=L+az/360*(R-L);
+   line(c,x,T,x,B,'#8db5df40',1);
+   label(c,az===360?'N':az===0?'N':az===90?'E':az===180?'S':az===270?'W':az+'°',x,B+14,'#d0e6fa',10,'center');
+  }
+ }
  const sun=sunHorizontal(state.date,state.lat,state.lon),m=moon(state.date,state.lat,state.lon);
  const place=(obj,col,name)=>{
   if(obj.alt<=0)return;
-  const distance=rad*(1-obj.alt/90),angle=(obj.az-90-state.skyHeading)*RAD;
-  const x=X+distance*Math.cos(angle),y=Y+distance*Math.sin(angle);
+  let x,y;
+  if(state.skyProjection==='rect'){
+   x=w*.06+wrap(obj.az-state.skyHeading,360)/360*w*.88;
+   y=h*.90-obj.alt/90*h*.80;
+  }else{
+   const distance=rad*(1-obj.alt/90),angle=(obj.az-90-state.skyHeading)*RAD;
+   x=X+distance*Math.cos(angle);y=Y+distance*Math.sin(angle);
+  }
   dot(c,x,y,name==='Sun'?8:6,col,15);
   label(c,name,x+11,y-8,col,11);
  };
  if($('show-sky-paths').checked){
   for(const [body,color] of [['sun','#ffc56a'],['moon','#c7d6ef']]){
-   c.save();c.beginPath();c.strokeStyle=color+'88';c.lineWidth=1.2;c.setLineDash([4,5]);let first=true;
+   c.save();c.beginPath();c.strokeStyle=color+'88';c.lineWidth=1.2;c.setLineDash([4,5]);let first=true,lastX=0;
    for(let hour=-12;hour<=12;hour+=.25){
     const time=new Date(state.date.getTime()+hour*3600000);
     const obj=body==='sun'?sunHorizontal(time,state.lat,state.lon):moon(time,state.lat,state.lon);
     if(obj.alt<0){first=true;continue}
-    const theta=(obj.az-90-state.skyHeading)*RAD,r=rad*(1-obj.alt/90);
-    const xx=X+r*Math.cos(theta),yy=Y+r*Math.sin(theta);
+    let xx,yy;
+    if(state.skyProjection==='rect'){
+     xx=w*.06+wrap(obj.az-state.skyHeading,360)/360*w*.88;
+     yy=h*.90-obj.alt/90*h*.80;
+    }else{
+     const theta=(obj.az-90-state.skyHeading)*RAD,r=rad*(1-obj.alt/90);
+     xx=X+r*Math.cos(theta);yy=Y+r*Math.sin(theta);
+    }
+    if(!first&&state.skyProjection==='rect'&&Math.abs(xx-lastX)>w*.42)first=true;
     if(first){c.moveTo(xx,yy);first=false}else c.lineTo(xx,yy);
+    lastX=xx;
    }
    c.stroke();c.restore();
   }
  }
- if($('show-stars').checked){
-  const occupied=[];
-  for(const star of starsAbove(state.date,state.lat,state.lon)){
-   const angle=(star.az-90-state.skyHeading)*RAD;
-   const distance=rad*(1-star.alt/90);
-   const x=X+distance*Math.cos(angle),y=Y+distance*Math.sin(angle);
-   const radius=Math.max(1.3,3.7-star.mag*.75);
-   dot(c,x,y,radius,'#eaf3ff',star.mag<1?7:0);
-   if($('show-labels').checked && occupied.every(([xx,yy])=>Math.hypot(xx-x,yy-y)>36)){
-    label(c,star.name,x+7,y-6,'#c3d6ef',10);
-    occupied.push([x,y]);
-   }
-  }
- }
+ const plotted=drawSkyAtlas(c,{
+  date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
+  mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
+  magLimit:state.magLimit,showStars:$('show-stars').checked,
+  showLabels:$('show-labels').checked&&state.magLimit<=4.5,
+  showConstellations:$('show-constellations').checked
+ });
+ const status=skyAtlasStatus();
+ $('sky-atlas-count').textContent=(status.ready?plotted||0:'Loading')+' stars'+(status.ready?' visible':' · catalog loading');
  place(sun,'#ffca7d','Sun');place(m,'#e1ebff','Moon');
  c.restore();
 }
@@ -199,6 +224,10 @@ function render(){
  $('observer').textContent=formatCoord(state.lat,'N','S')+' / '+formatCoord(state.lon,'E','W');
  $('time-scrubber').value=String(state.date.getUTCHours()*60+state.date.getUTCMinutes());
  $('scrub-readout').textContent=utcTime(state.date)+' UTC';
+ const hSid=sidereal(state.date,state.lon)/15;
+ const sidTime=String(Math.floor(hSid)).padStart(2,'0')+':'+String(Math.floor(hSid%1*60)).padStart(2,'0')+':'+String(Math.floor(hSid*3600%60)).padStart(2,'0');
+ $('sidereal-time').textContent=sidTime+' LMST';
+ $('dock-sidereal').textContent=sidTime;
  daylightChart();worldMap();sky();drawMoon();orrery();
 }
 function browserZone(){
@@ -320,6 +349,28 @@ for(const button of document.querySelectorAll('[data-sky-light]')){
    other.classList.toggle('selected',selected);other.setAttribute('aria-pressed',String(selected));
   }
   render();
+ });
+}
+for(const button of document.querySelectorAll('[data-sky-projection]')){
+ button.addEventListener('click',()=>{
+  state.skyProjection=button.dataset.skyProjection;
+  for(const other of document.querySelectorAll('[data-sky-projection]')){
+   const active=other===button;other.classList.toggle('selected',active);other.setAttribute('aria-pressed',String(active));
+  }render();
+ });
+}
+$('star-magnitude').addEventListener('change',e=>{
+ state.magLimit=Number(e.target.value);
+ $('show-labels').checked=state.magLimit<=4.5;
+ render();
+});
+$('show-constellations').addEventListener('change',render);
+window.addEventListener('helioclock-sky-atlas-ready',render);
+const SIDEREAL_DAY_MS=86164090.5;
+for(const [id,sign] of [['sky-prev-sidereal',-1],['sky-next-sidereal',1]]){
+ $(id).addEventListener('click',()=>{
+  pausePlayback();state.date=new Date(state.date.getTime()+sign*SIDEREAL_DAY_MS);
+  state.live=false;setDateInputs();render();
  });
 }
 for(const id of ['show-stars','show-labels','show-sky-paths'])$(id).addEventListener('change',render);
