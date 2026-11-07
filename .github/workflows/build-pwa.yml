@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Assemble standalone distribution
+      - name: Validate JavaScript and astronomy\n        shell: bash\n        run: |\n          node --check --experimental-default-type=module astronomy.js\n          node --check --experimental-default-type=module app.js\n          node --check sw.js\n          node --experimental-default-type=module tests/astronomy.test.mjs\n      - name: Assemble standalone distribution
         shell: bash
         run: |
           set -euo pipefail
