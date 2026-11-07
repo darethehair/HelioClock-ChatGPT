@@ -18,5 +18,5 @@ const position=sunHorizontal(at('2026-06-21T18:00:00Z'),...winnipeg);
 assert.ok(position.alt>50,'local mid-day summer Sun');
 const lunar=moon(at('2026-11-07T12:00:00Z'),...winnipeg);
 assert.ok(lunar.illuminated>=0&&lunar.illuminated<=1,'lunar illumination range');
-assert.equal(orbitPositions(at('2026-11-07T12:00:00Z')).length,4);
+assert.equal(orbitPositions(at('2026-11-07T12:00:00Z')).length,8);
 console.log('Astronomy smoke tests passed.');
