@@ -342,9 +342,21 @@ for(const button of document.querySelectorAll('[data-fullscreen]')){
   }catch(e){notice('Fullscreen could not be opened: '+e.message)}
  });
 }
+// The browser fullscreen top layer hides siblings of the fullscreen element.
+// Move the SAME dock (not a copy) into the active panel and restore it afterward,
+// retaining all input state and event listeners.
+const timeDock=$('time-dock');
+const dockHome=timeDock.parentNode;
+const dockNext=timeDock.nextSibling;
 document.addEventListener('fullscreenchange',()=>{
+ const activePanel=document.fullscreenElement;
+ if(activePanel?.classList.contains('panel')){
+  activePanel.appendChild(timeDock);
+ }else if(dockHome){
+  dockHome.insertBefore(timeDock,dockNext);
+ }
  for(const button of document.querySelectorAll('[data-fullscreen]')){
-  const active=document.fullscreenElement===button.closest('.panel');
+  const active=activePanel===button.closest('.panel');
   button.textContent=active?'⤢ Exit':'⛶ Expand';button.setAttribute('aria-pressed',String(active));
  }
  requestAnimationFrame(render);
