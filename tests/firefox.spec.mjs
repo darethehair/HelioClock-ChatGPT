@@ -26,6 +26,29 @@ test('dashboard controls work in Firefox',async({page})=>{
  const nightSky=await page.locator('#sky').evaluate(el=>Array.from(el.getContext('2d').getImageData(2,2,1,1).data));
  expect(nightSky.slice(0,3)).toEqual([0,0,0]);
 
+ await expect(page.locator('#sidereal-time')).toContainText('LMST');
+ await expect(page.locator('#dock-sidereal')).not.toHaveText('—');
+ await page.locator('[data-sky-projection="rect"]').click();
+ await expect(page.locator('[data-sky-projection="rect"]')).toHaveAttribute('aria-pressed','true');
+ await page.locator('[data-sky-projection="polar"]').click();
+ await expect(page.locator('[data-sky-projection="polar"]')).toHaveAttribute('aria-pressed','true');
+ await page.locator('#star-magnitude').selectOption('7');
+ await expect(page.locator('#show-labels')).not.toBeChecked();
+ await expect(page.locator('#sky-atlas-count')).toContainText('stars');
+ await page.locator('#show-constellations').check();
+ await expect(page.locator('#show-constellations')).toBeChecked();
+ await page.locator('#show-constellations').uncheck();
+ await page.locator('#star-magnitude').selectOption('3.5');
+ const beforeSidereal=await page.locator('#sidereal-time').textContent();
+ const beforeUtc=await page.locator('#utc-clock').textContent();
+ await page.locator('#sky-next-sidereal').click();
+ const afterSidereal=await page.locator('#sidereal-time').textContent();
+ const afterUtc=await page.locator('#utc-clock').textContent();
+ expect(afterUtc).not.toEqual(beforeUtc);
+ // Sidereal clock should return within a few seconds, not jump almost 4 minutes.
+ const seconds=t=>{const m=t.match(/(\d\d):(\d\d):(\d\d)/);return +m[1]*3600 + +m[2]*60 + +m[3]};
+ const elapsed=Math.abs(seconds(afterSidereal)-seconds(beforeSidereal));
+ expect(Math.min(elapsed,86400-elapsed)).toBeLessThan(5);
  await expect(page.locator('#local-clock')).not.toHaveText('—');
  await expect(page.locator('#dock-time-zone')).toContainText('UTC');
  await expect(page.locator('#dock-local-time')).not.toHaveText('—');
