@@ -17,9 +17,10 @@ An original, independently implemented astronomical dashboard, created for compa
 
 1. Open **Actions → Build standalone PWA ZIP** in this repository.
 2. Choose the latest successful workflow, then download the **HelioClock-ChatGPT-PWA** artifact.
-3. Unzip the downloaded GitHub artifact archive. It contains **HelioClock-ChatGPT-PWA.zip**.
-4. Extract that inner ZIP into the Apache directory that will serve the app, for example `/var/www/html/helioclock-chatgpt/`.
-5. Browse to `https://darethehair.net/helioclock-chatgpt/`.
+3. Extract the downloaded ZIP **once** directly into the Apache directory that will serve the app, for example `/var/www/html/helioclock-chatgpt/`.
+4. Browse to `https://darethehair.net/helioclock-chatgpt/`.
+
+The GitHub artifact is already a ZIP containing `index.html`, `app.js`, and all other deployable files at its top level; there is **no nested ZIP**.
 
 The ZIP uses relative resource paths, so it can be hosted at the domain root **or in any subdirectory**. HTTPS is required for geolocation and offline service-worker features (localhost is also allowed). On first load, the app caches its files for subsequent offline visits. The Google Fonts stylesheet is optional and falls back to system fonts when offline.
 
