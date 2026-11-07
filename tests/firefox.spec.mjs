@@ -4,6 +4,28 @@ test('dashboard controls work in Firefox',async({page})=>{
  page.on('pageerror',error=>errors.push(error.message));
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#sunrise')).not.toHaveText('—');
+ // Polar sky must support a truly black canvas background and solar-altitude colour.
+ await page.locator('[data-sky-light="black"]').click();
+ await expect(page.locator('[data-sky-light="black"]')).toHaveAttribute('aria-pressed','true');
+ const darkSky=await page.locator('#sky').evaluate(el=>Array.from(el.getContext('2d').getImageData(2,2,1,1).data));
+ expect(darkSky.slice(0,3)).toEqual([0,0,0]);
+ await page.locator('[data-sky-light="daylight"]').click();
+ await expect(page.locator('[data-sky-light="daylight"]')).toHaveAttribute('aria-pressed','true');
+ // Force a summer local-noon observation and confirm sky blue rather than black.
+ await page.locator('#observe-date').fill('2026-06-21');
+ await page.locator('#observe-time').fill('18:00');
+ await page.locator('#observe-time').dispatchEvent('change');
+ await expect(page.locator('#sky-light-status')).toContainText('Daylight');
+ const sunnySky=await page.locator('#sky').evaluate(el=>Array.from(el.getContext('2d').getImageData(2,2,1,1).data));
+ expect(sunnySky[2]).toBeGreaterThan(80);
+ // At a fixed midwinter date, daylight and night must produce different sky backgrounds.
+ await page.locator('#observe-date').fill('2026-12-21');
+ await page.locator('#observe-time').fill('06:00');
+ await page.locator('#observe-time').dispatchEvent('change');
+ await expect(page.locator('#sky-light-status')).toContainText('Night');
+ const nightSky=await page.locator('#sky').evaluate(el=>Array.from(el.getContext('2d').getImageData(2,2,1,1).data));
+ expect(nightSky.slice(0,3)).toEqual([0,0,0]);
+
  await expect(page.locator('#local-clock')).not.toHaveText('—');
  await expect(page.locator('#dock-time-zone')).toContainText('UTC');
  await expect(page.locator('#dock-local-time')).not.toHaveText('—');
