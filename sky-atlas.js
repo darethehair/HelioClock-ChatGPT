@@ -39,7 +39,7 @@ export function drawSkyAtlas(c,{
   return [X+distance*Math.cos(angle),Y+distance*Math.sin(angle)];
  };
  if(showConstellations&&ready){
-  c.save();c.strokeStyle='#88b5e077';c.lineWidth=1;
+  c.save();c.strokeStyle=brightSky?'#12355299':'#88b5e077';c.lineWidth=1;
   for(const chain of constellations){
    let previous=null;
    for(const [ra,dec] of chain){
