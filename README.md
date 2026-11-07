@@ -7,7 +7,8 @@ An original, independently implemented astronomical dashboard, created for compa
 - Solar altitude and azimuth; sunrise, sunset, solar noon, daylight duration and equation of time.
 - Interactive 24-hour annual solar ephemeris with sky-blue daylight, civil/nautical/astronomical twilight bands, sunrise/sunset contours, selected-date readout and date scrubbing. The vertical chart uses **local mean solar time**, not a guessed civil timezone.
 - Interactive **NASA Blue Marble satellite-textured** Earth map with calculated daylight/twilight shading, Equal Earth / orthographic globe / Mercator projection tabs directly above the map, observer/subsolar markers, drag-pan, zoom buttons and wheel zoom.
-- Local horizon sky compass with Sun and approximate Moon positions, selectable Sun/Moon paths, a compact J2000 bright-star catalogue with names, zoom and rotation.
+- Two sky projections (polar and rectangular horizon) with Sun/Moon tracks, an offline J2000 star catalogue down to magnitude 7, optional constellation stick figures, configurable magnitude cutoff and bright-star names suppressed in faint-star mode. Both modes share sky illumination settings, magnification and rotation.
+- Local mean sidereal time (LMST) in the sky panel and persistent time dock. Dedicated ±1 sidereal day controls advance 86,164.0905 seconds, keeping the stars nearly fixed while Sun/Moon positions progress. Ordinary ±1 day controls remain exactly 86,400 seconds.
 - Moon phase and approximate synodic age, rendered as one centered antialiased disc (including correct high-DPI scaling).
 - Schematic inner-planet orrery.
 - Offline PWA with local files and no required backend.
@@ -44,3 +45,7 @@ All work and GitHub Actions run solely in this separate repository. No workflow 
 ## License
 
 Project-specific experimental prototype; no license granted by default.
+
+## Star atlas provenance
+
+Star positions, brightness and constellation-line shapes are converted at build time from [D3-Celestial](https://github.com/ofrohn/d3-celestial) datasets, originally based on Hipparcos and curated constellation representations. The PWA includes local JSON data and functions entirely offline once installed; no sky-atlas service is called at runtime. Coordinates are J2000 approximations and currently omit precession, proper motion, nutation, atmospheric refraction, and extinction. A sidereal-day demonstration is consequently educational rather than an observatory-grade forecast.
