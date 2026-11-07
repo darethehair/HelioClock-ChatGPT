@@ -11,6 +11,9 @@ An original, independently implemented astronomical dashboard, created for compa
 - Moon phase and approximate synodic age, rendered as one centered antialiased disc (including correct high-DPI scaling).
 - Schematic inner-planet orrery.
 - Offline PWA with local files and no required backend.
+- Browser-local clock and IANA time-zone identifier (with current UTC offset) shown beside UTC time, using the device's time-zone database.
+- Fixed bottom simulation bar for changing dates and times while observing any panel; each graphics panel supports browser fullscreen.
+- Lunar photograph zoom controls, plus schematic inner/outer orbital modes through Neptune.
 - No runtime JavaScript framework or external API required. GitHub Actions uses npm/esbuild to bundle the map libraries and local world atlas directly into the ZIP; nothing needs installing on Apache.
 
 ## Download and deploy to Apache
@@ -30,7 +33,7 @@ Run `npm install && npm run build` to bundle the app, then copy `index.html`, `s
 
 ## Accuracy and limitations
 
-Solar outputs use standard approximate NOAA/Meeus-style formulae and are suitable for general visualization, not navigation or eclipse prediction. Sunrise/sunset use a nominal -0.833° altitude and simple iteration. Polar day/night is supported. Moon position is a low-precision orbital approximation; lunar phase and planetary orrery are approximate. Sunrise/noon/sunset are displayed in **UTC** and does not guess legal civil time zones from longitude. This avoids an especially common class of time-zone errors. A future release can add explicit IANA zone selection with tested timezone data. Star catalogue positions are J2000 approximations without precession or nutation, and are not navigation grade.
+Solar outputs use standard approximate NOAA/Meeus-style formulae and are suitable for general visualization, not navigation or eclipse prediction. Sunrise/sunset use a nominal -0.833° altitude and simple iteration. Polar day/night is supported. Moon position is a low-precision orbital approximation; lunar phase and planetary orrery are approximate. Sunrise/noon/sunset continue to be displayed in **UTC**; the app also displays the device's local clock, IANA zone and UTC offset for the selected instant. The bottom dock accepts device-local dates/times and handles its DST transitions through the browser. The observer's geographic coordinates do **not** automatically imply a legal time zone, so there is no guess based on longitude. A future release can add explicit IANA zone selection with tested timezone data. Star catalogue positions are J2000 approximations without precession or nutation, and are not navigation grade.
 
 The Earth map embeds the **NASA/Goddard Space Flight Center Scientific Visualization Studio Blue Marble** 2048×1024 image (https://svs.gsfc.nasa.gov/2915/), available as a NASA public scientific visualization. The build downloads and packages the imagery, so the deployed PWA does not need the NASA website at runtime. Credits: NASA/GSFC SVS; Blue Marble data courtesy of Reto Stöckli (NASA/GSFC) and NASA Earth Observatory. The World Atlas geographic outlines and mathematically computed Sun/twilight shading are overlaid locally. The orrery uses simplified, roughly circular orbits and is **not suitable for precision conjunctions**.
 
