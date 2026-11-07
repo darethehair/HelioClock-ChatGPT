@@ -1,4 +1,4 @@
-import {RAD,wrap,clamp,horizontal} from './astronomy.js';
+import {RAD,wrap,clamp,horizontal,precessJ2000} from './astronomy.js';
 import {BRIGHT_STARS} from './sky-catalog.js';
 
 // D3-Celestial J2000 star positions and stick-figure constellation paths
@@ -15,11 +15,16 @@ Promise.all([
  window.dispatchEvent(new Event('helioclock-sky-atlas-ready'));
 });
 const mod=(v,m)=>((v%m)+m)%m;
-const toAltAz=(star,date,latitude,longitude)=>horizontal(star.ra,star.dec,date,latitude,longitude);
+// Off: show the legacy untransformed J2000 coordinates. On: use the
+// mean equator/equinox of date consistently for every star and line vertex.
+const toAltAz=(star,date,latitude,longitude,precession)=> {
+ const eq=precession?precessJ2000(star.ra,star.dec,date):star;
+ return horizontal(eq.ra,eq.decl,date,latitude,longitude);
+};
 function drawDot(c,x,y,r,color){c.beginPath();c.arc(x,y,r,0,2*Math.PI);c.fillStyle=color;c.fill();}
 export function drawSkyAtlas(c,{
  date,lat,lon,width,height,mode='polar',zoom=1,heading=0,magLimit=3.5,
- showLabels=true,showStars=true,showConstellations=false
+ showLabels=true,showStars=true,showConstellations=false,precession=true
 }){
  const X=width/2,Y=height/2,radius=(Math.min(width-35,height-20)/2-14)*zoom;
  const project=(az,alt)=>{
@@ -38,7 +43,7 @@ export function drawSkyAtlas(c,{
   for(const chain of constellations){
    let previous=null;
    for(const [ra,dec] of chain){
-    const h=horizontal(ra,dec,date,lat,lon),pos=project(h.az,h.alt);
+    const h=toAltAz({ra,dec},date,lat,lon,precession),pos=project(h.az,h.alt);
     if(pos&&previous&&Math.hypot(pos[0]-previous[0],pos[1]-previous[1])<width*.42){
      c.beginPath();c.moveTo(previous[0],previous[1]);c.lineTo(pos[0],pos[1]);c.stroke();
     }
@@ -52,7 +57,7 @@ export function drawSkyAtlas(c,{
  c.save();
  for(const star of source){
   if(star.mag>magLimit)continue;
-  const h=toAltAz(star,date,lat,lon),pos=project(h.az,h.alt);
+  const h=toAltAz(star,date,lat,lon,precession),pos=project(h.az,h.alt);
   if(!pos)continue;
   const [x,y]=pos;
   if(x<0||x>width||y<0||y>height)continue;
@@ -67,7 +72,7 @@ export function drawSkyAtlas(c,{
  if(showLabels&&magLimit<=4.5){
   for(const star of BRIGHT_STARS){
    if(star.mag>Math.min(magLimit,3.4))continue;
-   const h=toAltAz(star,date,lat,lon),p=project(h.az,h.alt);
+   const h=toAltAz(star,date,lat,lon,precession),p=project(h.az,h.alt);
    if(!p||p[0]<8||p[0]>width-40||p[1]<10||p[1]>height-9)continue;
    c.fillStyle='#bedaf7';c.font='10px sans-serif';c.fillText(star.name,p[0]+5,p[1]-6);
   }
