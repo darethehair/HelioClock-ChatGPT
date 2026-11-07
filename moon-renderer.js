@@ -34,7 +34,9 @@ export function renderMoon(canvas,when,latitude,longitude,zoom=1){
  const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);
  c.clearRect(0,0,w,h);
  const m=moon(when,latitude,longitude),tilt=moonOrientation(when,latitude,longitude);
- const size=Math.max(20,Math.floor(Math.min(w*.58,h*.80)*zoom));
+ // At 1×, fill most of the Moon canvas (and hence its panel), while
+ // leaving enough space for the rotated disc without clipping its edges.
+ const size=Math.max(20,Math.floor(Math.min(w*.82,h*.90)*zoom));
  const radius=size/2;
  // Illuminate image coordinates before rotating the entire lunar photograph.
  // The surface normal of the visible sphere is (nx,ny,nz).
