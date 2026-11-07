@@ -5,6 +5,16 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#sunrise')).not.toHaveText('—');
  await expect(page.locator('#solar-chart-readout')).toContainText('DAYLIGHT');
+ await expect(page.locator('#solar-chart-time')).toContainText('Selected Sun:');
+ await expect(page.locator('#solar-chart-time')).toContainText('mean solar time');
+ await expect(page.locator('#moon-tilt')).toContainText('Bright limb from zenith:');
+ await expect(page.locator('#moon-source')).toContainText('NASA LRO near-side mosaic');
+ const realMoonImage=await page.evaluate(async()=>{
+  const img=new Image();img.src='./moon-nearside-lro.jpg';await img.decode();
+  return [img.naturalWidth,img.naturalHeight];
+ });
+ expect(realMoonImage).toEqual([1400,1400]);
+
  await expect(page.locator('#solar-chart-date')).not.toHaveText('—');
  const moonCanvas=page.locator('#moon');
  const moonPixels=await moonCanvas.evaluate(el=>{
