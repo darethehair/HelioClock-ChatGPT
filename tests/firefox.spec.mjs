@@ -111,6 +111,39 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.locator('#observe-time').fill('06:00');
  await page.locator('#observe-time').dispatchEvent('change');
  await page.locator('[data-sky-light="daylight"]').click();
+ // SChronos-style rectangular view: actual full +90 to -90 altitude chart.
+ await page.locator('#observe-date').fill('2026-06-21');
+ await page.locator('#observe-time').fill('18:00');
+ await page.locator('#observe-time').dispatchEvent('change');
+ await page.locator('[data-sky-light="daylight"]').click();
+ await page.locator('[data-sky-projection="rect"]').click();
+ await expect(page.locator('#below-horizon-setting')).toBeVisible();
+ await expect(page.locator('#show-below-horizon')).toBeChecked();
+ await expect(page.locator('#sky-atlas-count')).toContainText('visible');
+ const fullCount=Number((await page.locator('#sky-atlas-count').textContent()).split(' ')[0]);
+ await page.locator('#show-below-horizon').uncheck();
+ const aboveCount=Number((await page.locator('#sky-atlas-count').textContent()).split(' ')[0]);
+ expect(fullCount).toBeGreaterThan(aboveCount);
+ await page.locator('#show-below-horizon').check();
+ // Background: blue above the halfway horizon and pure black below it.
+ const sampleSky=()=>page.locator('#sky').evaluate(el=>{
+  const c=el.getContext('2d'),w=el.width,h=el.height;
+  const sample=(x,y)=>Array.from(c.getImageData(Math.round(w*x),Math.round(h*y),1,1).data).slice(0,3);
+  return {above:sample(.45,.23),below:sample(.45,.77)};
+ });
+ await page.locator('#show-stars').uncheck();
+ await page.locator('#show-sky-paths').uncheck();
+ const fullSky=await sampleSky();
+ expect(fullSky.above[2]).toBeGreaterThan(75);
+ expect(fullSky.below).toEqual([0,0,0]);
+ await page.locator('[data-sky-light="black"]').click();
+ const noAtmosphere=await sampleSky();
+ expect(noAtmosphere.above).toEqual([0,0,0]);
+ await page.locator('[data-sky-light="daylight"]').click();
+ await page.locator('#show-stars').check();
+ await page.locator('#show-sky-paths').check();
+ await page.locator('[data-sky-projection="polar"]').click();
+ await expect(page.locator('#below-horizon-setting')).toBeHidden();
  await expect(page.locator('#sidereal-time')).toContainText('LMST');
  await expect(page.locator('#dock-sidereal')).not.toHaveText('—');
  await page.locator('[data-sky-projection="rect"]').click();
