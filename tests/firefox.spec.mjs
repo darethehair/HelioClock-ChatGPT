@@ -48,6 +48,16 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.locator('[data-sky-light="daylight"]').click();
  await page.locator('[data-fullscreen="sky-panel"]').click();
  await expect.poll(()=>page.evaluate(()=>!!document.fullscreenElement)).toBe(true);
+ await page.evaluate(()=>{
+  window.__skyArcLog=[];
+  const original=CanvasRenderingContext2D.prototype.arc;
+  CanvasRenderingContext2D.prototype.arc=function(x,y,r,...rest){
+   if(this.canvas.id==='sky'&&r<10){
+    window.__skyArcLog.push({x,y,r,color:this.fillStyle,finite:Number.isFinite(x)&&Number.isFinite(y)});
+   }
+   return original.call(this,x,y,r,...rest);
+  };
+ });
  const countStarPixels=async()=>{
   await page.locator('#show-stars').check();
   await page.locator('#sky').evaluate(el=>{
@@ -72,6 +82,13 @@ test('dashboard controls work in Firefox',async({page})=>{
   if(enabled)await page.locator('#use-precession').check();
   else await page.locator('#use-precession').uncheck();
   const pixels=await countStarPixels();
+  const diagnostics=await page.evaluate(()=>({
+   coords:window.__skyArcLog.slice(-8),total:window.__skyArcLog.length,
+   nonfinite:window.__skyArcLog.filter(a=>!a.finite).length,
+   canvas:{width:document.getElementById('sky').width,height:document.getElementById('sky').height},
+   count:document.getElementById('sky-atlas-count').textContent
+  }));
+  console.log('SKY STAR DEBUG:',JSON.stringify({enabled,pixels,diagnostics}));
   expect(pixels.changed).toBeGreaterThan(600);
   expect(pixels.clearlyDark).toBeGreaterThan(150);
  }
