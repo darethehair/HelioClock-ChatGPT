@@ -1,6 +1,8 @@
+import {renderEarth} from './earth-renderer.js';
+import {starsAbove} from './sky-catalog.js';
 import {RAD,PI,wrap,clamp,solar,sunHorizontal,sunEvents,moon,orbitPositions,utcTime,durationText} from './astronomy.js';
 const $=id=>document.getElementById(id);
-const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyHeading:0,earthZoom:1,earthLon:0,earthLat:0,orreryZoom:1,playing:false};
+const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyHeading:0,earthZoom:1,earthLon:0,earthLat:0,earthProjection:'equal',orreryZoom:1,playing:false};
 const fmt=d=>d.toISOString().slice(0,10);
 function setDateInputs(){$('observe-date').value=fmt(state.date);$('observe-time').value=utcTime(state.date)}
 function selectDate(){
@@ -50,42 +52,9 @@ function daylightChart(){
  };
 }
 function worldMap(){
- const o=canvas($('earth-map'));if(!o)return;const{c,w,h}=o,s=solar(state.date);
- const utc=state.date.getUTCHours()+state.date.getUTCMinutes()/60+state.date.getUTCSeconds()/3600;
- // Solar noon happens where local solar time is 12:00.
- const sublon=wrap((720-utc*60-s.eq)/4+180,360)-180;
- $('subsolar').textContent=Math.abs(s.decl).toFixed(1)+'°'+(s.decl>=0?'N':'S')+' / '+Math.abs(sublon).toFixed(1)+'°'+(sublon>=0?'E':'W');
- const image=c.createImageData(Math.ceil(w),Math.ceil(h));
- const colors=[[14,25,44],[32,47,76],[57,74,107],[94,112,146],[193,155,104],[228,190,125]];
- const ll=state.lat*RAD,lo=state.lon*RAD;
- for(let y=0;y<image.height;y++){
-  const lat=clamp(90-(((y+.5)/h-.5)/state.earthZoom+.5)*180+state.earthLat,-90,90)*RAD,sinLat=Math.sin(lat),cosLat=Math.cos(lat);
-  for(let x=0;x<image.width;x++){
-   const lon=(wrap((((x+.5)/w-.5)/state.earthZoom)*360+state.earthLon-sublon+180,360)-180)*RAD;
-   const cosZ=sinLat*Math.sin(s.decl*RAD)+cosLat*Math.cos(s.decl*RAD)*Math.cos(lon);
-   const alt=Math.asin(clamp(cosZ,-1,1))/RAD;
-   let color;
-   if(alt>=0) color=colors[5];else if(alt>=-6)color=colors[4];else if(alt>=-12)color=colors[3];else if(alt>=-18)color=colors[2];else color=colors[0];
-   const k=(y*image.width+x)*4;
-   const shade=.80+.12*Math.cos(lat)**2;
-   image.data[k]=color[0]*shade;image.data[k+1]=color[1]*shade;image.data[k+2]=color[2]*shade;image.data[k+3]=255;
-  }
- }
- c.putImageData(image,0,0);
- for(let lat=-60;lat<=60;lat+=30){
-  const y=((.5-(lat-state.earthLat)/180)*state.earthZoom+.5)*h;
-  if(y>=0&&y<=h)line(c,0,y,w,y,'#f4e6ca36',.7);
- }
- for(let lon=-180;lon<=180;lon+=30){
-  const x=((lon-state.earthLon)/360*state.earthZoom+.5)*w;
-  if(x>=0&&x<=w)line(c,x,0,x,h,'#f4e6ca36',.7);
- }
- const x=((wrap(state.lon-state.earthLon+180,360)-180)/360*state.earthZoom+.5)*w;
- const y=((.5-(state.lat-state.earthLat)/180)*state.earthZoom+.5)*h;
- if(x>=0&&x<w&&y>=0&&y<h){dot(c,x,y,4,'#fff7e0',10);c.beginPath();c.arc(x,y,8,0,2*PI);c.strokeStyle='#fff7e0a0';c.lineWidth=1;c.stroke()}
- // Rectangular projection intentionally shows illumination, not invented coastlines.
- label(c,'180°W',5,h-7,'#edf2ff99',10);label(c,'0°',w/2,h-7,'#edf2ff99',10,'center');
- label(c,'180°E',w-5,h-7,'#edf2ff99',10,'right');
+ const o=canvas($('earth-map'));if(!o)return;
+ const result=renderEarth(o.c,o.w,o.h,state.date,state);
+ $('subsolar').textContent=Math.abs(result.sunDecl).toFixed(1)+'°'+(result.sunDecl>=0?'N':'S')+' / '+Math.abs(result.sunLon).toFixed(1)+'°'+(result.sunLon>=0?'E':'W');
 }
 function sky(){
  const o=canvas($('sky'));if(!o)return;const{c,w,h}=o;
@@ -112,6 +81,34 @@ function sky(){
   dot(c,x,y,name==='Sun'?8:6,col,15);
   label(c,name,x+11,y-8,col,11);
  };
+ if($('show-sky-paths').checked){
+  for(const [body,color] of [['sun','#ffc56a'],['moon','#c7d6ef']]){
+   c.save();c.beginPath();c.strokeStyle=color+'88';c.lineWidth=1.2;c.setLineDash([4,5]);let first=true;
+   for(let hour=-12;hour<=12;hour+=.25){
+    const time=new Date(state.date.getTime()+hour*3600000);
+    const obj=body==='sun'?sunHorizontal(time,state.lat,state.lon):moon(time,state.lat,state.lon);
+    if(obj.alt<0){first=true;continue}
+    const theta=(obj.az-90-state.skyHeading)*RAD,r=rad*(1-obj.alt/90);
+    const xx=X+r*Math.cos(theta),yy=Y+r*Math.sin(theta);
+    if(first){c.moveTo(xx,yy);first=false}else c.lineTo(xx,yy);
+   }
+   c.stroke();c.restore();
+  }
+ }
+ if($('show-stars').checked){
+  const occupied=[];
+  for(const star of starsAbove(state.date,state.lat,state.lon)){
+   const angle=(star.az-90-state.skyHeading)*RAD;
+   const distance=rad*(1-star.alt/90);
+   const x=X+distance*Math.cos(angle),y=Y+distance*Math.sin(angle);
+   const radius=Math.max(1.3,3.7-star.mag*.75);
+   dot(c,x,y,radius,'#eaf3ff',star.mag<1?7:0);
+   if($('show-labels').checked && occupied.every(([xx,yy])=>Math.hypot(xx-x,yy-y)>36)){
+    label(c,star.name,x+7,y-6,'#c3d6ef',10);
+    occupied.push([x,y]);
+   }
+  }
+ }
  place(sun,'#ffca7d','Sun');place(m,'#e1ebff','Moon');
  c.restore();
 }
@@ -231,6 +228,8 @@ setInterval(()=>{if(state.playing)shiftTime(15)},180);
 function viewRange(id,key){$(id).addEventListener('input',e=>{state[key]=Number(e.target.value);render()})}
 viewRange('sky-zoom','skyZoom');viewRange('sky-heading','skyHeading');
 viewRange('earth-zoom','earthZoom');viewRange('orrery-zoom','orreryZoom');
+$('earth-projection').addEventListener('change',e=>{state.earthProjection=e.target.value;render()});
+for(const id of ['show-stars','show-labels','show-sky-paths'])$(id).addEventListener('change',render);
 function reset(id,defaults){
  $(id).addEventListener('click',()=>{for(const [key,value] of Object.entries(defaults))state[key]=value;
  const controls={skyZoom:'sky-zoom',skyHeading:'sky-heading',earthZoom:'earth-zoom',orreryZoom:'orrery-zoom'};
