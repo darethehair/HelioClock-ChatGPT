@@ -124,3 +124,19 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 .sky-light-controls span{color:#9fbed8;font-size:10px;margin-left:6px}
 #sky{background:#000}
 @media(max-width:750px){.sky-light-controls span{width:100%;margin-left:0}}
+
+/* Polar and rectangular star-chart controls */
+.sky-observatory-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;padding:10px 0;border-bottom:1px solid #385471}
+.sky-observatory-toolbar label{font-size:11px;color:#c2d7e9;display:flex;gap:6px;align-items:center}
+.sky-observatory-toolbar select{padding:5px 9px;background:#132c48;color:#fff;border-radius:5px;border:1px solid #527a98}
+.sky-projections{display:flex;gap:5px}
+.sky-projections button,.sky-sidereal-toolbar button{background:#132f4c;border:1px solid #466d8d;border-radius:6px;color:#c1def5;padding:7px 11px;font-size:11px;font-weight:700}
+.sky-projections button.selected{background:#a6d7ef;color:#082136}
+#sky-atlas-count{font-size:10px;color:#b7d3e6}
+.sky-sidereal-toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;padding:8px 0 12px}
+.sky-sidereal-toolbar strong{font-size:11px;color:#fad08b;margin-right:10px}
+.sky-sidereal-toolbar span{font-size:10px;color:#a7c0d5}
+.sky-sidereal-toolbar button:hover{background:#356281}
+.dock-sidereal{display:flex;gap:5px;align-items:center;white-space:nowrap;color:#abc4e4;font-size:10px}
+.dock-sidereal strong{color:#e6cc91;font-variant-numeric:tabular-nums}
+@media(max-width:750px){.sky-observatory-toolbar,.sky-sidereal-toolbar{gap:7px}.sky-sidereal-toolbar strong{width:100%}.dock-sidereal{display:none}}
