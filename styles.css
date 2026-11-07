@@ -32,3 +32,13 @@ input[type=range]{accent-color:#f4c17a;cursor:pointer}
 #sky,#orrery{background:radial-gradient(ellipse at center,#19305060,transparent 80%);border-radius:10px}
 button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offset:2px}
 @media(max-width:750px){.mission-control{padding:16px}.mission-head h2{font-size:19px}.transport{width:100%}.transport button{flex:1;padding:10px 5px;font-size:11px}.view-controls{gap:10px}.view-controls label{flex-wrap:wrap}.view-controls input{width:75px}.time-scrub{gap:7px}.time-scrub output{width:67px;font-size:10px}}
+
+#earth-map{height:335px;background:radial-gradient(ellipse at center,#23496f,#071324);border-radius:9px}
+#sky{height:355px}
+.earth-panel,.sky-panel{border-color:#3e6184}
+.sky-options{display:flex;gap:17px;margin:-3px 0 12px;font-size:11px;color:#c5d9ef}
+.sky-options label{display:flex;align-items:center;gap:5px;cursor:pointer}
+.sky-options input{accent-color:#63d5ff}
+.view-controls select{color:#f4d6a2;background:#1d3652;border:1px solid #527391;border-radius:5px;padding:7px 9px}
+.earth-panel .panel-heading,.sky-panel .panel-heading{margin-bottom:14px}
+@media(max-width:750px){#earth-map{height:270px}#sky{height:305px}.sky-options{flex-wrap:wrap;gap:10px}.view-controls select{max-width:125px}}
