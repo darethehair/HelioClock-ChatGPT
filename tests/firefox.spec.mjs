@@ -39,6 +39,45 @@ test('dashboard controls work in Firefox',async({page})=>{
  const nightSky=await page.locator('#sky').evaluate(el=>Array.from(el.getContext('2d').getImageData(2,2,1,1).data));
  expect(nightSky.slice(0,3)).toEqual([0,0,0]);
 
+ // Fullscreen daytime chart: J2000 and precession modes must BOTH plot stars.
+ // Store snapshots in browser memory; compare actual RGBA pixels after toggling
+ // stars off, not an internal count or full-scene hash.
+ await page.locator('#observe-date').fill('2100-11-07');
+ await page.locator('#observe-time').fill('21:54');
+ await page.locator('#observe-time').dispatchEvent('change');
+ await page.locator('[data-sky-light="daylight"]').click();
+ await page.locator('[data-fullscreen="sky-panel"]').click();
+ await expect.poll(()=>page.evaluate(()=>!!document.fullscreenElement)).toBe(true);
+ const countStarPixels=async()=>{
+  await page.locator('#show-stars').check();
+  await page.locator('#sky').evaluate(el=>{
+   window.__starCanvasOn=new Uint8ClampedArray(el.getContext('2d').getImageData(0,0,el.width,el.height).data);
+  });
+  await page.locator('#show-stars').uncheck();
+  const diffs=await page.locator('#sky').evaluate(el=>{
+   const on=window.__starCanvasOn;
+   const off=el.getContext('2d').getImageData(0,0,el.width,el.height).data;
+   let changed=0,clearlyDark=0;
+   for(let i=0;i<off.length;i+=4){
+    if(Math.abs(on[i]-off[i])+Math.abs(on[i+1]-off[i+1])+Math.abs(on[i+2]-off[i+2])>90)changed++;
+    if(on[i]<40&&on[i+1]<60&&on[i+2]<80&&off[i]>60)clearlyDark++;
+   }
+   delete window.__starCanvasOn;
+   return {changed,clearlyDark};
+  });
+  await page.locator('#show-stars').check();
+  return diffs;
+ };
+ for(const enabled of [false,true]){
+  if(enabled)await page.locator('#use-precession').check();
+  else await page.locator('#use-precession').uncheck();
+  const pixels=await countStarPixels();
+  expect(pixels.changed).toBeGreaterThan(600);
+  expect(pixels.clearlyDark).toBeGreaterThan(150);
+ }
+ await page.evaluate(()=>document.exitFullscreen());
+ await expect.poll(()=>page.evaluate(()=>!!document.fullscreenElement)).toBe(false);
+ await page.locator('#use-precession').check();
  // Precession must affect the actual star layer and stick-figure lines.
  await expect(page.locator('#use-precession')).toBeChecked();
  await expect(page.locator('#precession-status')).toContainText('equinox of date');
