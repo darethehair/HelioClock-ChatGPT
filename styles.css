@@ -70,3 +70,8 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 .solar-chart-summary strong{color:#ffd58b;font-size:12px;white-space:nowrap}
 .solar-chart-summary span{color:#c7deef;font-size:11px;line-height:1.5}
 @media(max-width:750px){#daylight-chart{height:290px}.solar-chart-legend{gap:8px}.solar-chart-summary span{font-size:10px}}
+
+.solar-time-position{margin:8px 0 2px;color:#ffdf9c;font-size:11px;font-weight:700;letter-spacing:.25px}
+.moon-orientation{display:flex;align-items:center;justify-content:space-between;gap:9px;flex-wrap:wrap;margin-top:0;color:#9eb8d3;font-size:10px}
+.moon-orientation strong{font-weight:600;color:#e5d5fa}
+.moon-stage{min-height:235px}
