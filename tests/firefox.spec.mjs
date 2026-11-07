@@ -87,6 +87,18 @@ test('dashboard controls work in Firefox',async({page})=>{
  expect(moonPixels.width).toBeGreaterThan(0);
  expect(moonPixels.center[3]).toBeGreaterThan(0);
  expect(moonPixels.farLeft[3]).toBe(0);
+ // Moon now occupies most of its normal canvas, not a small central postage stamp.
+ const moonSpan=await moonCanvas.evaluate(el=>{
+  const c=el.getContext('2d'),y=Math.floor(el.height/2);
+  const row=c.getImageData(0,y,el.width,1).data;
+  let lo=-1,hi=-1;
+  for(let x=0;x<el.width;x++){
+   if(row[x*4+3]>80){if(lo<0)lo=x;hi=x;}
+  }
+  return {diameter:hi-lo+1,canvasHeight:el.height};
+ });
+ expect(moonSpan.diameter).toBeGreaterThan(moonSpan.canvasHeight*.72);
+
 
  await expect(page.locator('[data-projection="equal"]')).toHaveAttribute('aria-pressed','true');
  await page.locator('[data-projection="globe"]').click();
