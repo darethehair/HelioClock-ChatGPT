@@ -64,10 +64,19 @@ export function drawSkyAtlas(c,{
   // This is an educational coordinate chart, not a naked-eye sky simulation.
   // In daylight use dark ink, rather than nearly-white semi-transparent stars
   // that effectively vanish against the light blue background.
-  const r=Math.max(brightSky?.85:.65,2.9-(star.mag+1)*.35)*Math.max(.8,Math.min(1.4,zoom**.35));
-  const brightness=brightSky?clamp((7.8-star.mag)/6.5,.5,1):clamp((8.5-star.mag)/8.5,.15,1);
-  c.globalAlpha=brightness;
-  drawDot(c,x,y,r,brightSky?'#09213a':'#e9f4ff');total++;
+  const r=Math.max(brightSky?1.9:.85,3.6-(star.mag+1)*.36)*Math.max(.9,Math.min(1.45,zoom**.35));
+  if(brightSky){
+   // Full-opacity, high-contrast ink with a pale 1px halo makes star positions
+   // unambiguously visible on blue, both for J2000 and precessed coordinates.
+   c.globalAlpha=1;
+   c.beginPath();c.arc(x,y,r+1.2,0,2*Math.PI);
+   c.fillStyle='#d8f4ff';c.fill();
+   drawDot(c,x,y,r,'#061323');
+  }else{
+   c.globalAlpha=clamp((8.5-star.mag)/8.5,.2,1);
+   drawDot(c,x,y,r,'#e9f4ff');
+  }
+  total++;
  }
  c.globalAlpha=1;
  // Do not label the full 7th-magnitude catalogue: only named stars, and
