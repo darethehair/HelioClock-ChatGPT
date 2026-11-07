@@ -24,7 +24,7 @@ const toAltAz=(star,date,latitude,longitude,precession)=> {
 function drawDot(c,x,y,r,color){c.beginPath();c.arc(x,y,r,0,2*Math.PI);c.fillStyle=color;c.fill();}
 export function drawSkyAtlas(c,{
  date,lat,lon,width,height,mode='polar',zoom=1,heading=0,magLimit=3.5,
- showLabels=true,showStars=true,showConstellations=false,precession=true
+ showLabels=true,showStars=true,showConstellations=false,precession=true,brightSky=false
 }){
  const X=width/2,Y=height/2,radius=(Math.min(width-35,height-20)/2-14)*zoom;
  const project=(az,alt)=>{
@@ -61,10 +61,13 @@ export function drawSkyAtlas(c,{
   if(!pos)continue;
   const [x,y]=pos;
   if(x<0||x>width||y<0||y>height)continue;
-  const r=Math.max(.55,2.9-(star.mag+1)*.35)*Math.max(.8,Math.min(1.4,zoom**.35));
-  const brightness=clamp((8.5-star.mag)/8.5,.15,1);
+  // This is an educational coordinate chart, not a naked-eye sky simulation.
+  // In daylight use dark ink, rather than nearly-white semi-transparent stars
+  // that effectively vanish against the light blue background.
+  const r=Math.max(brightSky?.85:.65,2.9-(star.mag+1)*.35)*Math.max(.8,Math.min(1.4,zoom**.35));
+  const brightness=brightSky?clamp((7.8-star.mag)/6.5,.5,1):clamp((8.5-star.mag)/8.5,.15,1);
   c.globalAlpha=brightness;
-  drawDot(c,x,y,r,'#e9f4ff');total++;
+  drawDot(c,x,y,r,brightSky?'#09213a':'#e9f4ff');total++;
  }
  c.globalAlpha=1;
  // Do not label the full 7th-magnitude catalogue: only named stars, and
@@ -74,7 +77,7 @@ export function drawSkyAtlas(c,{
    if(star.mag>Math.min(magLimit,3.4))continue;
    const h=toAltAz(star,date,lat,lon,precession),p=project(h.az,h.alt);
    if(!p||p[0]<8||p[0]>width-40||p[1]<10||p[1]>height-9)continue;
-   c.fillStyle='#bedaf7';c.font='10px sans-serif';c.fillText(star.name,p[0]+5,p[1]-6);
+   c.fillStyle=brightSky?'#071b30':'#bedaf7';c.font='10px sans-serif';c.fillText(star.name,p[0]+5,p[1]-6);
   }
  }
  c.restore();
