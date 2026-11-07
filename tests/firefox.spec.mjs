@@ -26,6 +26,39 @@ test('dashboard controls work in Firefox',async({page})=>{
  const nightSky=await page.locator('#sky').evaluate(el=>Array.from(el.getContext('2d').getImageData(2,2,1,1).data));
  expect(nightSky.slice(0,3)).toEqual([0,0,0]);
 
+ // Precession must affect the actual star layer and stick-figure lines.
+ await expect(page.locator('#use-precession')).toBeChecked();
+ await expect(page.locator('#precession-status')).toContainText('equinox of date');
+ await page.locator('#observe-date').fill('2100-01-01');
+ await page.locator('#observe-time').fill('08:00');
+ await page.locator('#observe-time').dispatchEvent('change');
+ await page.locator('[data-sky-light="black"]').click();
+ await page.locator('#show-constellations').check();
+ await page.locator('#star-magnitude').selectOption('5');
+ await expect(page.locator('#sky-atlas-count')).toContainText('visible');
+ const skyHash=()=>page.locator('#sky').evaluate(el=>{
+  const {data}=el.getContext('2d').getImageData(0,0,el.width,el.height);
+  let hash=2166136261;
+  for(let i=0;i<data.length;i+=3)hash=Math.imul(hash^data[i],16777619);
+  return hash>>>0;
+ });
+ const enabledSky=await skyHash();
+ await page.locator('#use-precession').uncheck();
+ await expect(page.locator('#precession-status')).toContainText('fixed J2000');
+ const disabledSky=await skyHash();
+ expect(disabledSky).not.toBe(enabledSky);
+ await page.locator('[data-sky-projection="rect"]').click();
+ const disabledRect=await skyHash();
+ await page.locator('#use-precession').check();
+ const enabledRect=await skyHash();
+ expect(enabledRect).not.toBe(disabledRect);
+ await page.locator('[data-sky-projection="polar"]').click();
+ await page.locator('#show-constellations').uncheck();
+ await page.locator('#star-magnitude').selectOption('3.5');
+ await page.locator('#observe-date').fill('2026-12-21');
+ await page.locator('#observe-time').fill('06:00');
+ await page.locator('#observe-time').dispatchEvent('change');
+ await page.locator('[data-sky-light="daylight"]').click();
  await expect(page.locator('#sidereal-time')).toContainText('LMST');
  await expect(page.locator('#dock-sidereal')).not.toHaveText('—');
  await page.locator('[data-sky-projection="rect"]').click();
