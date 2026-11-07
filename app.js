@@ -1,3 +1,4 @@
+import {drawSolarYear} from './solar-chart.js';
 import {renderEarth} from './earth-renderer.js';
 import {starsAbove} from './sky-catalog.js';
 import {RAD,PI,wrap,clamp,solar,sunHorizontal,sunEvents,moon,orbitPositions,utcTime,durationText} from './astronomy.js';
@@ -30,26 +31,14 @@ function dot(c,x,y,r,color,glow=0){
  c.beginPath();c.arc(x,y,r,0,2*PI);c.fill();c.restore();
 }
 function daylightChart(){
- const o=canvas($('daylight-chart'));if(!o)return;const{c,w,h}=o;
- const L=36,R=w-15,T=15,B=h-24,W=R-L,H=B-T,year=state.date.getUTCFullYear();
- const count=(Date.UTC(year+1,0,1)-Date.UTC(year,0,1))/86400000;
- const data=Array.from({length:count},(_,i)=>sunEvents(new Date(Date.UTC(year,0,i+1,12)),state.lat,state.lon).duration);
- for(let v=0;v<=24;v+=6){const y=B-v/24*H;line(c,L,y,R,y,'#2b3b51');label(c,v+'h',L-7,y+4,'#8294ae',10,'right')}
- const gradient=c.createLinearGradient(0,T,0,B);gradient.addColorStop(0,'#f3c37b6b');gradient.addColorStop(1,'#f3c37b00');
- c.beginPath();c.moveTo(L,B);data.forEach((v,i)=>c.lineTo(L+i/(count-1)*W,B-v/24*H));c.lineTo(R,B);c.closePath();c.fillStyle=gradient;c.fill();
- c.beginPath();data.forEach((v,i)=>i?c.lineTo(L+i/(count-1)*W,B-v/24*H):c.moveTo(L,B-v/24*H));
- c.strokeStyle='#efbf81';c.lineWidth=2;c.stroke();
- const index=Math.floor((Date.UTC(year,state.date.getUTCMonth(),state.date.getUTCDate())-Date.UTC(year,0,1))/86400000);
- const x=L+index/(count-1)*W,y=B-data[index]/24*H;
- line(c,x,T,x,B,'#b8c7ddaa');dot(c,x,y,4,'#ffd48f',12);
- label(c,durationText(data[index]),clamp(x,L+42,R-42),Math.max(T+12,y-12),'#f4d6a5',11,'center');
+ const year=state.date.getUTCFullYear();
+ drawSolarYear($('daylight-chart'),{
+  year,lat:state.lat,lon:state.lon,selectedDate:state.date,
+  onSelect:date=>{
+   pausePlayback();state.date=date;state.live=false;setDateInputs();render();
+  }
+ });
  $('chart-year').textContent=String(year);
- $('daylight-chart').onclick=e=>{
-  const rect=e.currentTarget.getBoundingClientRect();
-  const day=Math.round(clamp((e.clientX-rect.left-L)/W,0,1)*(count-1));
-  state.date=new Date(Date.UTC(year,0,day+1,state.date.getUTCHours(),state.date.getUTCMinutes()));
-  state.live=false;setDateInputs();render();
- };
 }
 function worldMap(){
  const o=canvas($('earth-map'));if(!o)return;
@@ -114,26 +103,45 @@ function sky(){
  c.restore();
 }
 function drawMoon(){
- const o=canvas($('moon'));if(!o)return;const{c,w,h}=o;
- const m=moon(state.date,state.lat,state.lon),radius=Math.min(w*.3,h*.39),cx=w/2,cy=h/2;
- const phase=2*PI*m.phase;
- // Draw a Lambert-lit sphere from an approximate Sun direction.
- const light=[-Math.sin(phase),0,-Math.cos(phase)];
- const pixels=c.createImageData(Math.ceil(w),Math.ceil(h));
- for(let y=Math.max(0,Math.floor(cy-radius));y<Math.min(h,Math.ceil(cy+radius));y++){
-  for(let x=Math.max(0,Math.floor(cx-radius));x<Math.min(w,Math.ceil(cx+radius));x++){
-   const nx=(x-cx)/radius,ny=(y-cy)/radius,d2=nx*nx+ny*ny;if(d2>1)continue;
-   const nz=Math.sqrt(1-d2),illum=Math.max(0,nx*light[0]+nz*light[2]);
-   const shade=.08+.92*illum,texture=.91+.04*Math.sin(nx*26+ny*9)*Math.sin(ny*31);
-   const q=(y*pixels.width+x)*4;
-   pixels.data[q]=Math.min(255,208*shade*texture);
-   pixels.data[q+1]=Math.min(255,218*shade*texture);
-   pixels.data[q+2]=Math.min(255,233*shade*texture);
-   pixels.data[q+3]=255;
+ const o=canvas($('moon'));if(!o)return;
+ const {c,w,h}=o,m=moon(state.date,state.lat,state.lon);
+ const diameter=Math.max(4,Math.round(Math.min(w*.60,h*.78)));
+ const radius=diameter/2,cx=w/2,cy=h/2;
+ // Generate the phase in an offscreen image with LOCAL integer pixel coordinates.
+ // Then drawImage respects the on-screen canvas's high-DPI transform.
+ // putImageData directly on a DPR-transformed canvas caused the old offset.
+ const off=document.createElement('canvas');off.width=diameter;off.height=diameter;
+ const context=off.getContext('2d');
+ const pixels=context.createImageData(diameter,diameter),data=pixels.data;
+ const phase=2*Math.PI*m.phase;
+ // Positive x is the illuminated half during the waxing phase.
+ const light=[Math.sin(phase),0,-Math.cos(phase)];
+ for(let y=0;y<diameter;y++){
+  for(let x=0;x<diameter;x++){
+   const nx=(x+.5-radius)/radius,ny=(y+.5-radius)/radius;
+   const rr=nx*nx+ny*ny;if(rr>1)continue;
+   const nz=Math.sqrt(1-rr);
+   const diffuse=Math.max(0,nx*light[0]+nz*light[2]);
+   // Near-new-Moon earthshine, subtle enough not to create a second disc.
+   const shade=.025+.96*diffuse;
+   const maria=1-.15*Math.max(0,Math.sin(nx*13+ny*19)*Math.cos(ny*17-nx*11));
+   const crater=.94+.035*Math.sin(nx*61+ny*21)*Math.cos(nx*37-ny*43);
+   const limb=.8+.2*nz;
+   const brightness=shade*maria*crater*limb;
+   const edge=clamp((1-Math.sqrt(rr))*radius,0,1);
+   const q=(y*diameter+x)*4;
+   data[q]=Math.min(255,224*brightness);
+   data[q+1]=Math.min(255,230*brightness);
+   data[q+2]=Math.min(255,240*brightness);
+   data[q+3]=Math.round(edge*255);
   }
  }
- c.putImageData(pixels,0,0);
- c.beginPath();c.arc(cx,cy,radius,0,2*PI);c.strokeStyle='#bdcbe94a';c.lineWidth=.8;c.stroke();
+ context.putImageData(pixels,0,0);
+ c.save();
+ c.shadowColor='#b7c9ed';c.shadowBlur=14;
+ c.drawImage(off,cx-radius,cy-radius,diameter,diameter);
+ c.restore();
+ // Deliberately no second stroked circle; the Moon is a single centered disc.
  $('moon-progress-fill').style.width=(m.phase*100).toFixed(1)+'%';
 }
 function orrery(){
