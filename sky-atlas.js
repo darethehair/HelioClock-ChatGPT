@@ -18,7 +18,7 @@ const mod=(v,m)=>((v%m)+m)%m;
 // Off: show the legacy untransformed J2000 coordinates. On: use the
 // mean equator/equinox of date consistently for every star and line vertex.
 const toAltAz=(star,date,latitude,longitude,precession)=> {
- const eq=precession?precessJ2000(star.ra,star.dec,date):star;
+ const eq=precession?precessJ2000(star.ra,star.dec,date):{ra:star.ra,decl:star.dec};
  return horizontal(eq.ra,eq.decl,date,latitude,longitude);
 };
 function drawDot(c,x,y,r,color){c.beginPath();c.arc(x,y,r,0,2*Math.PI);c.fillStyle=color;c.fill();}
