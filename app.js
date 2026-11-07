@@ -169,25 +169,48 @@ function drawMoon(){
 function orrery(){
  const o=canvas($('orrery'));if(!o)return;
  const {c,w,h}=o,X=w/2,Y=h/2,outer=state.orbitMode==='outer';
+ // The background is permanently black: solar daylight cannot illuminate space.
+ c.fillStyle='#000000';c.fillRect(0,0,w,h);
  const all=orbitPositions(state.date),planets=outer?all:all.slice(0,4);
  const maximum=outer?30.07:1.524;
  const scale=Math.min(w*.44,h*.43)/maximum*state.orreryZoom;
- for(let i=0;i<140;i++){
-  const x=(i*73.7%1000)/1000*w,y=(i*137.3%1000)/1000*h;
-  dot(c,x,y,.55,i%3?'#fff5dd42':'#fff5dd88');
- }
+ // Faint orbital trajectories remain visible independently of AU guide rings.
  planets.forEach(p=>{
   const r=p.radius*scale;
-  c.beginPath();c.arc(X,Y,r,0,2*PI);c.strokeStyle='#40526b88';c.lineWidth=1;c.stroke();
+  c.beginPath();c.arc(X,Y,r,0,2*PI);
+  c.strokeStyle='#40526b70';c.lineWidth=.8;c.stroke();
  });
- dot(c,X,Y,outer?5:12,'#ffcd7d',22);
+ if($('show-au-rings').checked){
+  const values=outer?[5,10,15,20,25,30]:[.25,.5,.75,1,1.25,1.5];
+  c.save();
+  c.setLineDash([3,5]);c.lineWidth=.8;
+  for(const au of values){
+   const radius=au*scale;
+   if(radius<8||radius>Math.max(w,h))continue;
+   c.beginPath();c.arc(X,Y,radius,0,2*PI);
+   c.strokeStyle='#72bddd77';c.stroke();
+   // Labels sit at 315° instead of on the planetary orbital path at the right.
+   const xx=X+Math.cos(-Math.PI/4)*radius,yy=Y+Math.sin(-Math.PI/4)*radius;
+   if(xx>10&&xx<w-22&&yy>12&&yy<h-10){
+    c.setLineDash([]);
+    c.font='10px sans-serif';
+    c.textAlign='left';
+    c.fillStyle='#aeddf4';
+    c.fillText((Number.isInteger(au)?au:au.toFixed(2).replace(/0$/,''))+' AU',xx+4,yy-4);
+    c.setLineDash([3,5]);
+   }
+  }
+  c.restore();
+ }
+ // No decorative fake stars in the orrery: an uncluttered black backdrop.
+ dot(c,X,Y,outer?5:12,'#ffcd7d',18);
  planets.forEach(p=>{
   const a=(p.angle-90)*RAD,x=X+p.radius*scale*Math.cos(a),y=Y+p.radius*scale*Math.sin(a);
   dot(c,x,y,outer?Math.max(2.6,p.r*.75):p.r,p.color,9);
   if(outer||p.radius*scale>20)label(c,p.name,x+8,y-7,p.color,10);
  });
- const legend=$('planet-legend');
- legend.innerHTML=planets.map(p=>'<span style="color:'+p.color+'">● '+p.name+'</span>').join('');
+ $('planet-legend').innerHTML=planets.map(p=>'<span style="color:'+p.color+'">● '+p.name+'</span>').join('');
+ $('au-scale-description').textContent=outer?'Outer view · 5 AU intervals':'Inner view · 0.25 AU intervals';
 }
 function formatCoord(n,positive,negative){return Math.abs(n).toFixed(2)+'° '+(n>=0?positive:negative)}
 function render(){
@@ -303,6 +326,7 @@ function viewRange(id,key){$(id).addEventListener('input',e=>{state[key]=Number(
 viewRange('sky-zoom','skyZoom');viewRange('sky-heading','skyHeading');
 viewRange('earth-zoom','earthZoom');viewRange('orrery-zoom','orreryZoom');
 viewRange('moon-zoom','moonZoom');
+$('show-au-rings').addEventListener('change',render);
 for(const button of document.querySelectorAll('[data-orbit-mode]')){
  button.addEventListener('click',()=>{
   state.orbitMode=button.dataset.orbitMode;
