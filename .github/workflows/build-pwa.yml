@@ -10,6 +10,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install build dependencies
+        run: npm install --no-audit --no-fund
       - name: Validate JavaScript and astronomy
         shell: bash
         run: |
@@ -17,12 +22,14 @@ jobs:
           node --check --experimental-default-type=module app.js
           node --check sw.js
           node --experimental-default-type=module tests/astronomy.test.mjs
+      - name: Bundle independent visualizations
+        run: npm run build
       - name: Assemble standalone distribution
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p dist
-          cp index.html styles.css astronomy.js app.js manifest.webmanifest sw.js icon.svg dist/
+          cp index.html styles.css astronomy.js manifest.webmanifest sw.js icon.svg dist/
           printf '{"commit":"%s","built_utc":"%s","repository":"%s"}\n' "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$GITHUB_REPOSITORY" > dist/build-info.json
       - name: Upload PWA ZIP
         uses: actions/upload-artifact@v4
