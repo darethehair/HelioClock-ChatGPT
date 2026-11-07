@@ -150,3 +150,13 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
  .moon-panel #moon{height:325px}
  .moon-panel .moon-stage{min-height:325px}
 }
+
+/* Orrery: space is black, with independently selectable AU distance guides. */
+.orrery-panel{background:#0b1222}
+.orrery-panel #orrery{background:#000000}
+.orrery-controls{display:flex;flex-wrap:wrap;gap:9px 17px;align-items:center;margin-bottom:9px}
+.orrery-controls .orrery-modes{margin-bottom:0}
+.au-ring-toggle{display:flex;align-items:center;gap:7px;font-size:11px;color:#cce4f5;white-space:nowrap;cursor:pointer}
+.au-ring-toggle input{accent-color:#83cbef}
+#au-scale-description{font-size:10px;color:#96b5cb}
+.orrery-panel:fullscreen{background:#050913}
