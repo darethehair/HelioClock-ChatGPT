@@ -1,3 +1,4 @@
+import {renderMoon} from './moon-renderer.js';
 import {drawSolarYear} from './solar-chart.js';
 import {renderEarth} from './earth-renderer.js';
 import {starsAbove} from './sky-catalog.js';
@@ -103,46 +104,13 @@ function sky(){
  c.restore();
 }
 function drawMoon(){
- const o=canvas($('moon'));if(!o)return;
- const {c,w,h}=o,m=moon(state.date,state.lat,state.lon);
- const diameter=Math.max(4,Math.round(Math.min(w*.60,h*.78)));
- const radius=diameter/2,cx=w/2,cy=h/2;
- // Generate the phase in an offscreen image with LOCAL integer pixel coordinates.
- // Then drawImage respects the on-screen canvas's high-DPI transform.
- // putImageData directly on a DPR-transformed canvas caused the old offset.
- const off=document.createElement('canvas');off.width=diameter;off.height=diameter;
- const context=off.getContext('2d');
- const pixels=context.createImageData(diameter,diameter),data=pixels.data;
- const phase=2*Math.PI*m.phase;
- // Positive x is the illuminated half during the waxing phase.
- const light=[Math.sin(phase),0,-Math.cos(phase)];
- for(let y=0;y<diameter;y++){
-  for(let x=0;x<diameter;x++){
-   const nx=(x+.5-radius)/radius,ny=(y+.5-radius)/radius;
-   const rr=nx*nx+ny*ny;if(rr>1)continue;
-   const nz=Math.sqrt(1-rr);
-   const diffuse=Math.max(0,nx*light[0]+nz*light[2]);
-   // Near-new-Moon earthshine, subtle enough not to create a second disc.
-   const shade=.025+.96*diffuse;
-   const maria=1-.15*Math.max(0,Math.sin(nx*13+ny*19)*Math.cos(ny*17-nx*11));
-   const crater=.94+.035*Math.sin(nx*61+ny*21)*Math.cos(nx*37-ny*43);
-   const limb=.8+.2*nz;
-   const brightness=shade*maria*crater*limb;
-   const edge=clamp((1-Math.sqrt(rr))*radius,0,1);
-   const q=(y*diameter+x)*4;
-   data[q]=Math.min(255,224*brightness);
-   data[q+1]=Math.min(255,230*brightness);
-   data[q+2]=Math.min(255,240*brightness);
-   data[q+3]=Math.round(edge*255);
-  }
- }
- context.putImageData(pixels,0,0);
- c.save();
- c.shadowColor='#b7c9ed';c.shadowBlur=14;
- c.drawImage(off,cx-radius,cy-radius,diameter,diameter);
- c.restore();
- // Deliberately no second stroked circle; the Moon is a single centered disc.
+ const info=renderMoon($('moon'),state.date,state.lat,state.lon);
+ const m=moon(state.date,state.lat,state.lon);
  $('moon-progress-fill').style.width=(m.phase*100).toFixed(1)+'%';
+ if(info){
+  $('moon-tilt').textContent='Bright limb from zenith: '+(info.fromZenith>0?'+':'')+info.fromZenith.toFixed(1)+'°';
+  $('moon-source').textContent=info.photoLoaded?'NASA LRO near-side mosaic · horizon-aligned':'Loading lunar photography…';
+ }
 }
 function orrery(){
  const o=canvas($('orrery'));if(!o)return;const{c,w,h}=o,X=w/2,Y=h/2;
@@ -259,6 +227,7 @@ $('earth-zoom-in').addEventListener('click',()=>adjustEarthZoom(1.25));
 $('earth-zoom-out').addEventListener('click',()=>adjustEarthZoom(.8));
 $('earth-map-home').addEventListener('click',()=>{$('earth-reset').click()});
 window.addEventListener('helioclock-earth-texture-ready',render);
+window.addEventListener('helioclock-moon-texture-ready',render);
 
 for(const id of ['show-stars','show-labels','show-sky-paths'])$(id).addEventListener('change',render);
 function reset(id,defaults){
