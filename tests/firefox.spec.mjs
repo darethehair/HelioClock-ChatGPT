@@ -81,7 +81,16 @@ test('dashboard controls work in Firefox',async({page})=>{
  expect(scrollCheck.top).toBeGreaterThanOrEqual(-2);
  await page.locator('[data-fullscreen="chart-panel"]').click();
  await expect.poll(()=>page.evaluate(()=>!!document.fullscreenElement)).toBe(true);
+ await expect.poll(()=>page.locator('#time-dock').evaluate(el=>el.parentElement.classList.contains('chart-panel'))).toBe(true);
+ await expect(page.locator('#dock-date')).toBeVisible();
+ await expect(page.locator('#dock-time')).toBeVisible();
+ const before=await page.locator('#dock-local-time').textContent();
+ await page.locator('#dock-next-hour').click();
+ const after=await page.locator('#dock-local-time').textContent();
+ expect(after).not.toBe(before);
  await page.evaluate(()=>document.exitFullscreen());
  await expect.poll(()=>page.evaluate(()=>!!document.fullscreenElement)).toBe(false);
+ await expect.poll(()=>page.locator('#time-dock').evaluate(el=>el.parentElement.classList.contains('app'))).toBe(true);
+ await expect(page.locator('#dock-date')).toBeVisible();
  expect(errors).toEqual([]);
 });
