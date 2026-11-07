@@ -44,27 +44,22 @@ function stamp(hours){
  const total=(Math.round(hours*60)+1440*4)%(1440);
  return String(Math.floor(total/60)).padStart(2,'0')+':'+String(total%60).padStart(2,'0');
 }
-function paintBand(c,g,index,total,inner,outer,color){
- const dx=(g.right-g.left)/(total-1),x=g.left+index*dx;
- const y=v=>g.bottom-(v/24)*(g.bottom-g.top);
- const from=Math.max(0,outer.dawn),to=Math.min(24,inner.dawn);
- const from2=Math.max(0,inner.dusk),to2=Math.min(24,outer.dusk);
- c.fillStyle=color;
- if(to>from)c.fillRect(x,y(to),dx+1,y(from)-y(to)+.6);
- if(to2>from2)c.fillRect(x,y(to2),dx+1,y(from2)-y(to2)+.6);
-}
-function fillRange(c,g,index,total,bands){
- const dx=(g.right-g.left)/(total-1),x=g.left+index*dx;
- const y=v=>g.bottom-(v/24)*(g.bottom-g.top);
- const L=bands.levels;
- c.fillStyle=COLORS.night;c.fillRect(x,g.top,dx+1,g.bottom-g.top);
- const full={dawn:0,dusk:24};
- paintBand(c,g,index,total,L.nautical,L.astronomical,COLORS.astronomical);
- paintBand(c,g,index,total,L.civil,L.nautical,COLORS.nautical);
- paintBand(c,g,index,total,L.sun,L.civil,COLORS.civil);
- c.fillStyle=COLORS.daylight;
- const from=clamp(L.sun.dawn,0,24),to=clamp(L.sun.dusk,0,24);
- if(to>from)c.fillRect(x,y(to),dx+1,y(from)-y(to)+.6);
+/**
+ * Paint each 365-day region as ONE continuous closed polygon. Earlier versions
+ * drew 365 overlapping rectangles, creating dark vertical hatch artifacts.
+ * Nested regions overpaint one another from astronomical dusk to daylight.
+ */
+function fillSolarRegion(c,g,data,key,color){
+ const x=i=>g.left+i/(data.length-1)*(g.right-g.left);
+ const y=hour=>g.bottom-clamp(hour,0,24)/24*(g.bottom-g.top);
+ c.beginPath();
+ data.forEach((d,i)=>{
+  const edge=d.levels[key].dawn;
+  if(i===0)c.moveTo(x(i),y(edge));else c.lineTo(x(i),y(edge));
+ });
+ for(let i=data.length-1;i>=0;i--)c.lineTo(x(i),y(data[i].levels[key].dusk));
+ c.closePath();
+ c.fillStyle=color;c.fill();
 }
 export function drawSolarYear(canvas,{year,lat,lon,selectedDate,onSelect}){
  const width=canvas.clientWidth,height=canvas.clientHeight;
@@ -75,7 +70,14 @@ export function drawSolarYear(canvas,{year,lat,lon,selectedDate,onSelect}){
  const g=chartGeometry(width,height),days=(Date.UTC(year+1,0,1)-Date.UTC(year,0,1))/86400000;
  const data=Array.from({length:days},(_,i)=>dayBands(new Date(Date.UTC(year,0,i+1)),lat,lon));
  c.clearRect(0,0,width,height);
- for(let i=0;i<days;i++)fillRange(c,g,i,days,data[i]);
+ // One contiguous fill per band, no overlapping day-by-day rectangles.
+ c.save();
+ c.beginPath();c.rect(g.left,g.top,g.right-g.left,g.bottom-g.top);c.clip();
+ c.fillStyle=COLORS.night;c.fillRect(g.left,g.top,g.right-g.left,g.bottom-g.top);
+ for(const [key,color] of [['astronomical',COLORS.astronomical],['nautical',COLORS.nautical],['civil',COLORS.civil],['sun',COLORS.daylight]]){
+  fillSolarRegion(c,g,data,key,color);
+ }
+ c.restore();
  const y=hour=>g.bottom-hour/24*(g.bottom-g.top),x=i=>g.left+i/(days-1)*(g.right-g.left);
  // Twilight boundary strokes, dawn and dusk, with polarity flipping at poles.
  for(const [key,color] of [['astronomical','#7585c8'],['nautical','#70bbf2'],['civil','#a4d9ff'],['sun','#ffcf77']]){
