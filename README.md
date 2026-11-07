@@ -5,10 +5,10 @@ An original, independently implemented astronomical dashboard, created for compa
 ## What it does
 
 - Solar altitude and azimuth; sunrise, sunset, solar noon, daylight duration and equation of time.
-- Interactive yearly daylight chart with date selection.
+- Interactive 24-hour annual solar ephemeris with sky-blue daylight, civil/nautical/astronomical twilight bands, sunrise/sunset contours, selected-date readout and date scrubbing. The vertical chart uses **local mean solar time**, not a guessed civil timezone.
 - Interactive **NASA Blue Marble satellite-textured** Earth map with calculated daylight/twilight shading, Equal Earth / orthographic globe / Mercator projection tabs directly above the map, observer/subsolar markers, drag-pan, zoom buttons and wheel zoom.
 - Local horizon sky compass with Sun and approximate Moon positions, selectable Sun/Moon paths, a compact J2000 bright-star catalogue with names, zoom and rotation.
-- Moon phase and approximate synodic age.
+- Moon phase and approximate synodic age, rendered as one centered antialiased disc (including correct high-DPI scaling).
 - Schematic inner-planet orrery.
 - Offline PWA with local files and no required backend.
 - No runtime JavaScript framework or external API required. GitHub Actions uses npm/esbuild to bundle the map libraries and local world atlas directly into the ZIP; nothing needs installing on Apache.
