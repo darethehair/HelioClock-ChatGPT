@@ -26,7 +26,7 @@ image.src='./moon-nearside-lro.jpg';
  * Libration and topocentric parallax of the lunar orientation are not yet
  * modelled. The phase fraction uses an approximate synodic calculation.
  */
-export function renderMoon(canvas,when,latitude,longitude){
+export function renderMoon(canvas,when,latitude,longitude,zoom=1){
  const w=canvas.clientWidth,h=canvas.clientHeight;
  if(w<=0||h<=0)return;
  const dpr=Math.min(window.devicePixelRatio||1,2);
@@ -34,7 +34,7 @@ export function renderMoon(canvas,when,latitude,longitude){
  const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);
  c.clearRect(0,0,w,h);
  const m=moon(when,latitude,longitude),tilt=moonOrientation(when,latitude,longitude);
- const size=Math.max(20,Math.floor(Math.min(w*.58,h*.80)));
+ const size=Math.max(20,Math.floor(Math.min(w*.58,h*.80)*zoom));
  const radius=size/2;
  // Illuminate image coordinates before rotating the entire lunar photograph.
  // The surface normal of the visible sphere is (nx,ny,nz).
