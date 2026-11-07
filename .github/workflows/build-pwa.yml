@@ -24,6 +24,20 @@ jobs:
           node --experimental-default-type=module tests/astronomy.test.mjs
       - name: Bundle independent visualizations
         run: npm run build
+      - name: Bundle NASA Blue Marble satellite texture
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --max-time 90 --silent --show-error \
+            https://svs.gsfc.nasa.gov/vis/a000000/a002900/a002915/bluemarble-2048.png \
+            --output dist/earth-blue-marble.png
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('dist/earth-blue-marble.png')
+          assert p.stat().st_size > 100000, 'Satellite Earth texture is missing or too small'
+          assert p.read_bytes()[:8] == b'\\x89PNG\\r\\n\\x1a\\n', 'Invalid PNG texture'
+          print('Satellite texture validated:',p.stat().st_size,'bytes')
+          PY
       - name: Stage static files for browser test
         run: cp index.html styles.css astronomy.js manifest.webmanifest sw.js icon.svg dist/ && echo '{"test":true}' > dist/build-info.json
       - name: Install Firefox for browser checks
