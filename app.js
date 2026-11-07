@@ -4,7 +4,7 @@ import {renderEarth} from './earth-renderer.js';
 import {starsAbove} from './sky-catalog.js';
 import {RAD,PI,wrap,clamp,solar,sunHorizontal,sunEvents,moon,orbitPositions,utcTime,durationText} from './astronomy.js';
 const $=id=>document.getElementById(id);
-const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyHeading:0,earthZoom:1,earthLon:0,earthLat:0,earthProjection:'equal',orreryZoom:1,moonZoom:1,orbitMode:'inner',playing:false};
+const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyHeading:0,earthZoom:1,earthLon:0,earthLat:0,earthProjection:'equal',orreryZoom:1,moonZoom:1,orbitMode:'inner',skyLight:'daylight',playing:false};
 const fmt=d=>d.toISOString().slice(0,10);
 function setDateInputs(){$('observe-date').value=fmt(state.date);$('observe-time').value=utcTime(state.date)}
 function selectDate(){
@@ -47,9 +47,37 @@ function worldMap(){
  $('earth-zoom-value').textContent=state.earthZoom.toFixed(1)+'×';
  $('subsolar').textContent=Math.abs(result.sunDecl).toFixed(1)+'°'+(result.sunDecl>=0?'N':'S')+' / '+Math.abs(result.sunLon).toFixed(1)+'°'+(result.sunLon>=0?'E':'W');
 }
+function skyColor(altitude){
+ // Approximate visual daytime/twilight colours, using solar elevation.
+ const stops=[
+  [-90,[0,0,0]],[-18,[0,0,0]],[-12,[6,9,24]],
+  [-6,[16,33,65]],[-1,[61,91,136]],[3,[91,155,199]],
+  [15,[78,169,220]],[50,[53,151,220]],[90,[40,139,213]]
+ ];
+ let i=1;while(i<stops.length-1&&altitude>stops[i][0])i++;
+ const [a,A]=stops[i-1],[b,B]=stops[i];
+ const t=clamp((altitude-a)/(b-a),0,1);
+ return A.map((v,j)=>Math.round(v*(1-t)+B[j]*t));
+}
+function fillSkyBackground(c,w,h,altitude){
+ if(state.skyLight==='black'){
+  c.fillStyle='#000000';c.fillRect(0,0,w,h);return;
+ }
+ const base=skyColor(altitude);
+ // Small vertical horizon glow makes sunrise/sunset distinguishable from noon.
+ const gradient=c.createLinearGradient(0,0,0,h);
+ const upper=base.map(v=>Math.round(v*.69));
+ const lower=base.map((v,i)=>Math.min(255,Math.round(v+(altitude>-10&&altitude<8?[41,21,8][i]*(1-Math.abs(altitude+1)/11):0))));
+ gradient.addColorStop(0,'rgb('+upper.join(',')+')');
+ gradient.addColorStop(1,'rgb('+lower.join(',')+')');
+ c.fillStyle=gradient;c.fillRect(0,0,w,h);
+}
 function sky(){
  const o=canvas($('sky'));if(!o)return;const{c,w,h}=o;
  const X=w/2,Y=h/2,rad=(Math.min(w-35,h-20)/2-14)*state.skyZoom;
+ const skySun=sunHorizontal(state.date,state.lat,state.lon);
+ fillSkyBackground(c,w,h,skySun.alt);
+ $('sky-light-status').textContent=state.skyLight==='black'?'Pure black background':(skySun.alt>=0?'Daylight':skySun.alt>=-6?'Civil twilight':skySun.alt>=-12?'Nautical twilight':skySun.alt>=-18?'Astronomical twilight':'Night')+' · Sun '+skySun.alt.toFixed(1)+'°';
  c.save();c.strokeStyle='#395270';c.lineWidth=1.3;c.beginPath();c.arc(X,Y,rad,0,2*PI);c.stroke();
  for(let a=0;a<360;a+=10){
   const p=(a-90-state.skyHeading)*RAD;line(c,X+Math.cos(p)*(rad-5),Y+Math.sin(p)*(rad-5),X+Math.cos(p)*rad,Y+Math.sin(p)*rad,'#59708e',a%30?0.6:1.3);
@@ -284,6 +312,16 @@ $('earth-map-home').addEventListener('click',()=>{$('earth-reset').click()});
 window.addEventListener('helioclock-earth-texture-ready',render);
 window.addEventListener('helioclock-moon-texture-ready',render);
 
+for(const button of document.querySelectorAll('[data-sky-light]')){
+ button.addEventListener('click',()=>{
+  state.skyLight=button.dataset.skyLight;
+  for(const other of document.querySelectorAll('[data-sky-light]')){
+   const selected=other===button;
+   other.classList.toggle('selected',selected);other.setAttribute('aria-pressed',String(selected));
+  }
+  render();
+ });
+}
 for(const id of ['show-stars','show-labels','show-sky-paths'])$(id).addEventListener('change',render);
 function reset(id,defaults){
  $(id).addEventListener('click',()=>{for(const [key,value] of Object.entries(defaults))state[key]=value;
