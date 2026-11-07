@@ -24,7 +24,7 @@ The experimental application already contains: Sun events and annual twilight ch
 
 ## Priority A: Scientific foundations and review
 
-- [ ] **Comprehensive original-versus-experimental feature inventory.** Inspect all relevant source/components and build a traceable comparison: present, partial, absent, and proposed new. Distinguish source-only capabilities from verified UI behaviour.
+- [ ] **Optional later original-versus-experimental feature inventory.** Not a prerequisite for current HelioClock development: the user has already requested the missing functionality they can identify. Revisit only if a specific parity gap arises or a comparison becomes useful. **For future rebuilds of existing applications, a thorough source-and-user-experience audit should be Step 1, before implementation.**
 - [ ] **Astronomical accuracy inspector.** Document algorithms and references; compare positions/events with a high-precision reference across locations, centuries, polar regions, leap years and DST cases. Display accuracy class/limitations in the UI.
 - [ ] **Precession-aware coordinate pipeline (required).** Preserve catalogue coordinates in J2000/ICRS; transform to requested epoch with a documented IAU-compatible precession model. Apply consistently to star points, constellation lines, equator/ecliptic grids, the celestial poles and sidereal coordinate transformations.
 - [ ] **Nutation and sidereal frame consistency.** Make clear whether time is mean or apparent sidereal; use matching coordinate frames and Earth orientation equations.
@@ -61,12 +61,16 @@ The experimental application already contains: Sun events and annual twilight ch
 
 ## Suggested implementation sequence
 
-1. Audit and accuracy/reference-model selection; publish gap report before adding more major astronomy.
+1. Scientific accuracy/reference-model selection and targeted validation; do not delay current work for a comprehensive feature-parity audit.
 2. Precession/time-frame foundations and tests.
 3. Milky Way layers and epoch-compatible sky drawing.
 4. Time-lapse + motion trails + tracking/retrograde demonstration.
 5. Event finder + timeline + explanation mode.
 6. Continuous visual, mathematical, accessibility, Firefox, PWA/offline and performance verification.
+
+## Lessons for future app-reconstruction projects
+
+**First step before writing code:** Examine the existing app comprehensively (source, rendered UI, interactions, calculations and deployment), produce a capability inventory, and agree on which features to preserve, improve or omit. This is a lesson for **future** projects, not a prerequisite for continuing this already mature HelioClock experiment.
 
 ## Collaboration and testing
 
