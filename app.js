@@ -54,6 +54,7 @@ function daylightChart(){
 function worldMap(){
  const o=canvas($('earth-map'));if(!o)return;
  const result=renderEarth(o.c,o.w,o.h,state.date,state);
+ $('earth-zoom-value').textContent=state.earthZoom.toFixed(1)+'×';
  $('subsolar').textContent=Math.abs(result.sunDecl).toFixed(1)+'°'+(result.sunDecl>=0?'N':'S')+' / '+Math.abs(result.sunLon).toFixed(1)+'°'+(result.sunLon>=0?'E':'W');
 }
 function sky(){
@@ -228,7 +229,29 @@ setInterval(()=>{if(state.playing)shiftTime(15)},180);
 function viewRange(id,key){$(id).addEventListener('input',e=>{state[key]=Number(e.target.value);render()})}
 viewRange('sky-zoom','skyZoom');viewRange('sky-heading','skyHeading');
 viewRange('earth-zoom','earthZoom');viewRange('orrery-zoom','orreryZoom');
-$('earth-projection').addEventListener('change',e=>{state.earthProjection=e.target.value;render()});
+
+function selectEarthProjection(next){
+ state.earthProjection=next;
+ for(const button of document.querySelectorAll('[data-projection]')){
+  const active=button.dataset.projection===next;
+  button.classList.toggle('is-active',active);
+  button.setAttribute('aria-pressed',String(active));
+ }
+ render();
+}
+for(const button of document.querySelectorAll('[data-projection]')){
+ button.addEventListener('click',()=>selectEarthProjection(button.dataset.projection));
+}
+function adjustEarthZoom(factor){
+ state.earthZoom=clamp(Math.round(state.earthZoom*factor*10)/10,1,4);
+ $('earth-zoom').value=state.earthZoom;
+ render();
+}
+$('earth-zoom-in').addEventListener('click',()=>adjustEarthZoom(1.25));
+$('earth-zoom-out').addEventListener('click',()=>adjustEarthZoom(.8));
+$('earth-map-home').addEventListener('click',()=>{$('earth-reset').click()});
+window.addEventListener('helioclock-earth-texture-ready',render);
+
 for(const id of ['show-stars','show-labels','show-sky-paths'])$(id).addEventListener('change',render);
 function reset(id,defaults){
  $(id).addEventListener('click',()=>{for(const [key,value] of Object.entries(defaults))state[key]=value;
