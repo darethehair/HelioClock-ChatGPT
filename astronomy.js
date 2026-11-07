@@ -98,6 +98,30 @@ export function moon(date,lat,lon){
  const name=phases[Math.floor(wrap(phase+1/16,1)*8)];
  return {...h,...m,age,phase,illuminated,name};
 }
+/**
+ * Bright-limb position angle (Meeus chapter 48), relative to celestial north
+ * and measured eastward. Parallactic angle relates celestial north to the
+ * observer's vertical (zenith), hence the local horizon-facing tilt.
+ * Low precision inherits the approximate Sun/Moon equatorial coordinates.
+ */
+export function moonOrientation(date,latitude,longitude){
+ const moonEq=moonEquatorial(date),sunEq=solar(date);
+ const deltaRA=(sunEq.ra-moonEq.ra)*RAD;
+ const dSun=sunEq.decl*RAD,dMoon=moonEq.decl*RAD;
+ const chi=Math.atan2(
+  Math.cos(dSun)*Math.sin(deltaRA),
+  Math.sin(dSun)*Math.cos(dMoon)-Math.cos(dSun)*Math.sin(dMoon)*Math.cos(deltaRA)
+ );
+ const hourAngle=(wrap(sidereal(date,longitude)-moonEq.ra+180)-180)*RAD;
+ const phi=latitude*RAD;
+ const q=Math.atan2(
+  Math.sin(hourAngle),
+  Math.tan(phi)*Math.cos(dMoon)-Math.sin(dMoon)*Math.cos(hourAngle)
+ );
+ const brightLimb=wrap(chi*DEG);
+ const parallactic=wrap(q*DEG+180)-180;
+ return {brightLimb,parallactic,fromZenith:wrap(brightLimb-parallactic+180)-180};
+}
 export function orbitPositions(date){
  const days=jd(date)-2451545;
  return [
