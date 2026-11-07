@@ -16,7 +16,7 @@ This file records requested and independently proposed capabilities, their relat
 6. **Distinct from source.** Audit the original application thoroughly, then make independent implementation choices. No writes to the original.
 7. **Avoid feature bloat.** Stage capabilities and measure performance, complexity and usefulness.
 
-## Existing experimental baseline (through Version 12)
+## Existing experimental baseline (through Version 13)
 
 The experimental application already contains: Sun events and annual twilight chart, interactive Earth map with NASA Blue Marble imagery and multiple projections, polar and rectangular sky views, catalogue stars to magnitude 7 and constellation-line toggle, sky daylight/black modes, local/UTC/LMST displays, sidereal-day stepping, Moon image with approximate illumination and horizon orientation, inner/outer schematic orrery through Neptune with optional labeled AU rings, PWA/offline distribution, full-screen panels, and persistent time dock.
 
@@ -26,7 +26,8 @@ The experimental application already contains: Sun events and annual twilight ch
 
 - [ ] **Optional later original-versus-experimental feature inventory.** Not a prerequisite for current HelioClock development: the user has already requested the missing functionality they can identify. Revisit only if a specific parity gap arises or a comparison becomes useful. **For future rebuilds of existing applications, a thorough source-and-user-experience audit should be Step 1, before implementation.**
 - [ ] **Astronomical accuracy inspector.** Document algorithms and references; compare positions/events with a high-precision reference across locations, centuries, polar regions, leap years and DST cases. Display accuracy class/limitations in the UI.
-- [ ] **Precession-aware coordinate pipeline (required).** Preserve catalogue coordinates in J2000/ICRS; transform to requested epoch with a documented IAU-compatible precession model. Apply consistently to star points, constellation lines, equator/ecliptic grids, the celestial poles and sidereal coordinate transformations.
+- [x] **Initial precession toggle for sky views (Version 13).** Keep the source star catalogue at J2000 and optionally transform stars, bright-star labels, and constellation-line vertices to mean equator/equinox of date with the documented IAU 1976 classical precession polynomial. Default on; off preserves the legacy J2000 plotting. Tested at J2000 and ±100 years. **Not a precision or long-millennia model.**
+- [ ] **Full precession-aware coordinate pipeline (later).** Upgrade to a modern IAU 2006-compatible model with consistent frame handling across future celestial pole, equator/ecliptic grids, Epoch Explorer, and any further layers. Current sky-toggle implementation is initial, not complete, and does not model proper motion or nutation.
 - [ ] **Nutation and sidereal frame consistency.** Make clear whether time is mean or apparent sidereal; use matching coordinate frames and Earth orientation equations.
 - [ ] **Stellar proper motion**, particularly important for historical/future epoch exploration. Include catalogue provenance and missing-data handling.
 - [ ] **Optional refinements:** annual aberration, topocentric parallax, atmospheric refraction and extinction. Distinguish geometric from apparent horizon positions.
