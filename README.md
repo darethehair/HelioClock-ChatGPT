@@ -115,3 +115,7 @@ Added **Sky Only** beside the existing **Text Only** button. Both presets work b
 - The conventional view is **from north of the ecliptic**, with heliocentric longitude 0° at the top and orbital longitudes increasing **counterclockwise**. Planet coordinates now use `x = centerX - radius * sin(longitude)`, `y = centerY - radius * cos(longitude)` to compensate for canvas's downward-positive Y axis.
 - Retains the existing simplified circular orbits, orbital phases, visual proportions, AU rings, and inner/outer zoom views. This change fixes **orientation only**, not full ephemeris accuracy.
 - Firefox regression test verifies Earth's and Mercury's opposing J2000 orientations, making a future accidental mirror reversal detectable.
+
+## Version 28 — Fix disappearing stars during zoomed polar panning
+
+The sky atlas previously rejected points using unshifted polar projection coordinates before the canvas pan transform was applied. This made stars and labels disappear prematurely near the screen edges when the polar view was zoomed and dragged. Stars and labels are now culled using their **final translated screen coordinates**. The Milky Way, constellation geometry, sky zoom/drag behavior, and rectangular projection are unchanged. Regression coverage includes independent viewport-boundary assertions and a browser panning smoke test.
