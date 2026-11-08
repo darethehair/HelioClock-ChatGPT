@@ -92,3 +92,12 @@ Added **Sky Only** beside the existing **Text Only** button. Both presets work b
 - **Milky Way:** preserved the original Vieira MultiPolygon groups and hole rings in the offline source conversion. In rectangular altitude/azimuth mode the contour renderer now uses D3's spherical antimeridian clipping, instead of joining an unwrapped planar ring across the azimuth seam. The established polar-view and greyscale Milky Way style are retained.
 - **Earth-only layout:** satellite imagery is clipped to the *actual projected globe/world outline*, matching the vector coastline layer. This prevents repeated phantom continents and wide horizontal raster wraps when the map is displayed as a single full-width panel.
 - **Regression tests:** Firefox verifies wide-map raster boundaries, Milky Way even-odd fills, and long unwanted polygon segments; the service worker cache and release/build numbers are v23.
+
+## Version 25 — Solar observations alongside the Moon
+
+- **Sun / Moon selector** in the existing lunar photographic panel; both use its ordinary fullscreen capability and share pan/zoom/reset tools. The Moon remains the simulated phase/orientation view based on the bundled NASA LRO mosaic.
+- **High-resolution Sun** from the NASA Solar Dynamics Observatory (SDO), HMI colour intensitygram, currently requested as `https://sdo.gsfc.nasa.gov/assets/img/latest/latest_2048_HMIIC.jpg`. A **Refresh Sun** button requests a fresh URL with a cache-busting query parameter; the timestamp printed in the image belongs to the NASA observation, not to the simulation clock or browser request.
+- **Offline fallback:** the PWA ZIP bundles a 1024-pixel NASA HMI image as `solar-fallback.jpg`, cached by the service worker; fallback is explicitly marked as a saved reference rather than presented as a current observation.
+- **Cursor-anchored zoom** for **both** celestial discs: mouse-wheel zooms around the pointer, plus and minus buttons zoom around the last pointer position or centre, drag pans the magnified view, and **Reset view** restores the centre. Zoom/pan state is independent for Sun and Moon. Normal and fullscreen layouts use the same controls.
+- **Data/time distinction:** current NASA solar photographs are *not* rewound when the simulated date changes. The moon view continues to reflect the selected astronomical date/time. No unverified automated interpretation of the NASA embedded timestamp is attempted.
+
