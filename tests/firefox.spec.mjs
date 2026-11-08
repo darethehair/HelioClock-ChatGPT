@@ -190,7 +190,19 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.locator('#show-milkyway-shade').uncheck();
  await page.locator('#show-galactic-center').uncheck();
  const blankGalactic=await skyHash();
+ // Record Canvas fill-rule usage: the contour renderer must shade actual
+ // even-odd polygons (with dark holes), not apply a wide glowing line stroke.
+ await page.locator('#sky').evaluate(el=>{
+  window.__milkyContourFills=0;
+  const original=CanvasRenderingContext2D.prototype.fill;
+  CanvasRenderingContext2D.prototype.fill=function(...args){
+   if(this.canvas.id==='sky'&&args[0]==='evenodd')window.__milkyContourFills++;
+   return original.apply(this,args);
+  };
+ });
  await page.locator('#show-milkyway-shade').check();
+ const filledRegions=await page.evaluate(()=>window.__milkyContourFills);
+ expect(filledRegions).toBeGreaterThanOrEqual(5);
  const withGlow=await skyHash();
  expect(withGlow).not.toEqual(blankGalactic);
  await page.locator('#show-milkyway-shade').uncheck();
