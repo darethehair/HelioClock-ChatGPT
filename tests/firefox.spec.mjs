@@ -394,3 +394,33 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
  await expect(page.locator('.almanac-panel')).toBeHidden();
  expect(errors).toEqual([]);
 });
+
+
+test('Version 23 single Earth map clips all raster imagery to the world outline',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('[data-panel-visibility="earth"]').check();
+ for(const key of ['hero','chart','sky','moon','orrery','details','almanac']){
+  await page.locator('[data-panel-visibility="'+key+'"]').uncheck();
+ }
+ await expect(page.locator('.dashboard')).toHaveClass(/single-panel/);
+ await expect(page.locator('.earth-panel')).toBeVisible();
+ await expect(page.locator('#earth-map')).toBeVisible();
+ await page.waitForFunction(()=>document.getElementById('earth-map').width>1000);
+ const samples=await page.locator('#earth-map').evaluate(el=>{
+  const c=el.getContext('2d'),w=el.width,h=el.height;
+  const p=(x,y)=>Array.from(c.getImageData(x,y,1,1).data).slice(0,3);
+  return {w,h,left:p(1,Math.floor(h/2)),right:p(w-2,Math.floor(h/2)),center:p(Math.floor(w/2),Math.floor(h/2))};
+ });
+ expect(samples.left).toEqual([7,19,36]);
+ expect(samples.right).toEqual([7,19,36]);
+ expect(samples.center).not.toEqual([7,19,36]);
+ await page.locator('[data-projection="mercator"]').click();
+ const edges=await page.locator('#earth-map').evaluate(el=>{
+  const c=el.getContext('2d'),w=el.width,h=el.height;
+  return [Array.from(c.getImageData(1,Math.floor(h/2),1,1).data).slice(0,3),
+   Array.from(c.getImageData(w-2,Math.floor(h/2),1,1).data).slice(0,3)];
+ });
+ expect(edges).toEqual([[7,19,36],[7,19,36]]);
+ expect(errors).toEqual([]);
+});
