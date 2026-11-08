@@ -576,3 +576,35 @@ test('Version 27 orrery has north-ecliptic counterclockwise geometry',async({pag
  expect(mercury.x).toBeGreaterThan(geometry.x);
  expect(errors).toEqual([]);
 });
+
+
+test('Version 28 keeps polar stars that enter the viewport through panning',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8765/');
+ await expect(page.locator('#sky-atlas-count')).toContainText('visible');
+ await page.locator('[data-sky-projection="polar"]').click();
+ await page.locator('[data-sky-light="black"]').click();
+ await page.locator('#star-magnitude').selectOption('7');
+ await page.locator('#sky').evaluate(el=>{
+  const base=CanvasRenderingContext2D.prototype.arc;
+  window.__offscreenProjectedVisibleStars=0;
+  CanvasRenderingContext2D.prototype.arc=function(x,y,r,...args){
+   if(this.canvas.id==='sky'&&r>=.8&&r<=6.1&&x<0){
+    const m=this.getTransform(),px=m.a*x+m.e,py=m.d*y+m.f;
+    if(px>=0&&px<this.canvas.width&&py>=0&&py<this.canvas.height)
+     window.__offscreenProjectedVisibleStars++;
+   }
+   return base.call(this,x,y,r,...args);
+  };
+ });
+ await page.locator('#sky-zoom').fill('3');
+ const box=await page.locator('#sky').boundingBox();
+ const x=box.x+box.width*.5,y=box.y+box.height*.5;
+ await page.mouse.move(x,y);
+ await page.mouse.down();
+ await page.mouse.move(x+210,y,{steps:6});
+ await page.mouse.up();
+ const drawn=await page.evaluate(()=>window.__offscreenProjectedVisibleStars);
+ expect(drawn).toBeGreaterThan(2);
+ expect(errors).toEqual([]);
+});
