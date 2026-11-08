@@ -1,3 +1,4 @@
+import {drawMilkyWay,milkyWayStatus} from './milky-way.js';
 import {rectGeometry,projectRect,rectHorizonY,paintRectAtmosphere} from './sky-projection.js';
 import {drawSkyAtlas,skyAtlasStatus} from './sky-atlas.js';
 import {renderMoon} from './moon-renderer.js';
@@ -147,6 +148,17 @@ function sky(){
    c.stroke();c.restore();
   }
  }
+ drawMilkyWay(c,{
+  date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
+  mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
+  precession:state.usePrecession,skyLight:state.skyLight,sunAltitude:skySun.alt,
+  showBelowHorizon:state.skyProjection==='rect'&&$('show-below-horizon').checked,
+  showShade:$('show-milkyway-shade').checked,
+  showOutline:$('show-milkyway-outline').checked,
+  showCenter:$('show-galactic-center').checked
+ });
+ const milky=milkyWayStatus();
+ $('milkyway-status').textContent=milky.failed?'Milky Way outlines unavailable':milky.ready?'Milky Way contours loaded':'Milky Way contours loading';
  const plotted=drawSkyAtlas(c,{
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
   mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
@@ -397,6 +409,8 @@ $('star-magnitude').addEventListener('change',e=>{
  render();
 });
 $('show-constellations').addEventListener('change',render);
+for(const id of ['show-milkyway-shade','show-milkyway-outline','show-galactic-center'])$(id).addEventListener('change',render);
+window.addEventListener('helioclock-milkyway-ready',render);
 $('use-precession').addEventListener('change',e=>{state.usePrecession=e.target.checked;render()});
 window.addEventListener('helioclock-sky-atlas-ready',render);
 const SIDEREAL_DAY_MS=86164090.5;
