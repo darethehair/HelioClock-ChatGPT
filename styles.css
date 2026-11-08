@@ -231,3 +231,20 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 /* Every single-panel preset gets the same full-width treatment. */
 .dashboard.single-panel{grid-template-columns:minmax(0,1fr)}
 .dashboard.single-panel > .panel:not([hidden]){grid-column:1/-1;min-width:0}
+
+/* Version 25: common interactive solar/lunar observation stage. */
+.disc-view-select{display:flex;gap:7px;margin:-3px 0 14px}
+.disc-view-select button{background:#152c42;border:1px solid #516c84;border-radius:6px;padding:8px 12px;font-size:11px;color:#e5edfa;font-weight:700}
+.disc-view-select button.selected{background:#91cbe9;color:#0b1c30;border-color:#91cbe9}
+.moon-stage{position:relative;height:245px;overflow:hidden;touch-action:none;cursor:grab;background:#05090f;border-radius:6px;display:block}
+.moon-stage:active{cursor:grabbing}
+.moon-stage canvas,.moon-stage img{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:contain;transform-origin:50% 50%;display:block;user-select:none;-webkit-user-drag:none;will-change:transform}
+.moon-view-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0 10px}
+.moon-view-tools button{background:#17314a;color:#d8ebfa;border:1px solid #4c6880;border-radius:5px;padding:6px 10px}
+.moon-view-tools span{font-size:12px;color:#cbddef;font-variant-numeric:tabular-nums}
+.solar-observation-note{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:11px;font-size:11px;color:#b9cce1;line-height:1.6}
+.solar-observation-note small{width:100%;font-size:10px;color:#91abc8}
+.solar-observation-note a{color:#efbb79}
+.moon-panel:fullscreen .moon-stage{height:calc(100vh - 310px);min-height:240px}
+.moon-panel:fullscreen .moon-stage canvas,.moon-panel:fullscreen .moon-stage img{height:100%!important;max-height:unset!important}
+@media(max-width:520px){.moon-stage{height:280px}.moon-panel:fullscreen .moon-stage{height:calc(100vh - 345px)}}
