@@ -61,6 +61,14 @@ The experimental application already contains: Sun events and annual twilight ch
 - [x] Rename the setting to **Milky Way shading** and preserve separate outline and galactic-centre controls.
 - [x] Retain the full-sphere rectangular sky, polar compass, epoch precession toggle, daylight dimming, and below-horizon visibility. Browser checks confirm actual even-odd contour fills.
 
+## Version 21 candidate: stellar magnitude and colour rendering
+
+- [ ] **Make stellar apparent magnitude visually more expressive.** Strengthen the size differences between bright and faint stars without oversized or hollow discs, retaining solid centres and readability in daylight and black-sky modes.
+- [ ] **Colour stars from catalogue B−V indices.** Use an approximate astronomical B−V to stellar-colour mapping (blue-white, white, yellow, orange, red), with a neutral fallback where B−V is missing. Document that screen colours are illustrative.
+- [ ] **Subtle halo for only the brightest stars.** Avoid uniform fuzzy points, exaggerated glows, and the previously rejected hollow-disc style.
+- [ ] **Optional “Stellar colours” checkbox.** Allow toggling between catalogue colours and the current solid-white star presentation.
+- [ ] **Regression checks.** Confirm actual canvas colour and magnitude-size differences in Firefox, including polar/rectangular projections and daylight/black backgrounds. Preserve Version 19 Milky Way contour shading.
+
 ## Priority B: Enhanced sky observatory
 
 - [x] **Milky Way overlay (Version 18).** Independent controls for (a) published five-level Vieira brightness outlines (D3-Celestial/BSD), (b) illustrative galactic-plane glow, and (c) galactic-centre marker. Both polar and rectangular projections; optional precession and below-horizon mode. **Glow is artistic, not photometric.**
