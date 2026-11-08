@@ -1,3 +1,4 @@
+import {drawEcliptic} from './ecliptic.js';
 import {drawMilkyWay,milkyWayStatus} from './milky-way.js';
 import {rectGeometry,projectRect,rectHorizonY,paintRectAtmosphere} from './sky-projection.js';
 import {drawSkyAtlas,skyAtlasStatus} from './sky-atlas.js';
@@ -149,6 +150,11 @@ function sky(){
    c.stroke();c.restore();
   }
  }
+ if($('show-ecliptic').checked)drawEcliptic(c,{
+  date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
+  mode:state.skyProjection,heading:state.skyHeading,zoom:state.skyZoom,
+  showBelowHorizon:state.skyProjection==='rect'&&$('show-below-horizon').checked
+ });
  drawMilkyWay(c,{
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
   mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
@@ -173,6 +179,15 @@ function sky(){
  const status=skyAtlasStatus();
  $('sky-atlas-count').textContent=(status.ready?plotted||0:'Loading')+' stars'+(status.ready?' visible':' · catalog loading');
  $('precession-status').textContent=state.usePrecession?'Precession on · mean equinox of date':'Precession off · fixed J2000 coordinates';
+ const fmtRA=degrees=>{
+  const hrs=wrap(degrees,360)/15,h=Math.floor(hrs),minutes=Math.floor((hrs-h)*60);
+  return String(h).padStart(2,'0')+'h '+String(minutes).padStart(2,'0')+'m';
+ };
+ const fmtDec=d=>(d>=0?'+':'')+d.toFixed(2)+'°';
+ const coords=(name,obj)=>
+  name+': Alt '+obj.alt.toFixed(2)+'° · Az '+obj.az.toFixed(2)+'° · RA '+fmtRA(obj.ra)+' · Dec '+fmtDec(obj.decl)+
+  (obj.alt>=0?' · above horizon':' · below horizon');
+ $('celestial-readout').textContent=coords('Sun',sun)+' | '+coords('Moon',m)+' · '+Math.round(m.distanceKm).toLocaleString('en-CA')+' km · '+Math.round(m.illuminated*100)+'% illuminated';
  place(sun,'#ffca7d','Sun');place(m,'#e1ebff','Moon');
  c.restore();
 }
@@ -421,7 +436,7 @@ for(const [id,sign] of [['sky-prev-sidereal',-1],['sky-next-sidereal',1]]){
   state.live=false;setDateInputs();render();
  });
 }
-for(const id of ['show-stars','show-labels','show-sky-paths','show-below-horizon'])$(id).addEventListener('change',render);
+for(const id of ['show-stars','show-labels','show-sky-paths','show-below-horizon','show-ecliptic'])$(id).addEventListener('change',render);
 function reset(id,defaults){
  $(id).addEventListener('click',()=>{for(const [key,value] of Object.entries(defaults))state[key]=value;
  const controls={skyZoom:'sky-zoom',skyHeading:'sky-heading',earthZoom:'earth-zoom',orreryZoom:'orrery-zoom'};
@@ -503,3 +518,21 @@ window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setT
 setInterval(()=>{if(state.live){state.date=new Date();setDateInputs();render()}},15000);
 setDateInputs();render();
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))}
+
+/** Static release metadata from the same GitHub Actions ZIP, offline-readable. */
+async function loadBuildMeta(){
+ try{
+  const response=await fetch('./build-info.json',{cache:'no-store'});
+  if(!response.ok)throw Error('Build metadata unavailable');
+  const info=await response.json();
+  const version=info.version||20,short=info.commit?info.commit.slice(0,9):'unknown';
+  for(const el of document.querySelectorAll('.app-version,.release-version,.dock-version'))el.textContent='v'+version;
+  const built=info.built_utc?new Date(info.built_utc).toLocaleString('en-CA',{dateStyle:'medium',timeStyle:'short',timeZone:'UTC'})+' UTC':'date not recorded';
+  $('build-meta').textContent='Build '+built+' · commit '+short;
+  $('app-version').title='HelioClock-ChatGPT v'+version+' · commit '+short+' · '+built;
+  $('dock-version').title=$('app-version').title;
+ }catch(error){
+  $('build-meta').textContent='Version 20 · offline build metadata unavailable';
+ }
+}
+loadBuildMeta();
