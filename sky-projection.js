@@ -51,3 +51,13 @@ export function paintRectAtmosphere(c,width,height,sun,{black=false,heading=0}={
  }
  c.restore();
 }
+
+/**
+ * Visibility after the polar projection's canvas translation. In a zoomed
+ * view a star may have unshifted x/y outside the canvas yet appear onscreen
+ * after panning; reject only its translated screen position.
+ */
+export function skyPointVisible(x,y,width,height,mode='polar',panX=0,panY=0){
+ const sx=x+(mode==='polar'?panX:0),sy=y+(mode==='polar'?panY:0);
+ return sx>=0&&sx<=width&&sy>=0&&sy<=height;
+}
