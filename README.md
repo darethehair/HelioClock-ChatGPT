@@ -65,3 +65,11 @@ The Earth panels now show a golden ring for the **solar zenith** and violet diam
 ## Version 19: Milky Way contour shading
 
 The earlier artificial, uniform galactic-plane glow has been removed. The **Milky Way shading** checkbox now fills the irregular five-level Vieira catalogue contours using nested, low-opacity neutral grey polygons (including catalogue holes). The independent **MW outlines** and **Galactic centre** toggles remain. Shading responds to precession, azimuth rotation, both sky projections, below-horizon clipping and daylight attenuation. This aims for the restrained, irregular SidClock-style star-chart treatment rather than an airbrushed glow. The shaded contour tiers are illustrative, not photometrically calibrated.
+
+## Version 20: release identification and more useful sky measurements
+
+The header and persistent time dock display the release version. The footer credits **Created by Darethehair with assistance from ChatGPT**, links to this repository and acknowledges astronomical data and NASA imagery. GitHub Actions embeds the version, exact commit and UTC build date in `build-info.json`; these are available offline after installing the PWA.
+
+Sky controls now include an optional **ecliptic of date**, computed using the solar obliquity of the selected date, with horizon clipping in polar sky and optional below-horizon visibility in rectangular sky. A coordinate readout shows Sun/Moon altitude, azimuth, RA (hours), declination (degrees) and lunar distance/illumination. The stars and Milky Way remain unchanged.
+
+The Moon's topocentric RA/declination, position, geocentric lunar coordinates and phase illumination now use Donald Cross's MIT-licensed **Astronomy Engine** instead of the application's original few-term lunar orbit and mean synodic phase. A visual lunar image still uses the existing approximate disc/orientation renderer. Sun and planetary orrery calculations remain approximate; the application is an educational tool rather than an observing-grade ephemeris.
