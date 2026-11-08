@@ -583,7 +583,8 @@ for(const button of document.querySelectorAll('[data-sky-projection]')){
 }
 $('star-magnitude').addEventListener('change',e=>{
  state.magLimit=Number(e.target.value);
- $('show-labels').checked=state.magLimit<=4.5;
+ // Magnitude and label visibility are independent controls. At high zoom
+ // the atlas selects uncluttered faint labels automatically.
  render();
 });
 $('show-constellations').addEventListener('change',render);
