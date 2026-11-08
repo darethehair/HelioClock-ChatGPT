@@ -248,3 +248,6 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 .moon-panel:fullscreen .moon-stage{height:calc(100vh - 310px);min-height:240px}
 .moon-panel:fullscreen .moon-stage canvas,.moon-panel:fullscreen .moon-stage img{height:100%!important;max-height:unset!important}
 @media(max-width:520px){.moon-stage{height:280px}.moon-panel:fullscreen .moon-stage{height:calc(100vh - 345px)}}
+
+/* Live astronomical cursor information remains outside the canvas drawing. */
+.sky-cursor-readout{display:block;margin:8px 2px 0;padding:7px 10px;min-height:28px;border:1px solid #324a64;border-radius:6px;background:#0d2034;color:#c8dcf1;font-size:11px;font-variant-numeric:tabular-nums;letter-spacing:.15px}
