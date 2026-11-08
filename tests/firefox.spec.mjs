@@ -495,7 +495,7 @@ test('Version 25 Sun and Moon use the same zoomable pannable fullscreen stage',a
  await page.locator('#disc-reset').click();
  await expect(page.locator('#solar-photo')).toHaveJSProperty('hidden',false);
  await expect(page.locator('#moon-zoom-value')).toHaveText('1.0×');
- await expect(page.locator('#solar-photo')).toHaveAttribute('style',/translate\(0px,0px\) scale\(1\)/);
+ await expect(page.locator('#solar-photo')).toHaveAttribute('style',/translate\(0px(?:,\s*0px)?\) scale\(1\)/);
  await page.locator('[data-fullscreen="moon-panel"]').click();
  await expect.poll(()=>page.evaluate(()=>document.fullscreenElement?.classList.contains('moon-panel'))).toBe(true);
  await expect(page.locator('#solar-photo')).toBeVisible();
