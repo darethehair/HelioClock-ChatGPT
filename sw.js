@@ -1,5 +1,5 @@
-const CACHE='helioclock-chatgpt-v17';
-const ASSETS=['./','./index.html','./styles.css','./app.js','./astronomy.js','./earth-blue-marble.png','./moon-nearside-lro.jpg','./sky-stars.json','./sky-constellations.json','./icon.svg','./manifest.webmanifest','./build-info.json'];
+const CACHE='helioclock-chatgpt-v18';
+const ASSETS=['./','./index.html','./styles.css','./app.js','./astronomy.js','./earth-blue-marble.png','./moon-nearside-lro.jpg','./sky-stars.json','./sky-constellations.json','./sky-milkyway.json','./icon.svg','./manifest.webmanifest','./build-info.json'];
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));
 });
