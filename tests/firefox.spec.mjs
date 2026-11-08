@@ -193,7 +193,7 @@ test('dashboard controls work in Firefox',async({page})=>{
  await expect(page.locator('#local-clock')).not.toHaveText('—');
  await expect(page.locator('#dock-time-zone')).toContainText('UTC');
  await expect(page.locator('#dock-local-time')).not.toHaveText('—');
- await expect(page.locator('.panel-fullscreen')).toHaveCount(6);
+ await expect(page.locator('.panel-fullscreen')).toHaveCount(7);
  // Milky Way overlay layers are independent and modify actual sky pixels.
  await page.locator('[data-sky-projection="rect"]').click();
  await page.locator('[data-sky-light="black"]').click();
