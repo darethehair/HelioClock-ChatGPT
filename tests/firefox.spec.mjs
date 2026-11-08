@@ -174,7 +174,8 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.locator('[data-sky-projection="polar"]').click();
  await expect(page.locator('[data-sky-projection="polar"]')).toHaveAttribute('aria-pressed','true');
  await page.locator('#star-magnitude').selectOption('7');
- await expect(page.locator('#show-labels')).not.toBeChecked();
+ // Magnitude no longer automatically disables star labels.
+ await expect(page.locator('#show-labels')).toBeChecked();
  await expect(page.locator('#sky-atlas-count')).toContainText('stars');
  await page.locator('#show-constellations').check();
  await expect(page.locator('#show-constellations')).toBeChecked();
