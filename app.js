@@ -9,7 +9,7 @@ import {renderEarth} from './earth-renderer.js';
 import {starsAbove} from './sky-catalog.js';
 import {RAD,PI,wrap,clamp,solar,sunHorizontal,sunEvents,moon,orbitPositions,sidereal,utcTime,durationText} from './astronomy.js';
 const $=id=>document.getElementById(id);
-const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyHeading:0,earthZoom:1,earthLon:0,earthLat:0,earthProjection:'equal',orreryZoom:1,moonZoom:1,orbitMode:'inner',skyLight:'daylight',skyProjection:'polar',magLimit:3.5,stellarColors:true,usePrecession:true,playing:false};
+const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyHeading:0,earthZoom:1,earthLon:0,earthLat:0,earthProjection:'equal',orreryZoom:1,moonZoom:1,discView:'moon',sunZoom:1,moonPanX:0,moonPanY:0,sunPanX:0,sunPanY:0,orbitMode:'inner',skyLight:'daylight',skyProjection:'polar',magLimit:3.5,stellarColors:true,usePrecession:true,playing:false};
 const fmt=d=>d.toISOString().slice(0,10);
 function setDateInputs(){$('observe-date').value=fmt(state.date);$('observe-time').value=utcTime(state.date)}
 function selectDate(){
@@ -194,6 +194,10 @@ function sky(){
  c.restore();
 }
 function drawMoon(){
+ if(state.discView==='sun'){
+  updateDiscViewport();
+  return;
+ }
  const info=renderMoon($('moon'),state.date,state.lat,state.lon,state.moonZoom);
  const m=moon(state.date,state.lat,state.lon);
  $('moon-zoom-value').textContent=state.moonZoom.toFixed(1)+'×';
@@ -202,6 +206,7 @@ function drawMoon(){
   $('moon-tilt').textContent='Bright limb from zenith: '+(info.fromZenith>0?'+':'')+info.fromZenith.toFixed(1)+'°';
   $('moon-source').textContent=info.photoLoaded?'NASA LRO near-side mosaic · horizon-aligned':'Loading lunar photography…';
  }
+ updateDiscViewport();
 }
 function orrery(){
  const o=canvas($('orrery'));if(!o)return;
@@ -381,10 +386,99 @@ for(const button of document.querySelectorAll('[data-orbit-mode]')){
   state.orreryZoom=1;$('orrery-zoom').value=1;render();
  });
 }
-function changeMoonZoom(factor){state.moonZoom=clamp(Math.round(state.moonZoom*factor*10)/10,.7,2.8);$('moon-zoom').value=state.moonZoom;render()}
-$('moon-zoom-in').addEventListener('click',()=>changeMoonZoom(1.25));
-$('moon-zoom-out').addEventListener('click',()=>changeMoonZoom(.8));
-$('moon-reset').addEventListener('click',()=>{state.moonZoom=1;$('moon-zoom').value=1;render()});
+// Discs share pan/zoom controls, but preserve independent zoom and pan between views.
+// A cursor-anchored zoom keeps the solar surface feature under the pointer stationary.
+const discStage=$('disc-stage'),solarPhoto=$('solar-photo');
+const solarSource='https://sdo.gsfc.nasa.gov/assets/img/latest/latest_2048_HMIIC.jpg';
+let discFocus=null,dragDisc=null,solarRequest=0;
+function updateDiscViewport(){
+ const sunMode=state.discView==='sun';
+ const zoom=sunMode?state.sunZoom:state.moonZoom;
+ const panX=sunMode?state.sunPanX:state.moonPanX,panY=sunMode?state.sunPanY:state.moonPanY;
+ const el=sunMode?solarPhoto:$('moon');
+ el.style.transform='translate('+panX+'px,'+panY+'px)'+(sunMode?' scale('+zoom+')':'');
+ $('moon-zoom-value').textContent=zoom.toFixed(1)+'×';
+}
+function zoomDisc(factor,focus=discFocus){
+ const sunMode=state.discView==='sun',k=sunMode?'sunZoom':'moonZoom',px=sunMode?'sunPanX':'moonPanX',py=sunMode?'sunPanY':'moonPanY';
+ const old=state[k],next=clamp(Math.round(old*factor*100)/100,1,sunMode?10:7);
+ if(next===old)return;
+ const box=discStage.getBoundingClientRect();
+ const ax=focus?focus.x-box.left-box.width/2:0,ay=focus?focus.y-box.top-box.height/2:0;
+ state[px]+=(1-next/old)*(ax-state[px]);
+ state[py]+=(1-next/old)*(ay-state[py]);
+ state[k]=next;
+ // Keep the original lunar phase synthesis at 1× and apply zoom in CSS;
+ // its texture remains fully resolved while the pointer anchor stays stable.
+ if(!sunMode)render();
+ else updateDiscViewport();
+}
+function resetDisc(){
+ if(state.discView==='sun'){state.sunZoom=1;state.sunPanX=0;state.sunPanY=0}
+ else{state.moonZoom=1;state.moonPanX=0;state.moonPanY=0;render()}
+ updateDiscViewport();
+}
+function showDisc(which){
+ if(which===state.discView)return;
+ state.discView=which;
+ const sun=which==='sun';
+ $('moon').hidden=sun;solarPhoto.hidden=!sun;
+ $('moon-bottom').hidden=sun;$('solar-note').hidden=!sun;
+ $('solar-refresh').hidden=!sun;
+ $('disc-kind').textContent=sun?'SOLAR OBSERVATION':'LUNAR CYCLE';
+ $('moon-phase').hidden=sun;
+ $('moon-tilt').textContent=sun?'SDO/HMI continuum image':'Bright limb from zenith: —';
+ $('moon-source').textContent=sun?'NASA Solar Dynamics Observatory · HMI':'NASA lunar mosaic';
+ for(const button of document.querySelectorAll('[data-disc-view]')){
+  const selected=button.dataset.discView===which;
+  button.classList.toggle('selected',selected);button.setAttribute('aria-pressed',String(selected));
+ }
+ if(sun&&solarRequest===0)refreshSolarImage();
+ render();
+}
+function refreshSolarImage(){
+ const stamp=Date.now();solarRequest++;
+ $('solar-status').textContent='Loading latest NASA image…';
+ solarPhoto.onload=()=>{
+  // The actual capture time is printed on NASA's image; do not confuse
+  // when a browser request finished with the astrophysical observation time.
+  $('solar-status').textContent='NASA SDO · image loaded (observation time stamped on photo)';
+ };
+ solarPhoto.onerror=()=>{
+  // A packaged offline reference is explicitly labelled as a fallback.
+  if(!solarPhoto.src.endsWith('/solar-fallback.jpg')){
+   $('solar-status').textContent='NASA offline reference image · not a current observation';
+   solarPhoto.onload=null;solarPhoto.onerror=null;solarPhoto.src='./solar-fallback.jpg';
+  }else $('solar-status').textContent='Solar image unavailable';
+ };
+ solarPhoto.src=solarSource+'?v='+stamp;
+}
+for(const button of document.querySelectorAll('[data-disc-view]'))
+ button.addEventListener('click',()=>showDisc(button.dataset.discView));
+$('solar-refresh').addEventListener('click',refreshSolarImage);
+$('moon-zoom-in').addEventListener('click',()=>zoomDisc(1.25));
+$('moon-zoom-out').addEventListener('click',()=>zoomDisc(.8));
+$('disc-reset').addEventListener('click',resetDisc);
+$('moon-reset').addEventListener('click',()=>{state.moonZoom=1;state.moonPanX=state.moonPanY=0;$('moon-zoom').value=1;if(state.discView==='moon')render()});
+discStage.addEventListener('pointermove',e=>{
+ discFocus={x:e.clientX,y:e.clientY};
+ if(!dragDisc||dragDisc.pointerId!==e.pointerId)return;
+ const px=state.discView==='sun'?'sunPanX':'moonPanX',py=state.discView==='sun'?'sunPanY':'moonPanY';
+ state[px]+=e.clientX-dragDisc.x;state[py]+=e.clientY-dragDisc.y;
+ dragDisc.x=e.clientX;dragDisc.y=e.clientY;updateDiscViewport();
+});
+discStage.addEventListener('pointerdown',e=>{
+ if(e.button!==0)return;
+ dragDisc={pointerId:e.pointerId,x:e.clientX,y:e.clientY};
+ discStage.setPointerCapture(e.pointerId);
+});
+for(const name of ['pointerup','pointercancel','lostpointercapture'])
+ discStage.addEventListener(name,()=>{dragDisc=null});
+discStage.addEventListener('pointerleave',()=>{discFocus=null});
+discStage.addEventListener('wheel',e=>{
+ e.preventDefault();zoomDisc(e.deltaY<0?1.2:1/1.2,{x:e.clientX,y:e.clientY});
+},{passive:false});
+
 
 
 function selectEarthProjection(next){
