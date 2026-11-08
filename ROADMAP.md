@@ -16,16 +16,16 @@ This file records requested and independently proposed capabilities, their relat
 6. **Distinct from source.** Audit the original application thoroughly, then make independent implementation choices. No writes to the original.
 7. **Avoid feature bloat.** Stage capabilities and measure performance, complexity and usefulness.
 
-## Existing experimental baseline (through Version 13)
+## Existing experimental baseline (through Version 18)
 
 The experimental application already contains: Sun events and annual twilight chart, interactive Earth map with NASA Blue Marble imagery and multiple projections, polar and rectangular sky views, catalogue stars to magnitude 7 and constellation-line toggle, sky daylight/black modes, local/UTC/LMST displays, sidereal-day stepping, Moon image with approximate illumination and horizon orientation, inner/outer schematic orrery through Neptune with optional labeled AU rings, PWA/offline distribution, full-screen panels, and persistent time dock.
 
 **These exist but are not yet scientifically validated to precision-ephemeris standards.** Some computations (Moon, planets, star positions and sidereal time) use approximations.
 
-## Next-round small refinements (requested 2026-11-08)
+## Completed Version 18 refinements (requested 2026-11-08)
 
-- [ ] **Daylight-year graph contrast:** Replace the pale green daylight-duration line with a thicker, high-contrast dark blue/navy line visible across the light-blue daylight band; preserve twilight layers and clear labeling.
-- [ ] **Solar nadir on Earth maps:** Show the subsolar zenith and antipodal nadir markers, with distinctive symbols/labels in the supported map projections; ensure globe back-side occlusion is respected.
+- [x] **Daylight-year graph contrast:** Replace the pale green daylight-duration line with a thicker, high-contrast dark blue/navy line visible across the light-blue daylight band; preserve twilight layers and clear labeling.
+- [x] **Solar nadir on Earth maps:** Show the subsolar zenith and antipodal nadir markers, with distinctive symbols/labels in the supported map projections; ensure globe back-side occlusion is respected.
 
 ## Priority A: Scientific foundations and review
 
@@ -48,8 +48,8 @@ The experimental application already contains: Sun events and annual twilight ch
 
 ## Priority B: Enhanced sky observatory
 
-- [ ] **Milky Way overlay — user requested.** Independent controls for (a) outline, (b) softly shaded brightness, and (c) galactic-centre marker. Use actual galactic coordinates and an appropriately licensed map/model; project into both polar and rectangular sky views.
-- [ ] **Lighting interaction.** In black-sky mode show full Milky Way overlay; attenuate/hide it as computed twilight/daylight brightens. Allow explicit override for education.
+- [x] **Milky Way overlay (Version 18).** Independent controls for (a) published five-level Vieira brightness outlines (D3-Celestial/BSD), (b) illustrative galactic-plane glow, and (c) galactic-centre marker. Both polar and rectangular projections; optional precession and below-horizon mode. **Glow is artistic, not photometric.**
+- [x] **Initial lighting interaction (Version 18).** Black-sky mode shows the Milky Way at full overlay strength; daylight mode attenuates it as the solar altitude rises. Explicit brightness override is still a future option.
 - [ ] **Precession-aware sky and constellation lines.** Ensure catalogued positions, stick figures, galactic overlay and pole are transformed in one consistent reference-frame pipeline.
 - [ ] **Celestial motion trails.** Trace apparent Sun, Moon and planet motion over a configurable interval. Offer horizon/RA-Dec/heliocentric reference frames and selectable trace lengths. Clearly label approximate versus validated trajectories.
 - [ ] **Epoch Explorer.** Explore changes in the celestial pole and approximate pole stars in historical/future skies, with accuracy warnings for long time horizons.
