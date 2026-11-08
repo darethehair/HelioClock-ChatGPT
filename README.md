@@ -101,3 +101,10 @@ Added **Sky Only** beside the existing **Text Only** button. Both presets work b
 - **Cursor-anchored zoom** for **both** celestial discs: mouse-wheel zooms around the pointer, plus and minus buttons zoom around the last pointer position or centre, drag pans the magnified view, and **Reset view** restores the centre. Zoom/pan state is independent for Sun and Moon. Normal and fullscreen layouts use the same controls.
 - **Data/time distinction:** current NASA solar photographs are *not* rewound when the simulated date changes. The moon view continues to reflect the selected astronomical date/time. No unverified automated interpretation of the NASA embedded timestamp is attempted.
 
+
+## Version 26 — Point-focused polar sky zoom and pan
+
+- Scrolling the mouse wheel over the **polar sky** magnifies the astronomical chart *toward the pointer* instead of only around the zenith. Its pan offset is adjusted using the ratio of new and old projection radii to keep the selected celestial position stationary.
+- With zoom greater than 1×, dragging pans the view in two dimensions. At 1×, dragging continues to rotate the compass as before; **Shift+drag** rotates the compass while zoomed. The existing heading slider also continues to rotate.
+- **Reset sky** restores 1× scale, heading 0°, and zero pan offset.
+- The polar reference grid, stars, ecliptic, Sun/Moon, and Vieira Milky Way overlays all use the same translated canvas frame. The established rectangular sky and Milky Way geometry are untouched.
