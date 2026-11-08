@@ -1,3 +1,4 @@
+import {geoEquirectangular,geoPath,geoArea} from 'd3-geo';
 import {RAD,DEG,wrap,horizontal,precessJ2000} from './astronomy.js';
 import {projectRect,rectGeometry} from './sky-projection.js';
 
@@ -129,6 +130,53 @@ function paintContours(c,levels,projectPoint,opts,visibility,shade,outline){
   }
  }
 }
+/**
+ * Rectangular projection: let D3's spherical antimeridian clipper split closed
+ * Milky Way contours at the azimuth seam. Naive x-coordinate unwrapping plus
+ * closePath() can draw long horizontal chords through the chart, especially
+ * where a ring winds around the zenith/nadir or crosses a projection pole.
+ *
+ * The published catalogue is a MultiPolygon. Maintain each polygon's hole
+ * rings, convert its equatorial vertices to local azimuth/altitude, and let
+ * spherical clipping form proper seam-edge closures. We stretch the resulting
+ * equirectangular latitude axis to match the existing ±90° altitude chart.
+ */
+function paintRectContours(c,levels,{date,lat,lon,width,height,heading,precession},visibility,shade,outline){
+ const g=rectGeometry(width,height),span=g.right-g.left;
+ const xCenter=(g.left+g.right)/2,yCenter=(g.top+g.bottom)/2;
+ const baseScale=span/(Math.PI*2),verticalScale=(g.bottom-g.top)/(Math.PI*baseScale);
+ const projection=geoEquirectangular().scale(baseScale)
+  .translate([xCenter,yCenter]).precision(.15);
+ const path=geoPath(projection,c),alpha=[.095,.060,.060,.070,.085];
+ c.save();
+ c.translate(0,yCenter);c.scale(1,verticalScale);c.translate(0,-yCenter);
+ for(let k=0;k<levels.length;k++){
+  const polygons=levels[k].polygons||[];
+  const converted=[];
+  for(const polygon of polygons){
+   const rings=polygon.map(ring=>ring.map(([ra,dec])=>{
+    const h=toAltAz(ra,dec,date,lat,lon,precession);
+    return [wrap(h.az-heading+180,360)-180,h.alt];
+   }));
+   if(!rings.length)continue;
+   // D3 uses spherical winding to choose a polygon interior. A contour
+   // should cover the smaller side of the sphere, never its complement.
+   let shape={type:'Polygon',coordinates:rings};
+   if(geoArea(shape)>2*Math.PI)shape={type:'Polygon',coordinates:rings.map(r=>[...r].reverse())};
+   converted.push(shape.coordinates);
+  }
+  if(!converted.length)continue;
+  c.beginPath();
+  path({type:'MultiPolygon',coordinates:converted});
+  if(shade){c.fillStyle='rgba(190,198,209,'+(alpha[k]*visibility)+')';c.fill('evenodd')}
+  if(outline){
+   c.strokeStyle='rgba(192,204,222,'+((.14+.035*k)*visibility)+')';
+   c.lineWidth=(k===0?1:.7)/Math.max(1,verticalScale);
+   c.stroke();
+  }
+ }
+ c.restore();
+}
 export function drawMilkyWay(c,opts){
  const {date,lat,lon,width,height,mode='polar',zoom=1,heading=0,
   precession=true,showBelowHorizon=true,showShade=false,showOutline=false,
@@ -158,7 +206,16 @@ export function drawMilkyWay(c,opts){
    return [width/2+Math.cos(angle)*r,height/2+Math.sin(angle)*r];
   };
   const projectPoint=(ra,dec)=>rawProjection(toAltAz(ra,dec,date,lat,lon,precession));
-  paintContours(c,levels,projectPoint,{mode,width,height,heading},visibility,showShade,showOutline);
+  if(mode==='rect'){
+   paintRectContours(c,levels,{date,lat,lon,width,height,heading,precession},
+    visibility,showShade,showOutline);
+  }else{
+   // Preserve the established Version 19 polar-sky visual rendering.
+   const polarLevels=levels.map(level=>({rings:level.polygons?
+    level.polygons.flatMap(p=>p):level.rings}));
+   paintContours(c,polarLevels,projectPoint,{mode,width,height,heading},
+    visibility,showShade,showOutline);
+  }
  }
  if(showCenter){
   const h=toAltAz(GALACTIC_CENTER.ra,GALACTIC_CENTER.dec,date,lat,lon,precession);
