@@ -546,3 +546,33 @@ test('Version 26 polar zoom anchors cursor and dragging pans the sky',async({pag
  expect(home).toEqual([0,0]);
  expect(errors).toEqual([]);
 });
+
+
+test('Version 27 orrery has north-ecliptic counterclockwise geometry',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('#observe-date').fill('2000-01-01');
+ await page.locator('#observe-time').fill('12:00');
+ await page.locator('#orrery').evaluate(canvas=>{
+  const context=canvas.getContext('2d');
+  const oldArc=context.arc.bind(context),oldFill=context.fill.bind(context);
+  let last=null;
+  window.__orbitDots=[];
+  context.arc=function(x,y,r,...rest){last={x,y,r};return oldArc(x,y,r,...rest)};
+  context.fill=function(...args){
+   if(last&&last.r>=3)window.__orbitDots.push({...last,color:this.fillStyle});
+   last=null;return oldFill(...args);
+  };
+ });
+ await page.locator('#observe-time').dispatchEvent('change');
+ const dots=await page.evaluate(()=>window.__orbitDots);
+ const earth=dots.filter(d=>d.color==='#76bde6').at(-1);
+ const mercury=dots.filter(d=>d.color==='#b5bac1').at(-1);
+ expect(earth).toBeDefined();expect(mercury).toBeDefined();
+ const geometry=await page.locator('#orrery').evaluate(el=>({x:el.clientWidth/2,y:el.clientHeight/2}));
+ // J2000 longitudes: Earth 100.46° must be on the left; Mercury
+ // 252.25° must be on the right when viewed from ecliptic north.
+ expect(earth.x).toBeLessThan(geometry.x);
+ expect(mercury.x).toBeGreaterThan(geometry.x);
+ expect(errors).toEqual([]);
+});
