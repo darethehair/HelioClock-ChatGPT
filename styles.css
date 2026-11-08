@@ -228,6 +228,6 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 @media(max-width:850px){.almanac-grid{grid-template-columns:minmax(0,1fr)}.almanac-panel:fullscreen .almanac-grid{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:450px){.twilight{grid-template-columns:1fr 1fr}.twilight-label{grid-column:1/-1}.layout-toggles{gap:12px}.almanac-row{font-size:11px}}
 
-/* A single visible panel gets all available dashboard width, regardless of type. */
-.dashboard:has(> .panel:not([hidden]):only-of-type){grid-template-columns:minmax(0,1fr)}
-.dashboard > .panel:not([hidden]):not(:has(~ .panel:not([hidden]))):first-child{min-width:0}
+/* Every single-panel preset gets the same full-width treatment. */
+.dashboard.single-panel{grid-template-columns:minmax(0,1fr)}
+.dashboard.single-panel > .panel:not([hidden]){grid-column:1/-1;min-width:0}
