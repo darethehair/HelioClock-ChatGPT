@@ -348,3 +348,35 @@ test('dashboard controls work in Firefox',async({page})=>{
  await expect(page.locator('#dock-date')).toBeVisible();
  expect(errors).toEqual([]);
 });
+
+
+test('Version 21 layout, colour, and almanac controls survive reload',async({page})=>{
+ const errors=[];
+ page.on('pageerror',err=>errors.push(err.message));
+ await page.goto('http://127.0.0.1:8765/');
+ await expect(page.locator('#app-version')).toHaveText('v21');
+ await expect(page.locator('.almanac-panel')).toBeHidden();
+ await page.locator('#layout-text').click();
+ await expect(page.locator('.almanac-panel')).toBeVisible();
+ await expect(page.locator('.sky-panel')).toBeHidden();
+ await expect(page.locator('#almanac-content')).toContainText('Astronomical');
+ await expect(page.locator('#almanac-content')).toContainText('Julian Date');
+ await expect(page.locator('#almanac-content')).toContainText('Nautical');
+ await expect(page.locator('#almanac-content')).toContainText('Upcoming astronomical events');
+ await expect(page.locator('#almanac-content')).toContainText('Moonrise');
+ await expect(page.locator('#almanac-content')).toContainText('UTC');
+ await page.reload();
+ await expect(page.locator('.almanac-panel')).toBeVisible();
+ await expect(page.locator('.sky-panel')).toBeHidden();
+ await page.locator('#layout-all').click();
+ await expect(page.locator('.sky-panel')).toBeVisible();
+ await expect(page.locator('.almanac-panel')).toBeVisible();
+ await page.locator('#show-stellar-colors').uncheck();
+ await expect(page.locator('#show-stellar-colors')).not.toBeChecked();
+ await page.locator('#show-stellar-colors').check();
+ await expect(page.locator('#show-stellar-colors')).toBeChecked();
+ await page.locator('#layout-default').click();
+ await expect(page.locator('.sky-panel')).toBeVisible();
+ await expect(page.locator('.almanac-panel')).toBeHidden();
+ expect(errors).toEqual([]);
+});
