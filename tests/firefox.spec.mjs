@@ -133,6 +133,10 @@ test('dashboard controls work in Firefox',async({page})=>{
  });
  await page.locator('#show-stars').uncheck();
  await page.locator('#show-sky-paths').uncheck();
+ // Turn off all luminous overlays before measuring raw atmosphere pixels.
+ await page.locator('#show-milkyway-shade').uncheck();
+ await page.locator('#show-galactic-center').uncheck();
+ await page.locator('#show-milkyway-outline').uncheck();
  const fullSky=await sampleSky();
  expect(fullSky.above[2]).toBeGreaterThan(75);
  expect(fullSky.below).toEqual([0,0,0]);
@@ -142,6 +146,8 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.locator('[data-sky-light="daylight"]').click();
  await page.locator('#show-stars').check();
  await page.locator('#show-sky-paths').check();
+ await page.locator('#show-milkyway-shade').check();
+ await page.locator('#show-galactic-center').check();
  await page.locator('[data-sky-projection="polar"]').click();
  await expect(page.locator('#below-horizon-setting')).toBeHidden();
  await expect(page.locator('#sidereal-time')).toContainText('LMST');
