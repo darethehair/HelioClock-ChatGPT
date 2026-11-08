@@ -82,3 +82,7 @@ The Moon's topocentric RA/declination, position, geocentric lunar coordinates an
 - **Accuracy and timezone notes:** event searches use Astronomy Engine and are scoped to the **device's local civil date** and timezone, including local DST handling. This is *not automatically the timezone at the observer's entered coordinates*. For days without a specified sunrise, sunset or twilight event, the panel shows a dash rather than substituting a different astronomical event. No weather or cloud-cover claims are made; observing conditions are derived from celestial geometry only. Planetary ephemerides remain a future improvement.
 - **Source credit:** the layout and output fields are inspired by Darren Enns's MChronos v0.37 (2008–2009). This is a newly written implementation and does not embed the original GPL program.
 
+
+## Version 22 — Equal-status dashboard presets
+
+Added **Sky Only** beside the existing **Text Only** button. Both presets work by selecting the visibility of one ordinary panel using the same dashboard layout code. Astronomical Information has no special priority or rendering status: it can be independently shown, hidden, full-screened, and combined with any other panel. A sole visible panel occupies the full grid width. Previous saved checkbox layouts remain compatible, and the new offline PWA cache is labelled v22.
