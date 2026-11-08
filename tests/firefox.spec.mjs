@@ -4,6 +4,13 @@ test('dashboard controls work in Firefox',async({page})=>{
  page.on('pageerror',error=>errors.push(error.message));
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#sunrise')).not.toHaveText('—');
+ // Release identity and provenance are visible even offline.
+ await expect(page.locator('#app-version')).toHaveText('v20');
+ await expect(page.locator('#dock-version')).toHaveText('v20');
+ await expect(page.locator('.credits-footer')).toContainText('Created by Darethehair with assistance from ChatGPT');
+ await expect(page.locator('.credits-footer a')).toHaveAttribute('href','https://github.com/darethehair/HelioClock-ChatGPT');
+ await expect(page.locator('#build-meta')).toContainText('commit');
+
  // Polar sky must support a truly black canvas background and solar-altitude colour.
  await page.locator('[data-sky-light="black"]').click();
  await expect(page.locator('[data-sky-light="black"]')).toHaveAttribute('aria-pressed','true');
@@ -111,6 +118,16 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.locator('#observe-time').fill('06:00');
  await page.locator('#observe-time').dispatchEvent('change');
  await page.locator('[data-sky-light="daylight"]').click();
+
+ // Ecliptic is an independent layer and tracks selected time and location.
+ await page.locator('#show-ecliptic').uncheck();
+ const eclipticOff=await skyHash();
+ await page.locator('#show-ecliptic').check();
+ expect(await skyHash()).not.toBe(eclipticOff);
+ await page.locator('#show-ecliptic').uncheck();
+ await expect(page.locator('#celestial-readout')).toContainText('Moon: Alt');
+ await expect(page.locator('#celestial-readout')).toContainText('RA');
+ await expect(page.locator('#celestial-readout')).toContainText('Dec');
  // SChronos-style rectangular view: actual full +90 to -90 altitude chart.
  await page.locator('#observe-date').fill('2026-06-21');
  await page.locator('#observe-time').fill('18:00');
