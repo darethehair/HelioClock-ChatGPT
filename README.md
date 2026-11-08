@@ -86,3 +86,9 @@ The Moon's topocentric RA/declination, position, geocentric lunar coordinates an
 ## Version 22 — Equal-status dashboard presets
 
 Added **Sky Only** beside the existing **Text Only** button. Both presets work by selecting the visibility of one ordinary panel using the same dashboard layout code. Astronomical Information has no special priority or rendering status: it can be independently shown, hidden, full-screened, and combined with any other panel. A sole visible panel occupies the full grid width. Previous saved checkbox layouts remain compatible, and the new offline PWA cache is labelled v22.
+
+## Version 23 — Rectangular sky and wide Earth geometry corrections
+
+- **Milky Way:** preserved the original Vieira MultiPolygon groups and hole rings in the offline source conversion. In rectangular altitude/azimuth mode the contour renderer now uses D3's spherical antimeridian clipping, instead of joining an unwrapped planar ring across the azimuth seam. The established polar-view and greyscale Milky Way style are retained.
+- **Earth-only layout:** satellite imagery is clipped to the *actual projected globe/world outline*, matching the vector coastline layer. This prevents repeated phantom continents and wide horizontal raster wraps when the map is displayed as a single full-width panel.
+- **Regression tests:** Firefox verifies wide-map raster boundaries, Milky Way even-odd fills, and long unwanted polygon segments; the service worker cache and release/build numbers are v23.
