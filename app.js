@@ -566,8 +566,6 @@ function applyLayout(next){
   const input=document.querySelector('[data-panel-visibility="'+key+'"]');
   if(input)input.checked=activeLayout[key];
  }
- document.querySelector('.dashboard').classList.toggle('text-first',activeLayout.almanac&&
-   !activeLayout.chart&&!activeLayout.earth&&!activeLayout.sky&&!activeLayout.moon&&!activeLayout.orrery);
  try{localStorage.setItem('helioclock-layout-v21',JSON.stringify(activeLayout))}catch{}
  requestAnimationFrame(render);
 }
@@ -576,7 +574,10 @@ for(const input of document.querySelectorAll('[data-panel-visibility]')){
 }
 $('layout-all').addEventListener('click',()=>applyLayout(Object.fromEntries(Object.keys(defaultLayout).map(k=>[k,true]))));
 $('layout-default').addEventListener('click',()=>applyLayout(defaultLayout));
-$('layout-text').addEventListener('click',()=>applyLayout({hero:false,chart:false,earth:false,sky:false,moon:false,orrery:false,details:false,almanac:true}));
+// Presets are equivalent visibility masks; every section remains independently toggleable.
+const onlyPanel=key=>Object.fromEntries(Object.keys(defaultLayout).map(k=>[k,k===key]));
+$('layout-sky').addEventListener('click',()=>applyLayout(onlyPanel('sky')));
+$('layout-text').addEventListener('click',()=>applyLayout(onlyPanel('almanac')));
 $('almanac-copy').addEventListener('click',async()=>{
  if(!almanacCurrent)return;
  try{
