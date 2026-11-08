@@ -108,3 +108,10 @@ Added **Sky Only** beside the existing **Text Only** button. Both presets work b
 - With zoom greater than 1×, dragging pans the view in two dimensions. At 1×, dragging continues to rotate the compass as before; **Shift+drag** rotates the compass while zoomed. The existing heading slider also continues to rotate.
 - **Reset sky** restores 1× scale, heading 0°, and zero pan offset.
 - The polar reference grid, stars, ecliptic, Sun/Moon, and Vieira Milky Way overlays all use the same translated canvas frame. The established rectangular sky and Milky Way geometry are untouched.
+
+## Version 27 — Corrected top-down orrery handedness
+
+- Corrects the previous mirror-image display of the eight approximate heliocentric orbital positions.
+- The conventional view is **from north of the ecliptic**, with heliocentric longitude 0° at the top and orbital longitudes increasing **counterclockwise**. Planet coordinates now use `x = centerX - radius * sin(longitude)`, `y = centerY - radius * cos(longitude)` to compensate for canvas's downward-positive Y axis.
+- Retains the existing simplified circular orbits, orbital phases, visual proportions, AU rings, and inner/outer zoom views. This change fixes **orientation only**, not full ephemeris accuracy.
+- Firefox regression test verifies Earth's and Mercury's opposing J2000 orientations, making a future accidental mirror reversal detectable.
