@@ -22,10 +22,28 @@ const toAltAz=(star,date,latitude,longitude,precession)=> {
  const eq=precession?precessJ2000(star.ra,star.dec,date):{ra:star.ra,decl:star.dec};
  return horizontal(eq.ra,eq.decl,date,latitude,longitude);
 };
+/** Approximate perceptual colours by B-V; preserves white fallback. */
+export function stellarColor(bv){
+ if(!Number.isFinite(bv))return '#ffffff';
+ const anchors=[[-.35,[163,190,255]],[0,[213,227,255]],[.30,[247,248,255]],[.65,[255,241,213]],[1.05,[255,203,153]],[1.70,[255,153,124]]];
+ if(bv<=anchors[0][0])return '#a3beff';
+ if(bv>=anchors.at(-1)[0])return '#ff997c';
+ for(let i=1;i<anchors.length;i++){
+  if(bv<=anchors[i][0]){
+   const [b0,c0]=anchors[i-1],[b1,c1]=anchors[i],t=(bv-b0)/(b1-b0);
+   return '#'+c0.map((v,j)=>Math.round(v+(c1[j]-v)*t).toString(16).padStart(2,'0')).join('');
+  }
+ }
+ return '#ffffff';
+}
+/** Brightness is represented by disc size; a gentle halo is only for mag < 1. */
+export function stellarRadius(mag,zoom=1){
+ return Math.max(.85,Math.min(6.1,4.6-.63*(mag+1.2)))*Math.max(.9,Math.min(1.45,zoom**.35));
+}
 function drawDot(c,x,y,r,color){c.beginPath();c.arc(x,y,r,0,2*Math.PI);c.fillStyle=color;c.fill();}
 export function drawSkyAtlas(c,{
  date,lat,lon,width,height,mode='polar',zoom=1,heading=0,magLimit=3.5,
- showLabels=true,showStars=true,showConstellations=false,precession=true,brightSky=false,showBelowHorizon=true
+ showLabels=true,showStars=true,showConstellations=false,precession=true,brightSky=false,showBelowHorizon=true,stellarColors=true
 }){
  const X=width/2,Y=height/2,radius=(Math.min(width-35,height-20)/2-14)*zoom;
  const project=(az,alt)=>{
@@ -59,15 +77,14 @@ export function drawSkyAtlas(c,{
   if(!pos)continue;
   const [x,y]=pos;
   if(x<0||x>width||y<0||y>height)continue;
-  // This is an educational coordinate chart, not a naked-eye sky simulation.
-  // In daylight use dark ink, rather than nearly-white semi-transparent stars
-  // that effectively vanish against the light blue background.
-  // Consistent white star symbols on both the illuminated and black sky.
-  // A solid core (not an outlined circle) maintains a simple atlas aesthetic.
-  // Brightness is represented by size; keep points fully opaque on blue.
-  const r=Math.max(.9,3.6-(star.mag+1)*.36)*Math.max(.9,Math.min(1.45,zoom**.35));
+  // Solid stars with more expressive magnitude-dependent radii. Catalogue
+  // B-V supplies an illustrative temperature hue; missing B-V stays white.
+  const r=stellarRadius(star.mag,zoom),color=stellarColors?stellarColor(star.bv):'#ffffff';
   c.globalAlpha=1;
-  drawDot(c,x,y,r,'#ffffff');
+  if(star.mag<.65){
+   c.save();c.shadowColor=color;c.shadowBlur=star.mag<0?8:4;
+   drawDot(c,x,y,r,color);c.restore();
+  }else drawDot(c,x,y,r,color);
   total++;
  }
  c.globalAlpha=1;
