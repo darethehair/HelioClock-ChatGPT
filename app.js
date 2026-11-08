@@ -375,7 +375,7 @@ setInterval(()=>{if(state.playing)shiftTime(15)},180);
 function viewRange(id,key){$(id).addEventListener('input',e=>{state[key]=Number(e.target.value);render()})}
 viewRange('sky-zoom','skyZoom');viewRange('sky-heading','skyHeading');
 viewRange('earth-zoom','earthZoom');viewRange('orrery-zoom','orreryZoom');
-viewRange('moon-zoom','moonZoom');
+// Shared disc viewer handles the Moon slider and pan/zoom interaction.
 $('show-au-rings').addEventListener('change',render);
 for(const button of document.querySelectorAll('[data-orbit-mode]')){
  button.addEventListener('click',()=>{
@@ -455,6 +455,10 @@ function refreshSolarImage(){
 }
 for(const button of document.querySelectorAll('[data-disc-view]'))
  button.addEventListener('click',()=>showDisc(button.dataset.discView));
+$('moon-zoom').addEventListener('input',e=>{
+ const val=Number(e.target.value),key=state.discView==='sun'?'sunZoom':'moonZoom';
+ zoomDisc(val/state[key],null);
+});
 $('solar-refresh').addEventListener('click',refreshSolarImage);
 $('moon-zoom-in').addEventListener('click',()=>zoomDisc(1.25));
 $('moon-zoom-out').addEventListener('click',()=>zoomDisc(.8));
@@ -557,7 +561,7 @@ function wheelZoom(canvasId,controlId,key,lo,hi){
 wheelZoom('sky','sky-zoom','skyZoom',1,3);
 wheelZoom('earth-map','earth-zoom','earthZoom',1,4);
 wheelZoom('orrery','orrery-zoom','orreryZoom',.7,3);
-wheelZoom('moon','moon-zoom','moonZoom',.7,2.8);
+// The shared Sun/Moon stage handles wheel zoom with cursor anchoring.
 function dragCanvas(id,onMove){
  const el=$(id);let start=null;
  el.style.cursor='grab';el.style.touchAction='none';
