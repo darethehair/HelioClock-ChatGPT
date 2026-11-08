@@ -611,20 +611,25 @@ test('Version 29 labels remain enabled for faint stars and sky cursor reports RA
  expect(await page.locator('#show-labels').isChecked()).toBe(true);
  const labels=await page.evaluate(()=>window.__starLabelTexts);
  expect(labels.length).toBeGreaterThan(0);
- const canvas=page.locator('#sky'),box=await canvas.boundingBox();
- await page.mouse.move(box.x+box.width*.5,box.y+box.height*.5);
- await expect(page.locator('#sky-cursor-readout')).toContainText('RA');
+ const canvas=page.locator('#sky');
+ const hover=async(x,y)=>canvas.evaluate((el,[u,v])=>{
+  const r=el.getBoundingClientRect();
+  el.dispatchEvent(new PointerEvent('pointermove',{
+   bubbles:true,clientX:r.left+r.width*u,clientY:r.top+r.height*v
+  }));
+ },[x,y]);
+ await hover(.5,.5);
+ await expect(page.locator('#sky-cursor-readout')).toContainText('Cursor: RA');
  await expect(page.locator('#sky-cursor-readout')).toContainText('Dec');
  await expect(page.locator('#sky-cursor-readout')).toContainText('Alt');
  const before=await page.locator('#sky-cursor-readout').textContent();
- await page.mouse.move(box.x+box.width*.57,box.y+box.height*.48);
+ await hover(.57,.48);
  const after=await page.locator('#sky-cursor-readout').textContent();
  expect(before).not.toEqual(after);
  await page.locator('[data-sky-projection="rect"]').click();
- const rect=await canvas.boundingBox();
- await page.mouse.move(rect.x+rect.width*.5,rect.y+rect.height*.45);
+ await hover(.5,.45);
  await expect(page.locator('#sky-cursor-readout')).toContainText('Dec');
- await page.mouse.move(rect.x-10,rect.y-10);
+ await canvas.evaluate(el=>el.dispatchEvent(new PointerEvent('pointerleave')));
  await expect(page.locator('#sky-cursor-readout')).toContainText('Move your pointer');
  expect(errors).toEqual([]);
 });
