@@ -1,3 +1,4 @@
+import {skyPointVisible} from '../sky-projection.js';
 import assert from 'node:assert/strict';
 import {solar,sunEvents,sunHorizontal,moon,orbitPositions,precessJ2000,horizontal,moonEquatorial} from '../astronomy.js';
 const at=(s)=>new Date(s);
@@ -58,3 +59,9 @@ console.log('Astronomy smoke tests passed.');
   assert.ok(g.ra>=0&&g.ra<360&&Math.abs(g.decl)<30,'valid lunar geocentric equatorial coordinates');
   assert.ok(m.alt>=-90&&m.alt<=90&&m.az>=0&&m.az<360,'valid topocentric horizon');
  }
+
+assert.equal(skyPointVisible(-80,90,600,300,'polar',160,0),true,'star shifted into visible viewport must not be culled');
+assert.equal(skyPointVisible(680,90,600,300,'polar',-160,0),true,'star shifted in from the right must remain visible');
+assert.equal(skyPointVisible(-80,90,600,300,'polar',0,0),false,'truly offscreen star must be culled');
+assert.equal(skyPointVisible(-80,90,600,300,'rect',160,0),false,'rectangular projection is not panned');
+assert.equal(skyPointVisible(45,-60,600,300,'polar',0,150),true,'vertical panning reveals stars above the original viewport');
