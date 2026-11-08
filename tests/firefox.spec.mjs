@@ -424,3 +424,41 @@ test('Version 23 single Earth map clips all raster imagery to the world outline'
  expect(edges).toEqual([[7,19,36],[7,19,36]]);
  expect(errors).toEqual([]);
 });
+
+test('Version 23 Milky Way rectangular contour paths avoid interior seam bridges',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('#observe-date').fill('2026-11-08');
+ await page.locator('#observe-time').fill('18:47');
+ await page.locator('#observe-time').dispatchEvent('change');
+ await page.locator('[data-sky-projection="rect"]').click();
+ await page.locator('[data-sky-light="black"]').click();
+ await expect(page.locator('#milkyway-status')).toContainText('loaded');
+ await page.locator('#show-milkyway-shade').uncheck();
+ await page.evaluate(()=>{
+  const p=CanvasRenderingContext2D.prototype;
+  const old={begin:p.beginPath,move:p.moveTo,line:p.lineTo,close:p.closePath,fill:p.fill};
+  let first=null,prior=null,bridges=0;
+  window.__milkyBridges=0;window.__milkyFills=0;
+  function check(x,y,ctx){
+   if(!prior)return;
+   const el=ctx.canvas,w=el.clientWidth,h=el.clientHeight;
+   // Exclude valid spherical-polygon seam closures along the top/bottom frame.
+   if(el.id==='sky'&&Math.abs(x-prior[0])>w*.6&&
+      Math.min(y,prior[1])>35&&Math.max(y,prior[1])<h-55)bridges++;
+  }
+  p.beginPath=function(...a){if(this.canvas.id==='sky'){first=null;prior=null;bridges=0}return old.begin.apply(this,a)};
+  p.moveTo=function(x,y){if(this.canvas.id==='sky'){first=[x,y];prior=[x,y]}return old.move.call(this,x,y)};
+  p.lineTo=function(x,y){if(this.canvas.id==='sky'){check(x,y,this);prior=[x,y]}return old.line.call(this,x,y)};
+  p.closePath=function(...a){if(this.canvas.id==='sky'&&first)check(first[0],first[1],this);return old.close.apply(this,a)};
+  p.fill=function(...a){
+   if(this.canvas.id==='sky'&&a[0]==='evenodd'){window.__milkyBridges+=bridges;window.__milkyFills++;}
+   return old.fill.apply(this,a);
+  };
+ });
+ await page.locator('#show-milkyway-shade').check();
+ const counts=await page.evaluate(()=>({bridges:window.__milkyBridges,fills:window.__milkyFills}));
+ expect(counts.fills).toBeGreaterThanOrEqual(5);
+ expect(counts.bridges).toBe(0);
+ expect(errors).toEqual([]);
+});
