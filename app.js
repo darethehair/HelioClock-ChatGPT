@@ -198,7 +198,7 @@ function drawMoon(){
   updateDiscViewport();
   return;
  }
- const info=renderMoon($('moon'),state.date,state.lat,state.lon,state.moonZoom);
+ const info=renderMoon($('moon'),state.date,state.lat,state.lon,1);
  const m=moon(state.date,state.lat,state.lon);
  $('moon-zoom-value').textContent=state.moonZoom.toFixed(1)+'×';
  $('moon-progress-fill').style.width=(m.phase*100).toFixed(1)+'%';
@@ -396,7 +396,7 @@ function updateDiscViewport(){
  const zoom=sunMode?state.sunZoom:state.moonZoom;
  const panX=sunMode?state.sunPanX:state.moonPanX,panY=sunMode?state.sunPanY:state.moonPanY;
  const el=sunMode?solarPhoto:$('moon');
- el.style.transform='translate('+panX+'px,'+panY+'px)'+(sunMode?' scale('+zoom+')':'');
+ el.style.transform='translate('+panX+'px,'+panY+'px) scale('+zoom+')';
  $('moon-zoom-value').textContent=zoom.toFixed(1)+'×';
 }
 function zoomDisc(factor,focus=discFocus){
@@ -408,10 +408,8 @@ function zoomDisc(factor,focus=discFocus){
  state[px]+=(1-next/old)*(ax-state[px]);
  state[py]+=(1-next/old)*(ay-state[py]);
  state[k]=next;
- // Keep the original lunar phase synthesis at 1× and apply zoom in CSS;
- // its texture remains fully resolved while the pointer anchor stays stable.
- if(!sunMode)render();
- else updateDiscViewport();
+ // Image transforms preserve the surface under the cursor for both bodies.
+ updateDiscViewport();
 }
 function resetDisc(){
  if(state.discView==='sun'){state.sunZoom=1;state.sunPanX=0;state.sunPanY=0}
