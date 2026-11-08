@@ -1,4 +1,4 @@
-import {projectRect,rectGeometry} from './sky-projection.js';
+import {projectRect,rectGeometry,skyPointVisible} from './sky-projection.js';
 import {RAD,wrap,clamp,horizontal,precessJ2000} from './astronomy.js';
 import {BRIGHT_STARS} from './sky-catalog.js';
 
@@ -79,9 +79,7 @@ export function drawSkyAtlas(c,{
   // The polar canvas context is translated when the observer pans a zoomed
   // chart. Cull in visible *screen* coordinates, not unshifted projection
   // coordinates: otherwise whole edge regions lose stars prematurely.
-  const screenX=x+(mode==='polar'?panX:0);
-  const screenY=y+(mode==='polar'?panY:0);
-  if(screenX<0||screenX>width||screenY<0||screenY>height)continue;
+  if(!skyPointVisible(x,y,width,height,mode,panX,panY))continue;
   // Solid stars with more expressive magnitude-dependent radii. Catalogue
   // B-V supplies an illustrative temperature hue; missing B-V stays white.
   const r=stellarRadius(star.mag,zoom),color=stellarColors?stellarColor(star.bv):'#ffffff';
@@ -100,8 +98,7 @@ export function drawSkyAtlas(c,{
    if(star.mag>Math.min(magLimit,3.4))continue;
    const h=toAltAz(star,date,lat,lon,precession),p=project(h.az,h.alt);
    if(!p)continue;
-   const lx=p[0]+(mode==='polar'?panX:0),ly=p[1]+(mode==='polar'?panY:0);
-   if(lx<8||lx>width-40||ly<10||ly>height-9)continue;
+   if(!skyPointVisible(p[0]-8,p[1]-10,width-48,height-19,mode,panX,panY))continue;
    c.fillStyle='#ffffff';c.font='10px sans-serif';c.fillText(star.name,p[0]+5,p[1]-6);
   }
  }
