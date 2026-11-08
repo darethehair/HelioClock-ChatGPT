@@ -566,6 +566,8 @@ function applyLayout(next){
   const input=document.querySelector('[data-panel-visibility="'+key+'"]');
   if(input)input.checked=activeLayout[key];
  }
+ document.querySelector('.dashboard').classList.toggle('single-panel',
+   [...document.querySelectorAll('.dashboard > .panel')].filter(el=>!el.hidden).length===1);
  try{localStorage.setItem('helioclock-layout-v21',JSON.stringify(activeLayout))}catch{}
  requestAnimationFrame(render);
 }
