@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {solar,sunEvents,sunHorizontal,moon,orbitPositions,precessJ2000,horizontal} from '../astronomy.js';
+import {solar,sunEvents,sunHorizontal,moon,orbitPositions,precessJ2000,horizontal,moonEquatorial} from '../astronomy.js';
 const at=(s)=>new Date(s);
 const vernal=solar(at('2026-03-20T14:00:00Z'));
 assert.ok(Math.abs(vernal.decl)<.5,'March equinox solar declination');
@@ -41,3 +41,20 @@ console.log('Astronomy smoke tests passed.');
   'precession must affect sky coordinates in a real horizon projection');
  const vega=precessJ2000(279.235,38.784,nextCentury);
  assert.ok(Number.isFinite(vega.ra)&&Number.isFinite(vega.decl));
+
+ // Independent real-world reference events: 2024-04-08 total solar eclipse
+ // (Moon near Sun; new moon), 2024-03-25 penumbral lunar eclipse (full moon).
+ const newEclipse=at('2024-04-08T18:00:00Z');
+ const moonNew=moon(newEclipse,30,-100),sunNew=solar(newEclipse);
+ const angularRA=Math.min(Math.abs(moonNew.ra-sunNew.ra),360-Math.abs(moonNew.ra-sunNew.ra));
+ assert.ok(angularRA<4&&Math.abs(moonNew.decl-sunNew.decl)<4,
+  'April 8 2024 new moon close to Sun by RA and declination');
+ assert.ok(moonNew.illuminated<.03,'solar eclipse has nearly dark Moon');
+ const fullEclipse=moon(at('2024-03-25T07:00:00Z'),49.19,-98.10);
+ assert.ok(fullEclipse.illuminated>.97,'lunar eclipse occurs near full Moon');
+ for(const date of [at('2024-04-08T18:00:00Z'),at('2026-11-08T12:00:00Z'),at('2030-06-15T12:00:00Z')]){
+  const m=moon(date,49.19,-98.10),g=moonEquatorial(date);
+  assert.ok(m.distanceKm>350000&&m.distanceKm<410000,'lunar distance in expected range');
+  assert.ok(g.ra>=0&&g.ra<360&&Math.abs(g.decl)<30,'valid lunar geocentric equatorial coordinates');
+  assert.ok(m.alt>=-90&&m.alt<=90&&m.az>=0&&m.az<360,'valid topocentric horizon');
+ }
