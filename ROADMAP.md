@@ -46,6 +46,12 @@ The experimental application already contains: Sun events and annual twilight ch
 - [x] Retain polar compass and separate pure-black mode, white magnitude-scaled stars, sidereal steps and optional precession.
 - [ ] Additional SChronos concepts for future iteration: ecliptic overlay, richer event annotations, seasonal solar paths, and refined typography to avoid crowded labels.
 
+## Completed Version 19 Milky Way refinement
+
+- [x] Replace the uniform galactic-plane glow with subtle, nested, irregular neutral-grey fills taken directly from the published five-level Vieira contours, including interior polygon holes.
+- [x] Rename the setting to **Milky Way shading** and preserve separate outline and galactic-centre controls.
+- [x] Retain the full-sphere rectangular sky, polar compass, epoch precession toggle, daylight dimming, and below-horizon visibility. Browser checks confirm actual even-odd contour fills.
+
 ## Priority B: Enhanced sky observatory
 
 - [x] **Milky Way overlay (Version 18).** Independent controls for (a) published five-level Vieira brightness outlines (D3-Celestial/BSD), (b) illustrative galactic-plane glow, and (c) galactic-centre marker. Both polar and rectangular projections; optional precession and below-horizon mode. **Glow is artistic, not photometric.**
