@@ -173,3 +173,17 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 @media(max-width:750px){
  .sky-panel:has([data-sky-projection="rect"].selected) #sky{height:330px}
 }
+
+/* V20 identity, offline build provenance and observational readouts. */
+.identity .app-version{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;color:#f5cb8e;letter-spacing:.2px;vertical-align:middle;margin-left:7px;border:1px solid #997747;border-radius:5px;padding:3px 6px;white-space:nowrap}
+.dock-version{font-size:10px;letter-spacing:.4px;color:#f0cd94;white-space:nowrap;border:1px solid #78613c;border-radius:5px;padding:4px 6px}
+.celestial-readout{color:#c2d7eb;background:#101f34;border:1px solid #314961;border-radius:7px;padding:10px 12px;margin-top:8px;font-size:11px;line-height:1.7;font-variant-numeric:tabular-nums}
+.credits-footer{letter-spacing:.1px;text-transform:none;align-items:start;font-size:11px;line-height:1.9;color:#9ab1cc}
+.credits-footer>div{flex:1}
+.credits-footer>div:last-child{text-align:right}
+.credits-footer strong{font-size:12px;color:#d8e7f7}
+.build-meta{font-size:10px;color:#839db9}
+.source-credits{margin-top:5px}
+.source-credits summary{cursor:pointer;color:#f1c58d}
+.source-credits p{margin:4px 0 0;max-width:620px;font-size:10px;color:#aac0d6;line-height:1.6;letter-spacing:0}
+@media(max-width:750px){.credits-footer>div:last-child{text-align:left}.identity .app-version{font-size:10px;margin-left:2px}.dock-version{display:none}}
