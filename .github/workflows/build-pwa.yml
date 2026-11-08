@@ -23,6 +23,8 @@ jobs:
           node --check --experimental-default-type=module solar-chart.js
           node --check --experimental-default-type=module moon-renderer.js
           node --check --experimental-default-type=module sky-atlas.js
+          node --check --experimental-default-type=module milky-way.js
+          node --check --experimental-default-type=module sky-projection.js
           node --check sw.js
           node --experimental-default-type=module tests/astronomy.test.mjs
       - name: Bundle independent visualizations
@@ -67,6 +69,14 @@ jobs:
             https://raw.githubusercontent.com/ofrohn/d3-celestial/master/data/constellations.lines.json \
             --output /tmp/helioclock-atlas/constellations.lines.json
           python3 scripts/build-sky-data.py /tmp/helioclock-atlas dist
+      - name: Bundle published Milky Way brightness outlines
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --max-time 90 --silent --show-error \
+            https://raw.githubusercontent.com/ofrohn/d3-celestial/master/data/mw.json \
+            --output /tmp/helioclock-atlas/mw.json
+          python3 scripts/build-milky-way.py /tmp/helioclock-atlas/mw.json dist/sky-milkyway.json
       - name: Stage static files for browser test
         run: cp index.html styles.css astronomy.js manifest.webmanifest sw.js icon.svg dist/ && echo '{"test":true}' > dist/build-info.json
       - name: Install Firefox for browser checks
