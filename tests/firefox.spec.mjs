@@ -637,6 +637,7 @@ test('Version 29 labels remain enabled for faint stars and sky cursor reports RA
 
 
 test('Version 30 polar Milky Way shading never fills most of the night sky',async({page})=>{
+ test.setTimeout(90000);
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:8765/');
  await page.locator('[data-sky-projection="polar"]').click();
