@@ -59,6 +59,20 @@ jobs:
           assert p.read_bytes()[:2] == bytes.fromhex('ffd8'), 'Invalid JPEG lunar mosaic'
           print('LRO lunar photo:',p.stat().st_size,'bytes')
           PY
+      - name: Bundle fallback NASA SDO solar continuum image
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --max-time 120 --silent --show-error \
+            https://sdo.gsfc.nasa.gov/assets/img/latest/latest_1024_HMIIC.jpg \
+            --output dist/solar-fallback.jpg
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('dist/solar-fallback.jpg')
+          assert p.stat().st_size > 50000, 'NASA solar reference is missing or too small'
+          assert p.read_bytes()[:2] == bytes.fromhex('ffd8'), 'Invalid JPEG solar reference'
+          print('Offline NASA SDO solar reference:',p.stat().st_size,'bytes')
+          PY
       - name: Bundle offline star catalogue and constellation stick figures
         shell: bash
         run: |
@@ -80,7 +94,7 @@ jobs:
             --output /tmp/helioclock-atlas/mw.json
           python3 scripts/build-milky-way.py /tmp/helioclock-atlas/mw.json dist/sky-milkyway.json
       - name: Stage static files for browser test
-        run: cp index.html styles.css astronomy.js manifest.webmanifest sw.js icon.svg dist/ && printf '{"version":24,"test":true,"commit":"%s","built_utc":"%s"}\n' "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > dist/build-info.json
+        run: cp index.html styles.css astronomy.js manifest.webmanifest sw.js icon.svg dist/ && printf '{"version":25,"test":true,"commit":"%s","built_utc":"%s"}\n' "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > dist/build-info.json
       - name: Install Firefox for browser checks
         run: npx playwright install --with-deps firefox
       - name: Exercise browser controls in Firefox
@@ -91,7 +105,7 @@ jobs:
           set -euo pipefail
           mkdir -p dist
           cp index.html styles.css astronomy.js manifest.webmanifest sw.js icon.svg dist/
-          printf '{"version":24,"commit":"%s","built_utc":"%s","repository":"%s"}\n' "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$GITHUB_REPOSITORY" > dist/build-info.json
+          printf '{"version":25,"commit":"%s","built_utc":"%s","repository":"%s"}\n' "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$GITHUB_REPOSITORY" > dist/build-info.json
       - name: Upload PWA ZIP
         uses: actions/upload-artifact@v4
         with:
