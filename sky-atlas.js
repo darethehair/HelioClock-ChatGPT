@@ -42,7 +42,7 @@ export function stellarRadius(mag,zoom=1){
 }
 function drawDot(c,x,y,r,color){c.beginPath();c.arc(x,y,r,0,2*Math.PI);c.fillStyle=color;c.fill();}
 export function drawSkyAtlas(c,{
- date,lat,lon,width,height,mode='polar',zoom=1,heading=0,magLimit=3.5,
+ date,lat,lon,width,height,mode='polar',zoom=1,heading=0,panX=0,panY=0,magLimit=3.5,
  showLabels=true,showStars=true,showConstellations=false,precession=true,brightSky=false,showBelowHorizon=true,stellarColors=true
 }){
  const X=width/2,Y=height/2,radius=(Math.min(width-35,height-20)/2-14)*zoom;
@@ -76,7 +76,12 @@ export function drawSkyAtlas(c,{
   const h=toAltAz(star,date,lat,lon,precession),pos=project(h.az,h.alt);
   if(!pos)continue;
   const [x,y]=pos;
-  if(x<0||x>width||y<0||y>height)continue;
+  // The polar canvas context is translated when the observer pans a zoomed
+  // chart. Cull in visible *screen* coordinates, not unshifted projection
+  // coordinates: otherwise whole edge regions lose stars prematurely.
+  const screenX=x+(mode==='polar'?panX:0);
+  const screenY=y+(mode==='polar'?panY:0);
+  if(screenX<0||screenX>width||screenY<0||screenY>height)continue;
   // Solid stars with more expressive magnitude-dependent radii. Catalogue
   // B-V supplies an illustrative temperature hue; missing B-V stays white.
   const r=stellarRadius(star.mag,zoom),color=stellarColors?stellarColor(star.bv):'#ffffff';
@@ -94,7 +99,9 @@ export function drawSkyAtlas(c,{
   for(const star of BRIGHT_STARS){
    if(star.mag>Math.min(magLimit,3.4))continue;
    const h=toAltAz(star,date,lat,lon,precession),p=project(h.az,h.alt);
-   if(!p||p[0]<8||p[0]>width-40||p[1]<10||p[1]>height-9)continue;
+   if(!p)continue;
+   const lx=p[0]+(mode==='polar'?panX:0),ly=p[1]+(mode==='polar'?panY:0);
+   if(lx<8||lx>width-40||ly<10||ly>height-9)continue;
    c.fillStyle='#ffffff';c.font='10px sans-serif';c.fillText(star.name,p[0]+5,p[1]-6);
   }
  }
