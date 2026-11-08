@@ -591,3 +591,40 @@ test('Version 28 zoomed polar rendering stays responsive during edge panning',as
  await expect(page.locator('#sky-atlas-count')).toContainText('stars');
  expect(errors).toEqual([]);
 });
+
+
+test('Version 29 labels remain enabled for faint stars and sky cursor reports RA Dec',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('[data-sky-projection="polar"]').click();
+ await page.locator('#star-magnitude').selectOption('7');
+ await page.locator('#show-labels').check();
+ await page.locator('#sky').evaluate(el=>{
+  window.__starLabelTexts=[];
+  const old=CanvasRenderingContext2D.prototype.fillText;
+  CanvasRenderingContext2D.prototype.fillText=function(text,...args){
+   if(this.canvas.id==='sky')window.__starLabelTexts.push(String(text));
+   return old.call(this,text,...args);
+  };
+ });
+ await page.locator('#sky-zoom').fill('2.5');
+ expect(await page.locator('#show-labels').isChecked()).toBe(true);
+ const labels=await page.evaluate(()=>window.__starLabelTexts);
+ expect(labels.length).toBeGreaterThan(0);
+ const canvas=page.locator('#sky'),box=await canvas.boundingBox();
+ await page.mouse.move(box.x+box.width*.5,box.y+box.height*.5);
+ await expect(page.locator('#sky-cursor-readout')).toContainText('RA');
+ await expect(page.locator('#sky-cursor-readout')).toContainText('Dec');
+ await expect(page.locator('#sky-cursor-readout')).toContainText('Alt');
+ const before=await page.locator('#sky-cursor-readout').textContent();
+ await page.mouse.move(box.x+box.width*.57,box.y+box.height*.48);
+ const after=await page.locator('#sky-cursor-readout').textContent();
+ expect(before).not.toEqual(after);
+ await page.locator('[data-sky-projection="rect"]').click();
+ const rect=await canvas.boundingBox();
+ await page.mouse.move(rect.x+rect.width*.5,rect.y+rect.height*.45);
+ await expect(page.locator('#sky-cursor-readout')).toContainText('Dec');
+ await page.mouse.move(rect.x-10,rect.y-10);
+ await expect(page.locator('#sky-cursor-readout')).toContainText('Move your pointer');
+ expect(errors).toEqual([]);
+});
