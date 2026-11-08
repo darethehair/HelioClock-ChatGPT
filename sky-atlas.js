@@ -10,7 +10,7 @@ Promise.all([
  fetch('./sky-stars.json').then(r=>{if(!r.ok)throw Error('Star atlas '+r.status);return r.json()}),
  fetch('./sky-constellations.json').then(r=>{if(!r.ok)throw Error('Constellation atlas '+r.status);return r.json()})
 ]).then(([stars,lines])=>{
- faint=stars.map(([ra,dec,mag,bv])=>({ra,dec,mag,bv}));
+ faint=stars.map(([ra,dec,mag,bv,name,proper])=>({ra,dec,mag,bv,name,proper}));
  constellations=lines;ready=true;
 }).catch(e=>{console.warn('Using bright-star fallback:',e);loadError=true}).finally(()=>{
  window.dispatchEvent(new Event('helioclock-sky-atlas-ready'));
@@ -91,15 +91,52 @@ export function drawSkyAtlas(c,{
   total++;
  }
  c.globalAlpha=1;
- // Do not label the full 7th-magnitude catalogue: only named stars, and
- // suppress ALL labels when the user enables faint-star mode.
- if(showLabels&&magLimit<=4.5){
+ // At 1× the familiar bright proper names remain prominent. As the polar
+ // view zooms inward, allow progressively fainter proper, Bayer and Flamsteed
+ // identifiers without turning the chart into an unreadable cloud of text.
+ if(showLabels){
+  const labelLimit=Math.min(magLimit,3.4+Math.max(0,mode==='polar'?zoom-1:0)*1.8);
+  const candidates=[];
+  // Keep the original familiar bright names even in atlas fallback mode.
   for(const star of BRIGHT_STARS){
-   if(star.mag>Math.min(magLimit,3.4))continue;
+   if(star.mag<=Math.min(labelLimit,3.4))
+    candidates.push({...star,priority:-2});
+  }
+  // The D3 star-name supplement supplies further proper names and standard
+  // Bayer/Flamsteed designations, not invented labels for unnamed stars.
+  if(ready){
+   for(const star of faint){
+    if(!star.name||star.mag>labelLimit)continue;
+    if(mode==='polar'&&zoom<1.35&&!star.proper)continue;
+    if(BRIGHT_STARS.some(b=>b.name===star.name))continue;
+    candidates.push({...star,priority:star.proper?-1:0});
+   }
+  }
+  candidates.sort((a,b)=>a.priority-b.priority||a.mag-b.mag);
+  const occupied=[];
+  // Limit labels with a real on-screen rectangle collision test. Greater
+  // magnification buys space; labels are checked against previously placed
+  // labels, so no two text boxes are allowed to overlap.
+  const budget=mode==='polar'?Math.round(35+Math.max(0,zoom-1)*65):45;
+  c.font='10px sans-serif';c.textBaseline='alphabetic';
+  let placed=0;
+  for(const star of candidates){
+   if(placed>=budget)break;
    const h=toAltAz(star,date,lat,lon,precession),p=project(h.az,h.alt);
    if(!p)continue;
-   if(!skyPointVisible(p[0]-8,p[1]-10,width-48,height-19,mode,panX,panY))continue;
-   c.fillStyle='#ffffff';c.font='10px sans-serif';c.fillText(star.name,p[0]+5,p[1]-6);
+   const sx=p[0]+(mode==='polar'?panX:0),sy=p[1]+(mode==='polar'?panY:0);
+   if(!skyPointVisible(p[0],p[1],width,height,mode,panX,panY))continue;
+   const textWidth=c.measureText(star.name).width;
+   const positions=[[7,-6],[-textWidth-7,-6],[7,14],[-textWidth-7,14]];
+   for(const [dx,dy] of positions){
+    const left=sx+dx-2,top=sy+dy-10,right=left+textWidth+4,bottom=top+13;
+    if(left<3||right>width-3||top<2||bottom>height-2)continue;
+    if(occupied.some(o=>left<o.right+4&&right>o.left-4&&top<o.bottom+3&&bottom>o.top-3))continue;
+    c.fillStyle=star.priority===0?'#bfd0e2':'#ffffff';
+    c.fillText(star.name,p[0]+dx,p[1]+dy);
+    occupied.push({left,top,right,bottom});placed++;
+    break;
+   }
   }
  }
  c.restore();
