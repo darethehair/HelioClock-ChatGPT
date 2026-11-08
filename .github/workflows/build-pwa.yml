@@ -84,6 +84,9 @@ jobs:
           curl --fail --location --retry 3 --max-time 120 --silent --show-error \
             https://raw.githubusercontent.com/ofrohn/d3-celestial/master/data/constellations.lines.json \
             --output /tmp/helioclock-atlas/constellations.lines.json
+          curl --fail --location --retry 3 --max-time 120 --silent --show-error \
+            https://raw.githubusercontent.com/ofrohn/d3-celestial/master/data/starnames.json \
+            --output /tmp/helioclock-atlas/starnames.json
           python3 scripts/build-sky-data.py /tmp/helioclock-atlas dist
       - name: Bundle published Milky Way brightness outlines
         shell: bash
