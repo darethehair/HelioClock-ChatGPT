@@ -33,7 +33,7 @@ export function dayBands(date,latitude,longitude){
 }
 const COLORS={
  night:'#081329',astronomical:'#253b72',nautical:'#3664a3',civil:'#519bd1',
- daylight:'#80c9ec',sun:'#ffd47c',green:'#76e8a7'
+ daylight:'#80c9ec',sun:'#ffd47c',duration:'#10335f'
 };
 export const chartGeometry=(width,height)=>({left:49,right:width-18,top:16,bottom:height-27});
 function drawLine(c,x1,y1,x2,y2,color,width=1){c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.strokeStyle=color;c.lineWidth=width;c.stroke()}
@@ -92,7 +92,9 @@ export function drawSolarYear(canvas,{year,lat,lon,selectedDate,onSelect}){
  const showDuration=Math.abs(lat)<66;
  if(showDuration){
    c.beginPath();data.forEach((d,i)=>{const yy=g.bottom-d.daylight/24*(g.bottom-g.top);i?c.lineTo(x(i),yy):c.moveTo(x(i),yy)});
-   c.strokeStyle=COLORS.green;c.lineWidth=1.7;c.setLineDash([4,3]);c.stroke();c.setLineDash([]);
+   c.save();
+   c.strokeStyle='#f7fcff';c.lineWidth=4.4;c.setLineDash([]);c.stroke();
+   c.strokeStyle=COLORS.duration;c.lineWidth=2.8;c.setLineDash([7,3]);c.stroke();c.restore();
  }
  for(let hr=0;hr<=24;hr+=3){
   const yy=y(hr);drawLine(c,g.left,yy,g.right,yy,'#cce3ff30');
