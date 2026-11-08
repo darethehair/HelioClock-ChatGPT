@@ -1,11 +1,12 @@
-import {RAD,DEG,wrap,horizontal,precessJ2000,sidereal} from './astronomy.js';
+import {RAD,DEG,wrap,horizontal,precessJ2000} from './astronomy.js';
 import {projectRect,rectGeometry} from './sky-projection.js';
 
 /**
- * Milky Way overlay. The glow follows the actual IAU J2000 galactic equator,
- * with a brighter central bulge around l=0°, but it is illustrative, not a
- * calibrated surface-brightness or dust-extinction map. The separate outline
- * layer uses Vieira's five-level Milky Way Outline Catalog (D3-Celestial).
+ * Milky Way chart using the five published Vieira contour levels. Shading
+ * comes only from their irregular filled polygons, never from an artificial
+ * smooth band along the galactic equator. Nested, semi-transparent neutral
+ * greys give the original SidClock-style chart appearance. The same outlines
+ * can be stroked separately.
  */
 let levels=[],ready=false,failed=false;
 export const milkyWayStatus=()=>({ready,failed,levels:levels.length});
@@ -50,6 +51,84 @@ function drawSegments(c,points,maxSpan){
  }
  c.stroke();
 }
+/**
+ * Project a complete closed contour, including positions below the horizon.
+ * Visibility is handled by the clipping region in the caller instead of by
+ * skipping vertices (which would break a filled polygon at the horizon).
+ * Rectangular coordinates are unwrapped across the 0°/360° azimuth seam.
+ * Interior rings are anchored to the same unwrapped longitude as the outer
+ * ring so the Canvas even-odd fill retains astronomical dark holes.
+ */
+function projectedRings(rings,projectPoint,{mode,width,height,heading}){
+ const g=mode==='rect'?rectGeometry(width,height):null;
+ const span=g?g.right-g.left:0;
+ const output=[];
+ let reference=null;
+ for(const ring of rings){
+  const xy=[];
+  let previous=null;
+  for(const [ra,dec] of ring){
+   const point=projectPoint(ra,dec);
+   if(!point)continue;
+   let x=point[0];
+   if(g){
+    const anchor=previous===null?(reference??x):previous;
+    x+=Math.round((anchor-x)/span)*span;
+   }
+   xy.push([x,point[1]]);
+   previous=x;
+  }
+  if(xy.length>2){
+   if(reference===null)reference=xy[0][0];
+   output.push(xy);
+  }
+ }
+ return output;
+}
+function traceRings(c,rings,dx=0){
+ c.beginPath();
+ for(const ring of rings){
+  c.moveTo(ring[0][0]+dx,ring[0][1]);
+  for(let i=1;i<ring.length;i++)c.lineTo(ring[i][0]+dx,ring[i][1]);
+  c.closePath();
+ }
+}
+/**
+ * Draw one even-odd polygon for each catalogue brightness tier, including
+ * hole rings. Repeat rectangular polygons across the azimuth seam, with
+ * matching hole offsets. The clip mask imposes the visible hemisphere.
+ */
+function paintContours(c,levels,projectPoint,opts,visibility,shade,outline){
+ const g=opts.mode==='rect'?rectGeometry(opts.width,opts.height):null;
+ const span=g?g.right-g.left:0;
+ const alpha=[.095,.060,.060,.070,.085];
+ for(let k=0;k<levels.length;k++){
+  const rings=projectedRings(levels[k].rings,projectPoint,opts);
+  if(!rings.length)continue;
+  // Spherical contours can cross the rectangular azimuth seam; repeat each
+  // uninterrupted path just far enough to cover the two sides of the map.
+  const offsets=g?[-2,-1,0,1,2].map(n=>n*span):[0];
+  for(const dx of offsets){
+   if(g){
+    let min=Infinity,max=-Infinity;
+    for(const ring of rings)for(const p of ring){
+     min=Math.min(min,p[0]+dx);max=Math.max(max,p[0]+dx);
+    }
+    if(max<g.left||min>g.right)continue;
+   }
+   traceRings(c,rings,dx);
+   if(shade){
+    c.fillStyle='rgba(190,198,209,'+(alpha[k]*visibility)+')';
+    c.fill('evenodd');
+   }
+   if(outline){
+    c.strokeStyle='rgba(192,204,222,'+((.14+.035*k)*visibility)+')';
+    c.lineWidth=k===0?1.0:.7;
+    c.stroke();
+   }
+  }
+ }
+}
 export function drawMilkyWay(c,opts){
  const {date,lat,lon,width,height,mode='polar',zoom=1,heading=0,
   precession=true,showBelowHorizon=true,showShade=false,showOutline=false,
@@ -63,45 +142,23 @@ export function drawMilkyWay(c,opts){
  c.save();
  if(mode==='rect'){
   const g=rectGeometry(width,height);
-  c.beginPath();c.rect(g.left,g.top,g.right-g.left,g.bottom-g.top);c.clip();
+  c.beginPath();c.rect(g.left,g.top,g.right-g.left,(showBelowHorizon?g.bottom:(g.top+g.bottom)/2)-g.top);c.clip();
  }else{
   const R=(Math.min(width-35,height-20)/2-14)*zoom;
   c.beginPath();c.arc(width/2,height/2,R,0,2*Math.PI);c.clip();
  }
- if(showShade){
-  // Thick antialiased luminous strokes on the projected galactic plane.
-  // Width adapts to plot dimensions but remains an illustrative angular band.
-  const baseline=mode==='rect'?(height-40)/180:Math.min(width,height)/180;
-  const bandScale=Math.max(1,baseline)*zoom;
-  for(let i=0;i<180;i++){
-   const l=i*2,points=[];
-   // 2° arc step keeps curved transitions smooth while respecting seams.
-   for(let j=0;j<3;j++){
-    const ll=l+j;
-    const eq=galacticToJ2000(ll,0);
-    points.push(position(toAltAz(eq.ra,eq.dec,date,lat,lon,precession)));
-   }
-   const centralBoost=Math.exp(-Math.pow(Math.min(Math.abs(wrap(l+180,360)-180),180)/37,2));
-   const maxSpan=mode==='rect'?width*.24:Math.min(width,height)*.37;
-   for(const [degrees,alpha] of [[36,.013],[23,.026],[12,.038]]){
-    c.strokeStyle='rgba(215,226,255,'+(alpha*visibility*(1+centralBoost*.85))+')';
-    c.lineWidth=Math.max(1,degrees*bandScale);c.lineCap='round';c.lineJoin='round';
-    drawSegments(c,points,maxSpan);
-   }
-  }
- }
- if(showOutline&&ready){
-  c.lineWidth=1;
-  c.lineCap='round';
-  const maxSpan=mode==='rect'?width*.18:Math.min(width,height)*.34;
-  for(let k=0;k<levels.length;k++){
-   c.strokeStyle='rgba(197,214,249,'+((.15+.055*k)*visibility)+')';
-   c.lineWidth=k===0?1.25:.8;
-   for(const ring of levels[k].rings){
-    const points=ring.map(([ra,dec])=>position(toAltAz(ra,dec,date,lat,lon,precession)));
-    drawSegments(c,points,maxSpan);
-   }
-  }
+ // Clip both shaded regions and outline strokes to the appropriate view.
+ // The polar sky always stops at the horizon; rectangular may show -90°.
+ if((showShade||showOutline)&&ready){
+  const rawProjection=h=>{
+   if(!Number.isFinite(h.az)||!Number.isFinite(h.alt))return null;
+   if(mode==='rect')return projectRect(h.az,h.alt,width,height,heading);
+   const R=(Math.min(width-35,height-20)/2-14)*zoom;
+   const angle=(h.az-90-heading)*RAD,r=R*(1-h.alt/90);
+   return [width/2+Math.cos(angle)*r,height/2+Math.sin(angle)*r];
+  };
+  const projectPoint=(ra,dec)=>rawProjection(toAltAz(ra,dec,date,lat,lon,precession));
+  paintContours(c,levels,projectPoint,{mode,width,height,heading},visibility,showShade,showOutline);
  }
  if(showCenter){
   const h=toAltAz(GALACTIC_CENTER.ra,GALACTIC_CENTER.dec,date,lat,lon,precession);
