@@ -27,6 +27,15 @@ The experimental application already contains: Sun events and annual twilight ch
 - [x] **Daylight-year graph contrast:** Replace the pale green daylight-duration line with a thicker, high-contrast dark blue/navy line visible across the light-blue daylight band; preserve twilight layers and clear labeling.
 - [x] **Solar nadir on Earth maps:** Show the subsolar zenith and antipodal nadir markers, with distinctive symbols/labels in the supported map projections; ensure globe back-side occlusion is respected.
 
+## Version 20 release milestones
+
+- [x] Display v20 in main header and persistent/fullscreen observation dock; embed version, UTC build date and commit hash in offline metadata.
+- [x] Credit “Created by Darethehair with assistance from ChatGPT”, link the experiment's GitHub repository, and acknowledge NASA imagery, D3-Celestial/Vieira and Astronomy Engine.
+- [x] Add optional mean ecliptic-of-date overlay in polar and full-altitude rectangular views.
+- [x] Show Sun/Moon alt/az and equatorial RA/Dec, plus Moon distance and illuminated fraction.
+- [x] Replace the Moon's previous few-term geocentric model and mean-phase estimates with MIT-licensed Astronomy Engine topocentric ephemerides and phase calculations, with eclipse-era regression tests.
+- [ ] Follow-up: precision review of sidereal frame, atmospheric refraction and lunar image orientation, and rigorous ephemeris comparison across epochs and observer locations.
+
 ## Priority A: Scientific foundations and review
 
 - [ ] **Optional later original-versus-experimental feature inventory.** Not a prerequisite for current HelioClock development: the user has already requested the missing functionality they can identify. Revisit only if a specific parity gap arises or a comparison becomes useful. **For future rebuilds of existing applications, a thorough source-and-user-experience audit should be Step 1, before implementation.**
