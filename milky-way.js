@@ -1,4 +1,4 @@
-import {geoEquirectangular,geoPath,geoArea} from 'd3-geo';
+import {geoEquirectangular,geoAzimuthalEquidistant,geoPath,geoArea} from 'd3-geo';
 import {RAD,DEG,wrap,horizontal,precessJ2000} from './astronomy.js';
 import {projectRect,rectGeometry} from './sky-projection.js';
 
@@ -180,6 +180,57 @@ function paintRectContours(c,levels,{date,lat,lon,width,height,heading,precessio
  }
  c.restore();
 }
+/**
+ * Polar brightness polygons must be clipped on the sphere before drawing.
+ * Directly connecting J2000 rings after local Alt/Az projection can select
+ * the *complement* of a Milky Way region when the contour crosses the
+ * observer's horizon or encloses the zenith. Flattening MultiPolygons into
+ * one even-odd path also mixes unrelated components and their hole parity.
+ *
+ * The azimuthal equidistant projection preserves the existing polar sky
+ * geometry: distance from zenith = (90° - altitude) * radius / 90°.
+ * Native spherical clipAngle(90) closes boundary-crossing polygons along
+ * the horizon, rather than connecting their hidden vertices through the
+ * visible hemisphere. Each original Polygon retains its interior rings.
+ */
+function paintPolarContours(c,levels,{date,lat,lon,width,height,zoom,heading,precession},visibility,shade,outline){
+ const radius=(Math.min(width-35,height-20)/2-14)*zoom;
+ const projection=geoAzimuthalEquidistant()
+  .rotate([0,-90]).clipAngle(90)
+  .scale(radius/(Math.PI/2))
+  .translate([width/2,height/2]).precision(.2);
+ const path=geoPath(projection,c);
+ const alpha=[.095,.060,.060,.070,.085];
+ for(let k=0;k<levels.length;k++){
+  const polygons=levels[k].polygons||[];
+  for(const polygon of polygons){
+   const rings=polygon.filter(r=>r.length>2).map(ring=>ring.map(([ra,dec])=>{
+    const h=toAltAz(ra,dec,date,lat,lon,precession);
+    // Spherical azimuthal projection centred on north pole: azimuth 0
+    // (canvas up) corresponds to longitude 180°, 90° (right) to 90°.
+    return [wrap(180-h.az+heading+180,360)-180,h.alt];
+   }));
+   if(!rings.length)continue;
+   let shape={type:'Polygon',coordinates:rings};
+   // d3-geo interprets winding on the sphere, not in flat chart pixels.
+   // A contour represents its smaller physical region, not its complement.
+   if(geoArea(shape)>2*Math.PI){
+    shape={type:'Polygon',coordinates:rings.map(r=>[...r].reverse())};
+   }
+   c.beginPath();
+   path(shape);
+   if(shade){
+    c.fillStyle='rgba(190,198,209,'+(alpha[k]*visibility)+')';
+    c.fill('evenodd');
+   }
+   if(outline){
+    c.strokeStyle='rgba(192,204,222,'+((.14+.035*k)*visibility)+')';
+    c.lineWidth=k===0?1:.7;
+    c.stroke();
+   }
+  }
+ }
+}
 export function drawMilkyWay(c,opts){
  const {date,lat,lon,width,height,mode='polar',zoom=1,heading=0,
   precession=true,showBelowHorizon=true,showShade=false,showOutline=false,
@@ -213,10 +264,7 @@ export function drawMilkyWay(c,opts){
    paintRectContours(c,levels,{date,lat,lon,width,height,heading,precession},
     visibility,showShade,showOutline);
   }else{
-   // Preserve the established Version 19 polar-sky visual rendering.
-   const polarLevels=levels.map(level=>({rings:level.polygons?
-    level.polygons.flatMap(p=>p):level.rings}));
-   paintContours(c,polarLevels,projectPoint,{mode,width,height,heading},
+   paintPolarContours(c,levels,{date,lat,lon,width,height,zoom,heading,precession},
     visibility,showShade,showOutline);
   }
  }
