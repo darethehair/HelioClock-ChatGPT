@@ -102,7 +102,13 @@ export function renderEarth(context,width,height,date,state){
  context.clearRect(0,0,width,height);
  context.fillStyle='#071324';context.fillRect(0,0,width,height);
  context.imageSmoothingEnabled=true;
- if(globe){context.beginPath();context.arc(center[0],center[1],radius,0,Math.PI*2);context.clip()}
+ // The inverse of Equal Earth/Mercator is defined even outside the visible
+ // projected Sphere. Without this clip the satellite texture wraps into
+ // phantom continents when a single-panel layout makes the canvas very wide.
+ // Clip the raster to exactly the same projected Sphere as the vector layers.
+ context.beginPath();
+ geoPath(map,context)({type:'Sphere'});
+ context.clip();
  context.drawImage(memoCanvas,0,0,width,height);
  const path=geoPath(map,context);
  context.lineWidth=.65;
