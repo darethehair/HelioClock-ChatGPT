@@ -25,6 +25,7 @@ jobs:
           node --check --experimental-default-type=module sky-atlas.js
           node --check --experimental-default-type=module milky-way.js
           node --check --experimental-default-type=module sky-projection.js
+          node --check --experimental-default-type=module ecliptic.js
           node --check sw.js
           node --experimental-default-type=module tests/astronomy.test.mjs
       - name: Bundle independent visualizations
@@ -78,7 +79,7 @@ jobs:
             --output /tmp/helioclock-atlas/mw.json
           python3 scripts/build-milky-way.py /tmp/helioclock-atlas/mw.json dist/sky-milkyway.json
       - name: Stage static files for browser test
-        run: cp index.html styles.css astronomy.js manifest.webmanifest sw.js icon.svg dist/ && echo '{"test":true}' > dist/build-info.json
+        run: cp index.html styles.css astronomy.js manifest.webmanifest sw.js icon.svg dist/ && printf '{"version":20,"test":true,"commit":"%s","built_utc":"%s"}\\n' "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > dist/build-info.json
       - name: Install Firefox for browser checks
         run: npx playwright install --with-deps firefox
       - name: Exercise browser controls in Firefox
