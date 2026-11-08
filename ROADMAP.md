@@ -22,6 +22,11 @@ The experimental application already contains: Sun events and annual twilight ch
 
 **These exist but are not yet scientifically validated to precision-ephemeris standards.** Some computations (Moon, planets, star positions and sidereal time) use approximations.
 
+## Next-round small refinements (requested 2026-11-08)
+
+- [ ] **Daylight-year graph contrast:** Replace the pale green daylight-duration line with a thicker, high-contrast dark blue/navy line visible across the light-blue daylight band; preserve twilight layers and clear labeling.
+- [ ] **Solar nadir on Earth maps:** Show the subsolar zenith and antipodal nadir markers, with distinctive symbols/labels in the supported map projections; ensure globe back-side occlusion is respected.
+
 ## Priority A: Scientific foundations and review
 
 - [ ] **Optional later original-versus-experimental feature inventory.** Not a prerequisite for current HelioClock development: the user has already requested the missing functionality they can identify. Revisit only if a specific parity gap arises or a comparison becomes useful. **For future rebuilds of existing applications, a thorough source-and-user-experience audit should be Step 1, before implementation.**
