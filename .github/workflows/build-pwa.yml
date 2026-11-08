@@ -90,7 +90,7 @@ jobs:
           set -euo pipefail
           mkdir -p dist
           cp index.html styles.css astronomy.js manifest.webmanifest sw.js icon.svg dist/
-          printf '{"commit":"%s","built_utc":"%s","repository":"%s"}\n' "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$GITHUB_REPOSITORY" > dist/build-info.json
+          printf '{"version":20,"commit":"%s","built_utc":"%s","repository":"%s"}\n' "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$GITHUB_REPOSITORY" > dist/build-info.json
       - name: Upload PWA ZIP
         uses: actions/upload-artifact@v4
         with:
