@@ -1,4 +1,4 @@
-import {geoEqualEarth,geoOrthographic,geoMercator,geoPath,geoGraticule10} from 'd3-geo';
+import {geoEqualEarth,geoOrthographic,geoMercator,geoPath,geoGraticule10,geoDistance} from 'd3-geo';
 import {feature,mesh} from 'topojson-client';
 import atlas from 'world-atlas/countries-110m.json';
 import {RAD,wrap,solar,clamp} from './astronomy.js';
@@ -114,11 +114,30 @@ export function renderEarth(context,width,height,date,state){
    context.beginPath();path(borders);context.lineWidth=.35;
    context.strokeStyle='#b1e8d64f';context.stroke();
  }
- const spot=map([sunLon,d.decl]);
- if(spot){
-  context.strokeStyle='#ffd580';context.lineWidth=1.25;
-  context.beginPath();context.arc(spot[0],spot[1],8,0,Math.PI*2);context.stroke();
-  context.fillStyle='#ffd580';context.beginPath();context.arc(spot[0],spot[1],3,0,Math.PI*2);context.fill();
+ // The nadir is antipodal to the subsolar point (180° longitude away,
+ // opposite declination). On an orthographic globe only the near hemisphere
+ // can have visible markers; projection alone does not enforce this for points.
+ const nadirLon=normLon(sunLon+180),nadirLat=-d.decl;
+ const isVisible=point=>!globe||geoDistance(point,[earthLon,earthLat])<=Math.PI/2+1e-8;
+ const zenithPoint=[sunLon,d.decl],nadirPoint=[nadirLon,nadirLat];
+ if(isVisible(zenithPoint)){
+  const spot=map(zenithPoint);
+  if(spot){
+   context.save();context.strokeStyle='#ffd580';context.lineWidth=1.6;
+   context.beginPath();context.arc(spot[0],spot[1],8,0,Math.PI*2);context.stroke();
+   context.fillStyle='#ffd580';context.beginPath();context.arc(spot[0],spot[1],3,0,Math.PI*2);context.fill();
+   context.restore();
+  }
+ }
+ if(isVisible(nadirPoint)){
+  const spot=map(nadirPoint);
+  if(spot){
+   // Violet diamond and central dot, visually distinct from the zenith ring.
+   const [x,y]=spot;context.save();context.strokeStyle='#daacff';context.lineWidth=1.8;
+   context.beginPath();context.moveTo(x,y-9);context.lineTo(x+9,y);context.lineTo(x,y+9);context.lineTo(x-9,y);context.closePath();context.stroke();
+   context.fillStyle='#daacff';context.beginPath();context.arc(x,y,2.8,0,2*Math.PI);context.fill();
+   context.restore();
+  }
  }
  const user=map([lon,lat]);
  if(user){
@@ -127,5 +146,5 @@ export function renderEarth(context,width,height,date,state){
   context.beginPath();context.arc(user[0],user[1],8,0,Math.PI*2);context.strokeStyle='#fff9e9b0';context.stroke();
  }
  context.restore();
- return {sunLon,sunDecl:d.decl,textureStatus};
+ return {sunLon,sunDecl:d.decl,nadirLon,nadirLat,textureStatus};
 }
