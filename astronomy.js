@@ -1,3 +1,4 @@
+import * as Astronomy from 'astronomy-engine';
 /**
  * Standalone low-precision astronomy calculations.
  * Angular values in radians unless marked as degrees.
@@ -95,33 +96,33 @@ export function sunEvents(date,lat,lon){
  }
  return {noon,sunrise:rise,sunset:set,duration:(set-rise)/3600000,polar:null};
 }
+/**
+ * Lunar coordinates from Astronomy Engine (MIT, Donald Cross).
+ * Ephemeris: VSOP/ELP-style lunar model with topocentric parallax.
+ * Equator returns geocentric true equator-of-date coordinates for the
+ * Moon when using a geocentric Moon vector; the display uses the observer's
+ * geocentric reference for limb orientation and separate topocentric RA/Dec.
+ */
 export function moonEquatorial(date){
- // Low-precision lunar orbit: largest periodic terms, suitable for visualizations.
- const D=jd(date)-2451545;
- const L=wrap(218.316+13.176396*D);
- const Mm=wrap(134.963+13.064993*D);
- const Ms=wrap(357.529+.98560028*D);
- const F=wrap(93.272+13.22935*D);
- const elong=wrap(297.850+12.190749*D);
- const lon=wrap(L+6.289*sinD(Mm)+1.274*sinD(2*elong-Mm)+.658*sinD(2*elong)+.214*sinD(2*Mm)-.186*sinD(Ms)-.114*sinD(2*F));
- const lat=5.128*sinD(F)+.280*sinD(Mm+F)+.277*sinD(Mm-F)+.173*sinD(2*elong-F);
- const eps=solar(date).obliq;
- const x=cosD(lon)*cosD(lat);
- const y=sinD(lon)*cosD(lat)*cosD(eps)-sinD(lat)*sinD(eps);
- const z=sinD(lon)*cosD(lat)*sinD(eps)+sinD(lat)*cosD(eps);
- return {ra:wrap(atan2D(y,x)),decl:Math.asin(z)*DEG,longitude:lon,latitude:lat};
+ const v=Astronomy.GeoMoon(date);
+ const eq=Astronomy.EquatorFromVector(Astronomy.RotateVector(Astronomy.Rotation_EQJ_EQD(date),v));
+ const ecl=Astronomy.EclipticGeoMoon(date);
+ return {ra:wrap(eq.ra*15),decl:eq.dec,longitude:ecl.lon,latitude:ecl.lat,
+  distanceKm:ecl.dist*149597870.7};
 }
 export function moon(date,lat,lon){
- const m=moonEquatorial(date),s=solar(date);
- const h=horizontal(m.ra,m.decl,date,lat,lon);
- const synodic=29.530588853;
- // Mean phase angle estimate from 2000-Jan-06 18:14 UTC reference new moon.
- const age=wrap(jd(date)-2451550.259,synodic);
- const phase=age/synodic;
- const illuminated=(1-Math.cos(2*Math.PI*phase))/2;
- const phases=["New Moon","Waxing Crescent","First Quarter","Waxing Gibbous","Full Moon","Waning Gibbous","Last Quarter","Waning Crescent"];
+ const observer=new Astronomy.Observer(lat,lon,0);
+ const eq=Astronomy.Equator(Astronomy.Body.Moon,date,observer,true,true);
+ const h=Astronomy.Horizon(date,observer,eq.ra,eq.dec,'');
+ const lunar=moonEquatorial(date);
+ const phase=wrap(Astronomy.MoonPhase(date),360)/360;
+ const illuminated=Astronomy.Illumination(Astronomy.Body.Moon,date).phase_fraction;
+ const age=phase*29.530588853;
+ const phases=['New Moon','Waxing Crescent','First Quarter','Waxing Gibbous','Full Moon','Waning Gibbous','Last Quarter','Waning Crescent'];
  const name=phases[Math.floor(wrap(phase+1/16,1)*8)];
- return {...h,...m,age,phase,illuminated,name};
+ return {alt:h.altitude,az:h.azimuth,ra:eq.ra*15,decl:eq.dec,
+  longitude:lunar.longitude,latitude:lunar.latitude,distanceKm:eq.dist*149597870.7,
+  phase,illuminated,age,name};
 }
 /**
  * Bright-limb position angle (Meeus chapter 48), relative to celestial north
