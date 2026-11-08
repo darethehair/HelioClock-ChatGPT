@@ -371,10 +371,16 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
  await page.locator('#layout-all').click();
  await expect(page.locator('.sky-panel')).toBeVisible();
  await expect(page.locator('.almanac-panel')).toBeVisible();
+ await page.locator('[data-sky-light="black"]').click();
+ await expect(page.locator('#sky-atlas-count')).toContainText('visible');
+ const colored=await page.locator('#sky').evaluate(c=>c.toDataURL());
  await page.locator('#show-stellar-colors').uncheck();
  await expect(page.locator('#show-stellar-colors')).not.toBeChecked();
+ const white=await page.locator('#sky').evaluate(c=>c.toDataURL());
+ expect(white).not.toEqual(colored);
  await page.locator('#show-stellar-colors').check();
  await expect(page.locator('#show-stellar-colors')).toBeChecked();
+ expect(await page.locator('#sky').evaluate(c=>c.toDataURL())).toEqual(colored);
  await page.locator('#layout-default').click();
  await expect(page.locator('.sky-panel')).toBeVisible();
  await expect(page.locator('.almanac-panel')).toBeHidden();
