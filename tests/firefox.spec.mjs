@@ -517,35 +517,32 @@ test('Version 26 polar zoom anchors cursor and dragging pans the sky',async({pag
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:8765/');
  await page.locator('[data-sky-projection="polar"]').click();
- const sky=page.locator('#sky');
- const box=await sky.boundingBox();
+ await page.locator('#sky').evaluate(el=>{
+  const old=CanvasRenderingContext2D.prototype.translate;
+  window.__skyTranslate=[0,0];
+  CanvasRenderingContext2D.prototype.translate=function(x,y){
+   if(this.canvas.id==='sky')window.__skyTranslate=[x,y];
+   return old.call(this,x,y);
+  };
+ });
+ const sky=page.locator('#sky'),box=await sky.boundingBox();
  const x=box.x+box.width*.73,y=box.y+box.height*.32;
  await page.mouse.move(x,y);
  await page.mouse.wheel(0,-180);
- const zoomed=await page.evaluate(()=>({
-  zoom:document.querySelector('#sky-zoom').value,
-  center:Array.from(document.querySelector('#sky').getContext('2d').getTransform().toFloat32Array?.()||[])
- }));
- expect(Number(zoomed.zoom)).toBeGreaterThan(1);
- // Validate actual on-canvas projection rather than just the slider text:
- // using the same transform applied to stars and all polar overlays.
- const anchor=await sky.evaluate(el=>{
-  const s=el.getContext('2d').getTransform();
-  return {x:s.e,y:s.f};
- });
- expect(Math.abs(anchor.x)+Math.abs(anchor.y)).toBeGreaterThan(1);
- const before=await sky.evaluate(el=>{const m=el.getContext('2d').getTransform();return [m.e,m.f]});
+ expect(Number(await page.locator('#sky-zoom').inputValue())).toBeGreaterThan(1);
+ const anchored=await page.evaluate(()=>window.__skyTranslate);
+ expect(anchored[0]).toBeLessThan(-1);
+ expect(anchored[1]).toBeGreaterThan(1);
  await page.mouse.move(x,y);
  await page.mouse.down();
  await page.mouse.move(x+34,y+24,{steps:3});
  await page.mouse.up();
- const after=await sky.evaluate(el=>{const m=el.getContext('2d').getTransform();return [m.e,m.f]});
- expect(after[0]).toBeGreaterThan(before[0]+25);
- expect(after[1]).toBeGreaterThan(before[1]+15);
+ const panned=await page.evaluate(()=>window.__skyTranslate);
+ expect(panned[0]).toBeGreaterThan(anchored[0]+25);
+ expect(panned[1]).toBeGreaterThan(anchored[1]+15);
  await page.locator('#sky-reset').click();
  await expect(page.locator('#sky-zoom')).toHaveValue('1');
- const home=await sky.evaluate(el=>{const m=el.getContext('2d').getTransform();return [m.e,m.f]});
- // Canvas contexts retain the device-pixel ratio transform.
- expect(Math.abs(home[0])+Math.abs(home[1])).toBeLessThan(1);
+ const home=await page.evaluate(()=>window.__skyTranslate);
+ expect(home).toEqual([0,0]);
  expect(errors).toEqual([]);
 });
