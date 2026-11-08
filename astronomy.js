@@ -67,6 +67,21 @@ export function horizontal(ra,decl,date,lat,lon){
  const az=wrap(atan2D(-Math.sin(H),Math.tan(d)*Math.cos(phi)-Math.sin(phi)*Math.cos(H)));
  return {alt,az};
 }
+/**
+ * Inverse of horizontal(): azimuth is 0° north, 90° east, altitude
+ * positive above the observer's horizon. Returns mean equatorial
+ * coordinates of date, matching the sky atlas's optional precession.
+ * Avoid the azimuth singularity at zenith/nadir via the atan2 terms.
+ */
+export function equatorialFromHorizontal(az,alt,date,lat,lon){
+ const A=az*RAD,a=alt*RAD,phi=lat*RAD;
+ const sinDec=clamp(Math.sin(a)*Math.sin(phi)+Math.cos(a)*Math.cos(phi)*Math.cos(A),-1,1);
+ const decl=Math.asin(sinDec)*DEG;
+ const sinH=-Math.cos(a)*Math.sin(A);
+ const cosH=Math.sin(a)*Math.cos(phi)-Math.cos(a)*Math.sin(phi)*Math.cos(A);
+ const hourAngle=Math.atan2(sinH,cosH)*DEG;
+ return {ra:wrap(sidereal(date,lon)-hourAngle),decl};
+}
 export function sunHorizontal(date,lat,lon){
  const s=solar(date);
  return {...horizontal(s.ra,s.decl,date,lat,lon),...s};
