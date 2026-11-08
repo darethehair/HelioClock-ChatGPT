@@ -1,6 +1,6 @@
 import {skyPointVisible} from '../sky-projection.js';
 import assert from 'node:assert/strict';
-import {solar,sunEvents,sunHorizontal,moon,orbitPositions,precessJ2000,horizontal,moonEquatorial} from '../astronomy.js';
+import {solar,sunEvents,sunHorizontal,moon,orbitPositions,precessJ2000,horizontal,equatorialFromHorizontal,moonEquatorial} from '../astronomy.js';
 const at=(s)=>new Date(s);
 const vernal=solar(at('2026-03-20T14:00:00Z'));
 assert.ok(Math.abs(vernal.decl)<.5,'March equinox solar declination');
@@ -65,3 +65,12 @@ assert.equal(skyPointVisible(680,90,600,300,'polar',-160,0),true,'star shifted i
 assert.equal(skyPointVisible(-80,90,600,300,'polar',0,0),false,'truly offscreen star must be culled');
 assert.equal(skyPointVisible(-80,90,600,300,'rect',160,0),false,'rectangular projection is not panned');
 assert.equal(skyPointVisible(45,-60,600,300,'polar',0,150),true,'vertical panning reveals stars above the original viewport');
+
+for(const [ra,dec] of [[0,0],[85,45],[173.5,-28],[290,80],[354,-62]]){
+ const at=new Date('2026-11-08T21:00:00Z'),lat=49.19,lon=-98.10;
+ const h=horizontal(ra,dec,at,lat,lon);
+ const inverted=equatorialFromHorizontal(h.az,h.alt,at,lat,lon);
+ const deltaRA=((inverted.ra-ra+540)%360)-180;
+ assert.ok(Math.abs(deltaRA)<1e-8&&Math.abs(inverted.decl-dec)<1e-8,
+  'cursor inverse Alt/Az to equatorial coordinates at '+ra+','+dec);
+}
