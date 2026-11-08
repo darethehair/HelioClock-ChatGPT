@@ -119,3 +119,10 @@ Added **Sky Only** beside the existing **Text Only** button. Both presets work b
 ## Version 28 — Fix disappearing stars during zoomed polar panning
 
 The sky atlas previously rejected points using unshifted polar projection coordinates before the canvas pan transform was applied. This made stars and labels disappear prematurely near the screen edges when the polar view was zoomed and dragged. Stars and labels are now culled using their **final translated screen coordinates**. The Milky Way, constellation geometry, sky zoom/drag behavior, and rectangular projection are unchanged. Regression coverage includes independent viewport-boundary assertions and a browser panning smoke test.
+
+## Version 29 — Zoom-sensitive star designations and live sky cursor coordinates
+
+- The **Labels** checkbox is now independent of limiting magnitude, including magnitude 5–7. In polar mode, higher magnification gradually reveals fainter proper names and Bayer/Flamsteed identifiers from the D3-Celestial star-name catalogue; zoomed-out views remain comparatively uncluttered. Candidate labels are ranked and placed only when their visible screen rectangles do not overlap existing labels.
+- The bundled star catalogue keeps its stellar B−V colours and magnitude data, and now joins a compact descriptive designation for stars where an actual name is available. These names are real catalogue metadata, never inferred from star positions.
+- A new **Cursor: RA / Dec / Az / Alt** strip appears beneath the sky canvas. It converts the pointer's screen position to sky coordinates in both polar and rectangular modes, accounting for the observer's latitude/longitude, simulation time, sky heading and polar zoom/pan. The RA/Dec readout follows the current chart coordinate model, and the display clears when the pointer leaves.
+- Tests cover inverse equatorial/horizontal coordinate round trips, large-magnitude labels and both cursor projections. Milky Way geometry, source star positions, and the orrery are unchanged.
