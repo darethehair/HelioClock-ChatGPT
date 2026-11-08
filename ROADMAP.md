@@ -93,6 +93,19 @@ The experimental application already contains: Sun events and annual twilight ch
 - [ ] **Retrograde-motion demonstration.** Show apparent geocentric loops against stars alongside the heliocentric explanation. Build on improved ephemerides, not current circular-orbit schematics.
 - [ ] **Offline explanation mode.** Short context-dependent text about sidereal versus solar days, lunar phases, twilight, seasonal changes and planetary motions, grounded in active simulation state; no chatbot service required.
 
+## Proposed MChronos-inspired astronomical text information panel (2026-11-08)
+
+Source reference: Darren's uploaded `mchronos_textonly.py` (MChronos v0.37; copyright 2008–2009 Darren Enns; GPLv2-or-later). Review as a design/reference, not a drop-in implementation.
+
+- [ ] **Optional Text Information panel** following the independent dashboard show/hide architecture; synced to selected simulation date/time/location and optionally copyable as plain text. Use legible grouped columns/cards with compact monospace mode rather than a fixed terminal-only layout.
+- [ ] **Clock/location:** observer-local date/day, explicit IANA timezone and UTC offset, UTC, Julian Date, local sidereal time, latitude/longitude (decimal and optional degrees/minutes/seconds).
+- [ ] **Sun and Moon:** current altitude/azimuth (optional RA/Dec), rise/set, upper transit (maximum altitude) and lower transit/antitransit (minimum altitude), with event-local dates if they cross midnight; Sun phase and daylight duration.
+- [ ] **Twilight:** morning/evening astronomical, nautical and civil twilight boundaries, with robust N/A/always-above/always-below handling in polar latitudes.
+- [ ] **Season/year:** current season, fractional/integer day of year, and exact equinox/solstice instants for the selected year.
+- [ ] **Lunar calendar:** illuminated percentage (distinct from lunar *phase angle*), age since previous new Moon, next new Moon, first quarter, full Moon and last quarter.
+- [ ] **Scientific and time standards:** event definitions/horizon altitude (including atmospheric refraction), topocentric versus geocentric coordinates, local legal civil time versus device time, daylight-saving transitions and cross-midnight events. Avoid silently substituting an antitransit for a nonexistent rise/set. Use Astronomy Engine where appropriate, validating results against reference cases rather than directly porting old PyEphem calls.
+- [ ] **Integration/tests:** match same simulation state across charts/maps/sky; optional seconds/DMS formatting, mobile layout, save visible preference, tests for polar night/day, differing time zones, moonrise and daylight-saving dates.
+
 ## Priority D: Observation and event planning
 
 - [ ] **Astronomical event finder.** Search upcoming windows for selected location, e.g. long astronomical darkness, Moon availability after sunset, favourable Venus altitude, dark sky intervals and conjunctions (subject to validated ephemerides).
