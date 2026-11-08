@@ -7,7 +7,7 @@ import {renderMoon} from './moon-renderer.js';
 import {drawSolarYear} from './solar-chart.js';
 import {renderEarth} from './earth-renderer.js';
 import {starsAbove} from './sky-catalog.js';
-import {RAD,PI,wrap,clamp,solar,sunHorizontal,sunEvents,moon,orbitPositions,sidereal,utcTime,durationText} from './astronomy.js';
+import {RAD,PI,wrap,clamp,solar,sunHorizontal,sunEvents,moon,orbitPositions,sidereal,equatorialFromHorizontal,utcTime,durationText} from './astronomy.js';
 const $=id=>document.getElementById(id);
 const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyPanX:0,skyPanY:0,skyHeading:0,earthZoom:1,earthLon:0,earthLat:0,earthProjection:'equal',orreryZoom:1,moonZoom:1,discView:'moon',sunZoom:1,moonPanX:0,moonPanY:0,sunPanX:0,sunPanY:0,orbitMode:'inner',skyLight:'daylight',skyProjection:'polar',magLimit:3.5,stellarColors:true,usePrecession:true,playing:false};
 const fmt=d=>d.toISOString().slice(0,10);
@@ -175,7 +175,7 @@ function sky(){
   mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
   panX:state.skyPanX,panY:state.skyPanY,
   magLimit:state.magLimit,showStars:$('show-stars').checked,
-  showLabels:$('show-labels').checked&&state.magLimit<=4.5,
+  showLabels:$('show-labels').checked,
   showConstellations:$('show-constellations').checked,
   precession:state.usePrecession,
   showBelowHorizon:state.skyProjection==='rect'&&$('show-below-horizon').checked,
@@ -185,6 +185,7 @@ function sky(){
  const status=skyAtlasStatus();
  $('sky-atlas-count').textContent=(status.ready?plotted||0:'Loading')+' stars'+(status.ready?' visible':' · catalog loading');
  $('precession-status').textContent=state.usePrecession?'Precession on · mean equinox of date':'Precession off · fixed J2000 coordinates';
+ if(skyCursorPosition)updateSkyCursor(...skyCursorPosition);
  const fmtRA=degrees=>{
   const hrs=wrap(degrees,360)/15,h=Math.floor(hrs),minutes=Math.floor((hrs-h)*60);
   return String(h).padStart(2,'0')+'h '+String(minutes).padStart(2,'0')+'m';
@@ -197,6 +198,52 @@ function sky(){
  place(sun,'#ffca7d','Sun');place(m,'#e1ebff','Moon');
  c.restore();
 }
+/**
+ * Read inverse coordinates from the actual rendered canvas geometry.
+ * Polar mode reverses user pan/zoom/rotation; rectangular mode uses the
+ * displayed azimuth seam and its full -90°..+90° altitude span.
+ */
+function skyCursorCoordinates(x,y,width,height,opts={}){
+ const {mode='polar',zoom=1,heading=0,panX=0,panY=0}=opts;
+ let az,alt;
+ if(mode==='polar'){
+  const radius=(Math.min(width-35,height-20)/2-14)*zoom;
+  if(radius<=0)return null;
+  const dx=x-width/2-panX,dy=y-height/2-panY;
+  const r=Math.hypot(dx,dy);
+  if(r>radius)return null;
+  alt=90*(1-r/radius);
+  az=wrap(Math.atan2(dy,dx)/RAD+90+heading);
+ }else{
+  const g=rectGeometry(width,height),span=g.right-g.left;
+  if(x<g.left||x>g.right||y<g.top||y>g.bottom)return null;
+  az=wrap((x-g.left)/span*360+heading);
+  alt=90-(y-g.top)/(g.bottom-g.top)*180;
+ }
+ const eq=equatorialFromHorizontal(az,alt,state.date,state.lat,state.lon);
+ const hours=eq.ra/15,h=Math.floor(hours),mins=(hours-h)*60;
+ return {az,alt,ra:eq.ra,dec:eq.decl,
+  raText:String(h).padStart(2,'0')+'h '+mins.toFixed(2).padStart(5,'0')+'m'};
+}
+function updateSkyCursor(x,y){
+ const canvas=$('sky'),out=$('sky-cursor-readout');
+ const coords=skyCursorCoordinates(x,y,canvas.clientWidth,canvas.clientHeight,{
+  mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
+  panX:state.skyPanX,panY:state.skyPanY
+ });
+ if(!coords){out.textContent='Cursor: outside plotted sky';return}
+ out.textContent='Cursor: RA '+coords.raText+' · Dec '+(coords.dec>=0?'+':'')+
+  coords.dec.toFixed(2)+'° · Az '+coords.az.toFixed(2)+'° · Alt '+coords.alt.toFixed(2)+'°';
+}
+let skyCursorPosition=null;
+$('sky').addEventListener('pointermove',e=>{
+ const bounds=$('sky').getBoundingClientRect();
+ skyCursorPosition=[e.clientX-bounds.left,e.clientY-bounds.top];
+ updateSkyCursor(...skyCursorPosition);
+});
+$('sky').addEventListener('pointerleave',()=>{
+ skyCursorPosition=null;$('sky-cursor-readout').textContent='Move your pointer over the sky to read RA, Dec, azimuth and altitude';
+});
 function drawMoon(){
  if(state.discView==='sun'){
   updateDiscViewport();
