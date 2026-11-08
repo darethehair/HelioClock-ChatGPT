@@ -359,9 +359,11 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
  await page.locator('#layout-sky').click();
  await expect(page.locator('.sky-panel')).toBeVisible();
  await expect(page.locator('.almanac-panel')).toBeHidden();
+ await expect(page.locator('.dashboard')).toHaveClass(/single-panel/);
  await page.locator('#layout-text').click();
  await expect(page.locator('.almanac-panel')).toBeVisible();
  await expect(page.locator('.sky-panel')).toBeHidden();
+ await expect(page.locator('.dashboard')).toHaveClass(/single-panel/);
  await expect(page.locator('#almanac-content')).toContainText('Astronomical');
  await expect(page.locator('#almanac-content')).toContainText('Julian Date');
  await expect(page.locator('#almanac-content')).toContainText('Nautical');
