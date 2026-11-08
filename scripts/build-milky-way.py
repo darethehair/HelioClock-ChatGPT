@@ -13,18 +13,22 @@ data=json.loads(src.read_text())
 result=[]
 for feature in data["features"]:
     polygons=feature["geometry"]["coordinates"]
-    rings=[]
+    polygons_out=[]
     for polygon in polygons:
+        # Preserve individual MultiPolygon components and their hole rings.
+        # Flattening rings destroys the topology required for seam clipping.
+        rings=[]
         for ring in polygon:
             if len(ring)<3:continue
-            # Keep sufficient detail without shipping 500KB of points; at most
-            # 1° typical catalogue sampling is enough for screen-space lines.
             step=max(1,len(ring)//700)
             reduced=ring[::step]
             if reduced[-1]!=ring[-1]:reduced.append(ring[-1])
-            rings.append([[round(float(p[0])%360,3),round(float(p[1]),3)]
-                          for p in reduced])
-    result.append({"id":feature.get("id",""),"rings":rings})
+            coords=[[round(float(p[0])%360,3),round(float(p[1]),3)]
+                    for p in reduced]
+            if coords[0]!=coords[-1]:coords.append(coords[0])
+            rings.append(coords)
+        if rings:polygons_out.append(rings)
+    result.append({"id":feature.get("id",""),"polygons":polygons_out})
 dest.parent.mkdir(parents=True,exist_ok=True)
 dest.write_text(json.dumps(result,separators=(",",":")))
 print("Milky Way contours:",len(result),"levels;",dest.stat().st_size,"bytes")
