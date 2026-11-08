@@ -173,6 +173,7 @@ function sky(){
  const plotted=drawSkyAtlas(c,{
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
   mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
+  panX:state.skyPanX,panY:state.skyPanY,
   magLimit:state.magLimit,showStars:$('show-stars').checked,
   showLabels:$('show-labels').checked&&state.magLimit<=4.5,
   showConstellations:$('show-constellations').checked,
