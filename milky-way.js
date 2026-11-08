@@ -156,7 +156,10 @@ function paintRectContours(c,levels,{date,lat,lon,width,height,heading,precessio
   for(const polygon of polygons){
    const rings=polygon.map(ring=>ring.map(([ra,dec])=>{
     const h=toAltAz(ra,dec,date,lat,lon,precession);
-    return [wrap(h.az-heading+180,360)-180,h.alt];
+    // D3 longitude zero projects to the *middle* of the rectangle,
+    // whereas the sky chart puts azimuth zero at both edges and 180°
+    // at the centre. Shift by 180°, rather than merely normalizing az.
+    return [wrap(h.az-heading,360)-180,h.alt];
    }));
    if(!rings.length)continue;
    // D3 uses spherical winding to choose a polygon interior. A contour
