@@ -27,7 +27,7 @@ jobs:
           node --check --experimental-default-type=module sky-projection.js
           node --check --experimental-default-type=module ecliptic.js
           node --check sw.js
-          node --experimental-default-type=module tests/astronomy.test.mjs
+          npx esbuild tests/astronomy.test.mjs --bundle --platform=node --format=esm --outfile=/tmp/helioclock-astronomy-test.mjs && node /tmp/helioclock-astronomy-test.mjs
       - name: Bundle independent visualizations
         run: npm run build
       - name: Bundle NASA Blue Marble satellite texture
