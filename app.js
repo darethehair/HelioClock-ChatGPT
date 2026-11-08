@@ -9,7 +9,7 @@ import {renderEarth} from './earth-renderer.js';
 import {starsAbove} from './sky-catalog.js';
 import {RAD,PI,wrap,clamp,solar,sunHorizontal,sunEvents,moon,orbitPositions,sidereal,utcTime,durationText} from './astronomy.js';
 const $=id=>document.getElementById(id);
-const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyHeading:0,earthZoom:1,earthLon:0,earthLat:0,earthProjection:'equal',orreryZoom:1,moonZoom:1,discView:'moon',sunZoom:1,moonPanX:0,moonPanY:0,sunPanX:0,sunPanY:0,orbitMode:'inner',skyLight:'daylight',skyProjection:'polar',magLimit:3.5,stellarColors:true,usePrecession:true,playing:false};
+const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyPanX:0,skyPanY:0,skyHeading:0,earthZoom:1,earthLon:0,earthLat:0,earthProjection:'equal',orreryZoom:1,moonZoom:1,discView:'moon',sunZoom:1,moonPanX:0,moonPanY:0,sunPanX:0,sunPanY:0,orbitMode:'inner',skyLight:'daylight',skyProjection:'polar',magLimit:3.5,stellarColors:true,usePrecession:true,playing:false};
 const fmt=d=>d.toISOString().slice(0,10);
 function setDateInputs(){$('observe-date').value=fmt(state.date);$('observe-time').value=utcTime(state.date)}
 function selectDate(){
@@ -86,6 +86,9 @@ function sky(){
  else fillSkyBackground(c,w,h,skySun.alt);
  $('sky-light-status').textContent=state.skyLight==='black'?'Pure black background':(skySun.alt>=0?'Daylight':skySun.alt>=-6?'Civil twilight':skySun.alt>=-12?'Nautical twilight':skySun.alt>=-18?'Astronomical twilight':'Night')+' · Sun '+skySun.alt.toFixed(1)+'°';
  c.save();
+ // The background remains fixed; all polar sky geometry, stars, ecliptic,
+ // Milky Way and annotations share this one translated coordinate frame.
+ if(state.skyProjection==='polar')c.translate(state.skyPanX,state.skyPanY);
  if(state.skyProjection==='polar'){
   c.strokeStyle='#395270';c.lineWidth=1.3;c.beginPath();c.arc(X,Y,rad,0,2*PI);c.stroke();
  for(let a=0;a<360;a+=10){
@@ -373,7 +376,9 @@ $('play-time').addEventListener('click',()=>{
 });
 setInterval(()=>{if(state.playing)shiftTime(15)},180);
 function viewRange(id,key){$(id).addEventListener('input',e=>{state[key]=Number(e.target.value);render()})}
-viewRange('sky-zoom','skyZoom');viewRange('sky-heading','skyHeading');
+viewRange('sky-heading','skyHeading');
+// Slider zoom is centred; wheel zoom targets the pointer position.
+$('sky-zoom').addEventListener('input',e=>setPolarSkyZoom(Number(e.target.value)));
 viewRange('earth-zoom','earthZoom');viewRange('orrery-zoom','orreryZoom');
 // Shared disc viewer handles the Moon slider and pan/zoom interaction.
 $('show-au-rings').addEventListener('change',render);
@@ -550,13 +555,36 @@ function reset(id,defaults){
  for(const [key,value] of Object.entries(defaults)){if(controls[key])$(controls[key]).value=value}
  render()});
 }
-reset('sky-reset',{skyZoom:1,skyHeading:0});
+reset('sky-reset',{skyZoom:1,skyPanX:0,skyPanY:0,skyHeading:0});
 reset('earth-reset',{earthZoom:1,earthLon:0,earthLat:0});
 reset('orrery-reset',{orreryZoom:1});
 function wheelZoom(canvasId,controlId,key,lo,hi){
  $(canvasId).addEventListener('wheel',e=>{e.preventDefault();state[key]=clamp(state[key]*(e.deltaY>0?.88:1.14),lo,hi);$(controlId).value=state[key];render()},{passive:false});
 }
-wheelZoom('sky','sky-zoom','skyZoom',1,3);
+// In polar azimuthal projection, changing zoom scales every point's
+// displacement from the chart centre. Correct the pan to keep the chosen
+// sky position stationary, including when the pointer isn't near zenith.
+function setPolarSkyZoom(next,clientX=null,clientY=null){
+ const canvas=$('sky'),rect=canvas.getBoundingClientRect();
+ const old=state.skyZoom;
+ next=clamp(next,1,3);
+ if(next===old)return;
+ const px=clientX===null?rect.width/2:clientX-rect.left;
+ const py=clientY===null?rect.height/2:clientY-rect.top;
+ if(state.skyProjection==='polar'){
+  const ratio=next/old;
+  state.skyPanX+=(1-ratio)*(px-rect.width/2-state.skyPanX);
+  state.skyPanY+=(1-ratio)*(py-rect.height/2-state.skyPanY);
+  if(next===1){state.skyPanX=0;state.skyPanY=0}
+ }
+ state.skyZoom=next;$('sky-zoom').value=String(next);
+ render();
+}
+$('sky').addEventListener('wheel',e=>{
+ e.preventDefault();
+ if(state.skyProjection==='polar')setPolarSkyZoom(Math.round(clamp(state.skyZoom*(e.deltaY>0?.88:1.14),1,3)*100)/100,e.clientX,e.clientY);
+ else{state.skyZoom=clamp(state.skyZoom*(e.deltaY>0?.88:1.14),1,3);$('sky-zoom').value=state.skyZoom;render()}
+},{passive:false});
 wheelZoom('earth-map','earth-zoom','earthZoom',1,4);
 wheelZoom('orrery','orrery-zoom','orreryZoom',.7,3);
 // The shared Sun/Moon stage handles wheel zoom with cursor anchoring.
@@ -567,12 +595,21 @@ function dragCanvas(id,onMove){
  el.addEventListener('pointermove',e=>{
   if(!start)return;
   const dx=e.clientX-start.x,dy=e.clientY-start.y;start={x:e.clientX,y:e.clientY};
-  onMove(dx,dy,el);render();
+  onMove(dx,dy,el,e);render();
  });
  const end=()=>{start=null;el.style.cursor='grab'};
  el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);el.addEventListener('lostpointercapture',end);
 }
-dragCanvas('sky',(dx)=>{state.skyHeading=clamp(state.skyHeading+dx*.8,-180,180);$('sky-heading').value=state.skyHeading});
+dragCanvas('sky',(dx,dy,el,e)=>{
+ if(state.skyProjection==='polar'&&state.skyZoom>1&&!e.shiftKey){
+  state.skyPanX+=dx;state.skyPanY+=dy;
+ }else{
+  // At normal zoom drag still rotates the compass. Shift+drag rotates when
+  // zoomed in, and the rotation slider always remains available.
+  state.skyHeading=clamp(state.skyHeading+dx*.8,-180,180);
+  $('sky-heading').value=state.skyHeading;
+ }
+});
 dragCanvas('earth-map',(dx,dy,el)=>{
  state.earthLon=wrap(state.earthLon-dx/el.clientWidth*360/state.earthZoom+180,360)-180;
  state.earthLat=clamp(state.earthLat+dy/el.clientHeight*180/state.earthZoom,-75,75);
