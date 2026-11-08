@@ -199,7 +199,6 @@ function paintPolarContours(c,levels,{date,lat,lon,width,height,zoom,heading,pre
   .rotate([0,-90]).clipAngle(90)
   .scale(radius/(Math.PI/2))
   .translate([width/2,height/2]).precision(.2);
- const path=geoPath(projection,c);
  const alpha=[.095,.060,.060,.070,.085];
  for(let k=0;k<levels.length;k++){
   const polygons=levels[k].polygons||[];
@@ -217,16 +216,36 @@ function paintPolarContours(c,levels,{date,lat,lon,width,height,zoom,heading,pre
    if(geoArea(shape)>2*Math.PI){
     shape={type:'Polygon',coordinates:rings.map(r=>[...r].reverse())};
    }
-   c.beginPath();
-   path(shape);
+   // Retain each contour as a real Path2D so it can be checked against the
+   // sky disc. Some horizon-crossing spherical rings have the *exterior*
+   // selected after clipping; those must be inverted, otherwise practically
+   // the entire polar sky acquires a grey wash.
+   const region=new Path2D();
+   geoPath(projection,region)(shape);
+   let inside=0,samples=0;
+   const sampleSteps=13;
+   for(let iy=0;iy<sampleSteps;iy++)for(let ix=0;ix<sampleSteps;ix++){
+    const sx=(ix+.5)/sampleSteps*2-1,sy=(iy+.5)/sampleSteps*2-1;
+    if(sx*sx+sy*sy>.94)continue;
+    samples++;
+    if(c.isPointInPath(region,width/2+sx*radius,height/2+sy*radius,'evenodd'))inside++;
+   }
+   const inverted=samples>0&&inside/samples>.55;
    if(shade){
     c.fillStyle='rgba(190,198,209,'+(alpha[k]*visibility)+')';
-    c.fill('evenodd');
+    if(inverted){
+     // Even-odd XOR with the local horizon circle selects the intended
+     // smaller region. The existing outer clipping mask clips any excess.
+     const positive=new Path2D();
+     positive.arc(width/2,height/2,radius,0,Math.PI*2);
+     positive.addPath(region);
+     c.fill(positive,'evenodd');
+    }else c.fill(region,'evenodd');
    }
    if(outline){
     c.strokeStyle='rgba(192,204,222,'+((.14+.035*k)*visibility)+')';
     c.lineWidth=k===0?1:.7;
-    c.stroke();
+    c.stroke(region);
    }
   }
  }
