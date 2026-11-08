@@ -223,7 +223,7 @@ function paintPolarContours(c,levels,{date,lat,lon,width,height,zoom,heading,pre
    const region=new Path2D();
    geoPath(projection,region)(shape);
    let inside=0,samples=0;
-   const sampleSteps=13;
+   const sampleSteps=5;
    for(let iy=0;iy<sampleSteps;iy++)for(let ix=0;ix<sampleSteps;ix++){
     const sx=(ix+.5)/sampleSteps*2-1,sy=(iy+.5)/sampleSteps*2-1;
     if(sx*sx+sy*sy>.94)continue;
