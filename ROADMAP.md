@@ -69,6 +69,15 @@ The experimental application already contains: Sun events and annual twilight ch
 - [ ] **Optional “Stellar colours” checkbox.** Allow toggling between catalogue colours and the current solid-white star presentation.
 - [ ] **Regression checks.** Confirm actual canvas colour and magnitude-size differences in Firefox, including polar/rectangular projections and daylight/black backgrounds. Preserve Version 19 Milky Way contour shading.
 
+## Dashboard customization: show and hide sections (requested 2026-11-08)
+
+- [ ] **Section visibility controls.** Let users independently show or hide each main dashboard visualization, including the daylight-year chart, illuminated Earth, sky compass, Moon, planetary orrery, and other major panels, without losing the underlying simulation date/time/location.
+- [ ] **Quick actions.** Include “Show all” / “Restore default layout” and a convenient way to restore individual hidden sections so they never become inaccessible.
+- [ ] **Responsive reflow.** Allow remaining panels to use freed space cleanly on desktop and mobile, respecting fullscreen mode and the persistent time dock.
+- [ ] **Remember the layout.** Save user visibility choices locally across page reloads/offline PWA sessions, with a reset option.
+- [ ] **Optional view presets (later).** Simple choices such as “Sky observing,” “Solar/Earth,” and “Full dashboard” if these genuinely reduce repetitive setup.
+- [ ] **Firefox regression tests.** Verify panel removal/restoration, restored persistent preferences, responsive layout, and fullscreen interaction.
+
 ## Priority B: Enhanced sky observatory
 
 - [x] **Milky Way overlay (Version 18).** Independent controls for (a) published five-level Vieira brightness outlines (D3-Celestial/BSD), (b) illustrative galactic-plane glow, and (c) galactic-centre marker. Both polar and rectangular projections; optional precession and below-horizon mode. **Glow is artistic, not photometric.**
