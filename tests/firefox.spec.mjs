@@ -462,3 +462,53 @@ test('Version 23 Milky Way rectangular contour paths avoid interior seam bridges
  expect(counts.bridges).toBe(0);
  expect(errors).toEqual([]);
 });
+
+
+test('Version 25 Sun and Moon use the same zoomable pannable fullscreen stage',async({page})=>{
+ const errors=[];page.on('pageerror',err=>errors.push(err.message));
+ await page.goto('http://127.0.0.1:8765/');
+ await expect(page.locator('#app-version')).toHaveText('v25');
+ await expect(page.locator('#moon')).toBeVisible();
+ await expect(page.locator('#solar-photo')).toBeHidden();
+ await page.locator('[data-disc-view="sun"]').click();
+ await expect(page.locator('#solar-photo')).toBeVisible();
+ await expect(page.locator('#moon')).toBeHidden();
+ await expect(page.locator('#solar-note')).toBeVisible();
+ await expect(page.locator('#solar-refresh')).toBeVisible();
+ await expect(page.locator('#moon-bottom')).toBeHidden();
+ await expect(page.locator('#solar-status')).toContainText('NASA');
+ // Zoom at a non-central point and verify the image is translated.
+ const stage=page.locator('#disc-stage');
+ const box=await stage.boundingBox();
+ const fx=box.x+box.width*.75,fy=box.y+box.height*.38;
+ await page.mouse.move(fx,fy);
+ await page.mouse.wheel(0,-180);
+ await expect(page.locator('#moon-zoom-value')).not.toHaveText('1.0×');
+ const first=await page.locator('#solar-photo').evaluate(el=>el.style.transform);
+ expect(first).toMatch(/translate\(-/);
+ expect(first).toMatch(/scale\(1\./);
+ await page.mouse.down();
+ await page.mouse.move(fx+45,fy+20,{steps:4});
+ await page.mouse.up();
+ const moved=await page.locator('#solar-photo').evaluate(el=>el.style.transform);
+ expect(moved).not.toBe(first);
+ await page.locator('#disc-reset').click();
+ await expect(page.locator('#solar-photo')).toHaveJSProperty('hidden',false);
+ await expect(page.locator('#moon-zoom-value')).toHaveText('1.0×');
+ await expect(page.locator('#solar-photo')).toHaveAttribute('style',/translate\(0px,0px\) scale\(1\)/);
+ await page.locator('[data-fullscreen="moon-panel"]').click();
+ await expect.poll(()=>page.evaluate(()=>document.fullscreenElement?.classList.contains('moon-panel'))).toBe(true);
+ await expect(page.locator('#solar-photo')).toBeVisible();
+ await expect(page.locator('#dock-time')).toBeVisible();
+ await page.evaluate(()=>document.exitFullscreen());
+ await page.locator('[data-disc-view="moon"]').click();
+ await expect(page.locator('#moon')).toBeVisible();
+ await expect(page.locator('#solar-photo')).toBeHidden();
+ await page.mouse.move(fx,fy);
+ await page.mouse.wheel(0,-120);
+ await expect(page.locator('#moon-zoom-value')).not.toHaveText('1.0×');
+ await expect(page.locator('#moon')).toHaveAttribute('style',/scale\(1\./);
+ await page.locator('#disc-reset').click();
+ await expect(page.locator('#moon-zoom-value')).toHaveText('1.0×');
+ expect(errors).toEqual([]);
+});
