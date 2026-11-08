@@ -634,3 +634,42 @@ test('Version 29 labels remain enabled for faint stars and sky cursor reports RA
  await expect(page.locator('#sky-cursor-readout')).toContainText('Move your pointer');
  expect(errors).toEqual([]);
 });
+
+
+test('Version 30 polar Milky Way shading never fills most of the night sky',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('[data-sky-projection="polar"]').click();
+ await page.locator('[data-sky-light="black"]').click();
+ await page.locator('#show-stars').uncheck();
+ await page.locator('#show-constellations').uncheck();
+ await page.locator('#show-sky-paths').uncheck();
+ await page.locator('#show-labels').uncheck();
+ await page.locator('#show-galactic-center').uncheck();
+ await page.locator('#show-milkyway-outline').uncheck();
+ await page.waitForFunction(()=>document.querySelector('#milkyway-status').textContent.includes('loaded'));
+ await page.locator('#observe-date').fill('2026-11-08');
+ for(const hour of ['01:00','07:00','13:00','19:00']){
+  await page.locator('#observe-time').fill(hour);
+  await page.locator('#observe-time').dispatchEvent('change');
+  const snapshot=()=>page.locator('#sky').evaluate(el=>({
+   w:el.width,h:el.height,
+   data:Array.from(el.getContext('2d').getImageData(0,0,el.width,el.height).data)
+  }));
+  await page.locator('#show-milkyway-shade').uncheck();
+  const off=await snapshot();
+  await page.locator('#show-milkyway-shade').check();
+  const on=await snapshot();
+  let inside=0,shaded=0;
+  const x0=off.w/2,y0=off.h/2,r=Math.min(off.w,off.h)*.44;
+  for(let y=0;y<off.h;y+=5)for(let x=0;x<off.w;x+=5){
+   if(Math.hypot(x-x0,y-y0)>r)continue;
+   const i=(y*off.w+x)*4;
+   inside++;
+   if(on.data[i]-off.data[i]>8||on.data[i+1]-off.data[i+1]>8)shaded++;
+  }
+  expect(shaded/inside).toBeLessThan(.55);
+  expect(shaded).toBeGreaterThan(10);
+ }
+ expect(errors).toEqual([]);
+});
