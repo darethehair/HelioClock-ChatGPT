@@ -250,9 +250,10 @@ function orrery(){
  // No decorative fake stars in the orrery: an uncluttered black backdrop.
  dot(c,X,Y,outer?5:12,'#ffcd7d',18);
  planets.forEach(p=>{
-  // Seen from ecliptic north, orbital longitude increases counterclockwise.
-// Canvas Y grows downwards, so invert the sine. Keep longitude zero at top.
-  const a=(p.angle-90)*RAD,x=X+p.radius*scale*Math.cos(a),y=Y-p.radius*scale*Math.sin(a);
+  // Seen from north of the ecliptic, orbital longitude increases counterclockwise.
+// Longitude zero remains at the top; 90 degrees projects left, not right.
+// Screen Y points downward, so use (-sin(longitude), -cos(longitude)).
+  const a=p.angle*RAD,x=X-p.radius*scale*Math.sin(a),y=Y-p.radius*scale*Math.cos(a);
   dot(c,x,y,outer?Math.max(2.6,p.r*.75):p.r,p.color,9);
   if(outer||p.radius*scale>20)label(c,p.name,x+8,y-7,p.color,10);
  });
