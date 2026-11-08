@@ -187,3 +187,45 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 .source-credits summary{cursor:pointer;color:#f1c58d}
 .source-credits p{margin:4px 0 0;max-width:620px;font-size:10px;color:#aac0d6;line-height:1.6;letter-spacing:0}
 @media(max-width:750px){.credits-footer>div:last-child{text-align:left}.identity .app-version{font-size:10px;margin-left:2px}.dock-version{display:none}}
+
+/* Version 21: user-selected sections, adaptable text-first astronomical almanac. */
+[hidden]{display:none!important}
+.layout-manager{border:1px solid #344861;background:linear-gradient(125deg,#13243b,#111c2f);border-radius:11px;padding:17px 21px;margin-bottom:18px}
+.layout-head{display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap}
+.layout-head h2{font-size:17px;font-weight:600;margin:4px 0;color:#e1eaf7}
+.layout-head p{font-size:11px;color:#96aac5;margin:0}
+.layout-actions{display:flex;gap:7px;flex-wrap:wrap}
+.layout-actions button,.almanac-tools button{background:#1a3550;border:1px solid #56718b;border-radius:6px;padding:8px 11px;color:#e1eeff;font-size:11px;font-weight:700}
+.layout-actions button:hover,.almanac-tools button:hover{background:#2b5478}
+.layout-toggles{display:flex;flex-wrap:wrap;align-items:center;gap:7px 17px;margin-top:13px}
+.layout-toggles label{color:#bdd0e4;font-size:11px;display:inline-flex;gap:5px;align-items:center;white-space:nowrap}
+.layout-toggles input{accent-color:#e1b67c}
+.dashboard.text-first{grid-template-columns:minmax(0,1fr)}
+.dashboard.text-first .almanac-panel{grid-column:1/-1}
+.almanac-panel{grid-column:1/-1}
+.almanac-tools{display:flex;gap:12px;align-items:center;margin-bottom:13px;color:#b3dbbc;font-size:11px}
+.almanac-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;align-items:start}
+.almanac-group{background:#0d1a2b;border:1px solid #344c65;border-radius:9px;overflow:hidden}
+.almanac-group summary{cursor:pointer;list-style:none;font-size:14px;font-weight:700;color:#e9f1fc;padding:13px 15px;background:#182b43}
+.almanac-group summary::-webkit-details-marker{display:none}
+.almanac-group summary:after{content:'⌄';float:right;color:#8da2bd}
+.almanac-group:not([open]) summary:after{content:'›'}
+.almanac-symbol{color:#edc68a;font-size:17px;margin-right:9px}
+.almanac-body{padding:11px 14px 14px}
+.almanac-row{display:flex;justify-content:space-between;gap:15px;border-bottom:1px solid #28394f;padding:7px 0;font-size:12px;font-variant-numeric:tabular-nums}
+.almanac-row span{color:#9fb4ce}
+.almanac-row strong{text-align:right;color:#e1ebf8;font-weight:600}
+.almanac-note{font-size:11px!important;color:#a4b8d0!important;line-height:1.65;margin:8px 0!important}
+.twilight{display:grid;grid-template-columns:minmax(85px,1.1fr) 1fr 1fr;gap:10px;align-items:center;font-size:11px;border-bottom:1px solid #293b52;padding:11px 6px;color:#b9cee0}
+.twilight strong{color:#e8f2ff;white-space:nowrap}
+.twilight-label{display:inline-flex;align-items:center;gap:7px;font-weight:700}
+.twilight-label i{width:8px;height:8px;border-radius:50%;background:var(--twilight-color)}
+.twilight-civil{--twilight-color:#eab76c;border-left:3px solid var(--twilight-color)}
+.twilight-nautical{--twilight-color:#76b7ed;border-left:3px solid var(--twilight-color)}
+.twilight-astronomical{--twilight-color:#aea2fa;border-left:3px solid var(--twilight-color)}
+.almanac-event{display:flex;width:100%;justify-content:space-between;gap:14px;text-align:left;align-items:center;background:transparent;color:#c7daec;border:0;border-bottom:1px solid #30445a;padding:11px 2px;font-size:12px}
+.almanac-event:hover{background:#1c3550;color:#fff}
+.almanac-event strong{font-weight:600;font-variant-numeric:tabular-nums}
+.almanac-panel:fullscreen .almanac-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:850px){.almanac-grid{grid-template-columns:minmax(0,1fr)}.almanac-panel:fullscreen .almanac-grid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:450px){.twilight{grid-template-columns:1fr 1fr}.twilight-label{grid-column:1/-1}.layout-toggles{gap:12px}.almanac-row{font-size:11px}}
