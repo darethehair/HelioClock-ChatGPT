@@ -1,3 +1,4 @@
+import {renderAlmanac} from './almanac.js';
 import {drawEcliptic} from './ecliptic.js';
 import {drawMilkyWay,milkyWayStatus} from './milky-way.js';
 import {rectGeometry,projectRect,rectHorizonY,paintRectAtmosphere} from './sky-projection.js';
@@ -8,7 +9,7 @@ import {renderEarth} from './earth-renderer.js';
 import {starsAbove} from './sky-catalog.js';
 import {RAD,PI,wrap,clamp,solar,sunHorizontal,sunEvents,moon,orbitPositions,sidereal,utcTime,durationText} from './astronomy.js';
 const $=id=>document.getElementById(id);
-const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyHeading:0,earthZoom:1,earthLon:0,earthLat:0,earthProjection:'equal',orreryZoom:1,moonZoom:1,orbitMode:'inner',skyLight:'daylight',skyProjection:'polar',magLimit:3.5,usePrecession:true,playing:false};
+const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyHeading:0,earthZoom:1,earthLon:0,earthLat:0,earthProjection:'equal',orreryZoom:1,moonZoom:1,orbitMode:'inner',skyLight:'daylight',skyProjection:'polar',magLimit:3.5,stellarColors:true,usePrecession:true,playing:false};
 const fmt=d=>d.toISOString().slice(0,10);
 function setDateInputs(){$('observe-date').value=fmt(state.date);$('observe-time').value=utcTime(state.date)}
 function selectDate(){
@@ -174,6 +175,7 @@ function sky(){
   showConstellations:$('show-constellations').checked,
   precession:state.usePrecession,
   showBelowHorizon:state.skyProjection==='rect'&&$('show-below-horizon').checked,
+  stellarColors:state.stellarColors,
   brightSky:state.skyLight==='daylight' && skySun.alt>=-6
  });
  const status=skyAtlasStatus();
@@ -248,6 +250,7 @@ function orrery(){
  $('au-scale-description').textContent=outer?'Outer view · 5 AU intervals':'Inner view · 0.25 AU intervals';
 }
 function formatCoord(n,positive,negative){return Math.abs(n).toFixed(2)+'° '+(n>=0?positive:negative)}
+let almanacCurrent=null;
 function render(){
  const s=sunHorizontal(state.date,state.lat,state.lon),m=moon(state.date,state.lat,state.lon);
  const ev=sunEvents(state.date,state.lat,state.lon);
@@ -286,7 +289,14 @@ function render(){
  const sidTime=String(Math.floor(hSid)).padStart(2,'0')+':'+String(Math.floor(hSid%1*60)).padStart(2,'0')+':'+String(Math.floor(hSid*3600%60)).padStart(2,'0');
  $('sidereal-time').textContent=sidTime+' LMST';
  $('dock-sidereal').textContent=sidTime;
- daylightChart();worldMap();sky();drawMoon();orrery();
+ if(!document.querySelector('.chart-panel').hidden)daylightChart();
+ if(!document.querySelector('.earth-panel').hidden)worldMap();
+ if(!document.querySelector('.sky-panel').hidden)sky();
+ if(!document.querySelector('.moon-panel').hidden)drawMoon();
+ if(!document.querySelector('.orrery-panel').hidden)orrery();
+ if(!document.querySelector('.almanac-panel').hidden){
+  almanacCurrent=renderAlmanac($('almanac-content'),state.date,state.lat,state.lon);
+ }
 }
 function browserZone(){
  return Intl.DateTimeFormat().resolvedOptions().timeZone||'Device local time';
@@ -428,6 +438,7 @@ $('show-constellations').addEventListener('change',render);
 for(const id of ['show-milkyway-shade','show-milkyway-outline','show-galactic-center'])$(id).addEventListener('change',render);
 window.addEventListener('helioclock-milkyway-ready',render);
 $('use-precession').addEventListener('change',e=>{state.usePrecession=e.target.checked;render()});
+$('show-stellar-colors').addEventListener('change',e=>{state.stellarColors=e.target.checked;render()});
 window.addEventListener('helioclock-sky-atlas-ready',render);
 const SIDEREAL_DAY_MS=86164090.5;
 for(const [id,sign] of [['sky-prev-sidereal',-1],['sky-next-sidereal',1]]){
@@ -536,3 +547,55 @@ async function loadBuildMeta(){
  }
 }
 loadBuildMeta();
+
+/** Dashboard profiles store only named panel visibility flags; never hide controls. */
+const panelVisibility={
+ hero:'.hero,.stat-strip',chart:'.chart-panel',earth:'.earth-panel',sky:'.sky-panel',
+ moon:'.moon-panel',orrery:'.orrery-panel',details:'.details-panel',almanac:'.almanac-panel'
+};
+const defaultLayout={hero:true,chart:true,earth:true,sky:true,moon:true,orrery:true,details:true,almanac:false};
+let activeLayout={...defaultLayout};
+try{
+ const saved=JSON.parse(localStorage.getItem('helioclock-layout-v21')||'null');
+ if(saved&&typeof saved==='object')for(const k of Object.keys(defaultLayout))if(typeof saved[k]==='boolean')activeLayout[k]=saved[k];
+}catch{}
+function applyLayout(next){
+ activeLayout={...defaultLayout,...next};
+ for(const [key,selector] of Object.entries(panelVisibility)){
+  for(const el of document.querySelectorAll(selector))el.hidden=!activeLayout[key];
+  const input=document.querySelector('[data-panel-visibility="'+key+'"]');
+  if(input)input.checked=activeLayout[key];
+ }
+ document.querySelector('.dashboard').classList.toggle('text-first',activeLayout.almanac&&
+   !activeLayout.chart&&!activeLayout.earth&&!activeLayout.sky&&!activeLayout.moon&&!activeLayout.orrery);
+ try{localStorage.setItem('helioclock-layout-v21',JSON.stringify(activeLayout))}catch{}
+ requestAnimationFrame(render);
+}
+for(const input of document.querySelectorAll('[data-panel-visibility]')){
+ input.addEventListener('change',()=>applyLayout({...activeLayout,[input.dataset.panelVisibility]:input.checked}));
+}
+$('layout-all').addEventListener('click',()=>applyLayout(Object.fromEntries(Object.keys(defaultLayout).map(k=>[k,true]))));
+$('layout-default').addEventListener('click',()=>applyLayout(defaultLayout));
+$('layout-text').addEventListener('click',()=>applyLayout({hero:false,chart:false,earth:false,sky:false,moon:false,orrery:false,details:false,almanac:true}));
+$('almanac-copy').addEventListener('click',async()=>{
+ if(!almanacCurrent)return;
+ try{
+  await navigator.clipboard.writeText(almanacCurrent.report);
+  $('almanac-copy-status').textContent='Copied!';
+ }catch{
+  // Allow manual copy where Clipboard API is unavailable, e.g. HTTP deployments.
+  const field=document.createElement('textarea');field.value=almanacCurrent.report;
+  field.style.cssText='position:absolute;left:-9999px';
+  document.body.appendChild(field);field.select();
+  const ok=document.execCommand('copy');field.remove();
+  $('almanac-copy-status').textContent=ok?'Copied!':'Clipboard unavailable';
+ }
+});
+$('almanac-content').addEventListener('click',e=>{
+ const button=e.target.closest('[data-event-index]');
+ if(!button||!almanacCurrent)return;
+ const event=almanacCurrent.next[Number(button.dataset.eventIndex)];
+ if(!event)return;
+ pausePlayback();state.date=new Date(event.date);state.live=false;setDateInputs();render();
+});
+applyLayout(activeLayout);
