@@ -16,7 +16,7 @@ for f in stars['features']:
   ra=float(lon)%360
   dec=float(dec)
   if mag>7 or not(-90<=dec<=90):continue
-  records.append([round(ra,5),round(dec,5),round(mag,2),round(float(p.get('bv') or 0),2)])
+  records.append([round(ra,5),round(dec,5),round(mag,2),round(float(p['bv']),2) if p.get('bv') is not None else None])
  except (ValueError,TypeError,KeyError):continue
 segments=[]
 for f in lines['features']:
