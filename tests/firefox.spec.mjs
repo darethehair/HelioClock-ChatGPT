@@ -5,8 +5,8 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#sunrise')).not.toHaveText('—');
  // Release identity and provenance are visible even offline.
- await expect(page.locator('#app-version')).toHaveText('v34');
- await expect(page.locator('#dock-version')).toHaveText('v34');
+ await expect(page.locator('#app-version')).toHaveText('v35');
+ await expect(page.locator('#dock-version')).toHaveText('v35');
  await expect(page.locator('.credits-footer')).toContainText('Created by Darethehair with assistance from ChatGPT');
  await expect(page.locator('.credits-footer a')).toHaveAttribute('href','https://github.com/darethehair/HelioClock-ChatGPT');
  await expect(page.locator('#build-meta')).toContainText('commit');
@@ -345,7 +345,7 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
  const errors=[];
  page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v34');
+ await expect(page.locator('#app-version')).toHaveText('v35');
  await expect(page.locator('.almanac-panel')).toBeHidden();
  await page.locator('#layout-sky').click();
  await expect(page.locator('.sky-panel')).toBeVisible();
@@ -445,10 +445,45 @@ test('Version 32 rectangular Milky Way mask changes the sky without a full-sky w
  expect(errors).toEqual([]);
 });
 
+test('Version 35 lunar Earthshine is optional and full Moon remains bright',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('#layout-moon').click();
+ await expect(page.locator('#show-earthshine')).toBeChecked();
+ await page.waitForFunction(()=>document.querySelector('#moon-source')?.textContent.includes('NASA LRO near-side'));
+ const centerPixel=()=>page.locator('#moon').evaluate(el=>{
+  const ctx=el.getContext('2d'),x=Math.floor(el.width/2),y=Math.floor(el.height/2);
+  return Array.from(ctx.getImageData(x,y,1,1).data);
+ });
+ // A known near-new Moon (solar eclipse); earthshine remains unmistakably
+ // optional and never changes the ephemeris's illumination percentage.
+ await page.locator('#observe-date').fill('2024-04-08');
+ await page.locator('#observe-time').fill('18:00');
+ await page.locator('#observe-time').dispatchEvent('change');
+ const newIllumination=await page.locator('#moon-illumination').innerText();
+ const visibleDark=await centerPixel();
+ await page.locator('#show-earthshine').uncheck();
+ const naturalDark=await centerPixel();
+ expect(visibleDark[0]).toBeGreaterThan(naturalDark[0]);
+ expect(visibleDark[3]).toBeGreaterThan(0);
+ await expect(page.locator('#moon-illumination')).toHaveText(newIllumination);
+ await page.locator('#show-earthshine').check();
+ await page.locator('#observe-date').fill('2024-03-25');
+ await page.locator('#observe-time').fill('07:00');
+ await page.locator('#observe-time').dispatchEvent('change');
+ const full=await centerPixel();
+ expect(full[0]).toBeGreaterThan(visibleDark[0]*2);
+ await page.locator('[data-disc-view="sun"]').click();
+ await expect(page.locator('#earthshine-setting')).toBeHidden();
+ await page.locator('[data-disc-view="moon"]').click();
+ await expect(page.locator('#earthshine-setting')).toBeVisible();
+ expect(errors).toEqual([]);
+});
+
 test('Version 25 Sun and Moon use the same zoomable pannable fullscreen stage',async({page})=>{
  const errors=[];page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v34');
+ await expect(page.locator('#app-version')).toHaveText('v35');
  await expect(page.locator('#moon')).toBeVisible();
  await expect(page.locator('#solar-photo')).toBeHidden();
  await page.locator('[data-disc-view="sun"]').click();
@@ -890,7 +925,7 @@ test('Version 34 offers comparable Milky Way masks and copyable exact debug stat
  });
  await page.locator('#mw-copy-debug').click();
  const data=await page.evaluate(()=>JSON.parse(window.__debugCopy));
- expect(data.version).toBe(34);
+ expect(data.version).toBe(35);
  expect(data.utc).toBe('2026-11-09T12:44:00.000Z');
  expect(data.observer).toEqual({lat:49.19,lon:-98.10});
  expect(data.sky.projection).toBe('rect');

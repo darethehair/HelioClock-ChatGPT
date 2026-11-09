@@ -146,3 +146,7 @@ The rectangular Milky Way renderer exposes both fixed-mask construction algorith
 ### Mask selection after visual verification
 
 The user-facing spherical-clip comparison toggle has been retired because its shading was incomplete. The repaired planar J2000 mask is selected automatically for rectangular views, and the previously validated legacy planar mask is retained for polar views. Copy Debug State and cursor diagnostics remain available. The internal source-mode comparison is no longer offered as a UI setting.
+
+## v35: Verified Milky Way and lunar display
+
+The fixed equatorial Milky Way masks are retained: repaired planar rendering for rectangular sky and the verified legacy mask for polar. The unreliable spherical-clip user toggle remains retired. Lunar visualization uses a slightly brighter midtone curve without changing lunar phase or ephemerides. The Moon panel adds a **Show Earthshine / dark-side detail** option (enabled by default), which subtly exposes the night-side lunar surface and adds a faint outline at near-new phase as a clearly identified educational display aid. Turn the option off for a naturally dark new-Moon presentation. Sun view hides this Moon-only setting.

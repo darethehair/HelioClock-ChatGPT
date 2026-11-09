@@ -262,13 +262,14 @@ function drawMoon(){
   updateDiscViewport();
   return;
  }
- const info=renderMoon($('moon'),state.date,state.lat,state.lon,1);
+ const info=renderMoon($('moon'),state.date,state.lat,state.lon,1,{showEarthshine:$('show-earthshine').checked});
  const m=moon(state.date,state.lat,state.lon);
  $('moon-zoom-value').textContent=state.moonZoom.toFixed(1)+'×';
  $('moon-progress-fill').style.width=(m.phase*100).toFixed(1)+'%';
  if(info){
   $('moon-tilt').textContent='Bright limb from zenith: '+(info.fromZenith>0?'+':'')+info.fromZenith.toFixed(1)+'°';
-  $('moon-source').textContent=info.photoLoaded?'NASA LRO near-side mosaic · horizon-aligned':'Loading lunar photography…';
+  $('moon-source').textContent=(info.photoLoaded?'NASA LRO near-side mosaic · horizon-aligned':'Loading lunar photography…')+
+   ($('show-earthshine').checked?' · Earthshine visualization':' · natural dark side');
  }
  updateDiscViewport();
 }
@@ -494,6 +495,7 @@ function showDisc(which){
  $('solar-refresh').hidden=!sun;
  $('disc-kind').textContent=sun?'SOLAR OBSERVATION':'LUNAR CYCLE';
  $('moon-phase').hidden=sun;
+ $('earthshine-setting').hidden=sun;
  $('moon-tilt').textContent=sun?'SDO/HMI continuum image':'Bright limb from zenith: —';
  $('moon-source').textContent=sun?'NASA Solar Dynamics Observatory · HMI':'NASA lunar mosaic';
  for(const button of document.querySelectorAll('[data-disc-view]')){
@@ -573,6 +575,7 @@ $('earth-zoom-in').addEventListener('click',()=>adjustEarthZoom(1.25));
 $('earth-zoom-out').addEventListener('click',()=>adjustEarthZoom(.8));
 $('earth-map-home').addEventListener('click',()=>{$('earth-reset').click()});
 window.addEventListener('helioclock-earth-texture-ready',render);
+$('show-earthshine').addEventListener('change',render);
 window.addEventListener('helioclock-moon-texture-ready',render);
 
 for(const button of document.querySelectorAll('[data-sky-light]')){

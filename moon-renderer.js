@@ -26,7 +26,7 @@ image.src='./moon-nearside-lro.jpg';
  * Libration and topocentric parallax of the lunar orientation are not yet
  * modelled. The phase fraction uses an approximate synodic calculation.
  */
-export function renderMoon(canvas,when,latitude,longitude,zoom=1){
+export function renderMoon(canvas,when,latitude,longitude,zoom=1,{showEarthshine=true}={}){
  const w=canvas.clientWidth,h=canvas.clientHeight;
  if(w<=0||h<=0)return;
  const dpr=Math.min(window.devicePixelRatio||1,2);
@@ -54,8 +54,14 @@ export function renderMoon(canvas,when,latitude,longitude,zoom=1){
    if(rr>=1)continue;
    const nz=Math.sqrt(1-rr);
    const light=Math.max(0,nx*sunX+ny*sunY+nz*z);
-   const earthshine=.022;
-   const shade=earthshine+.978*light;
+   // A brighter midtone curve brings out LRO maria and highlands without
+   // washing out the bright hemisphere or changing phase geometry.
+   const sunlit=1.10*Math.pow(light,.86);
+   // Earthshine is only a visualization of the night-side surface:
+   // strongest near crescent/new phases, never applied as solar illumination.
+   const earthshine=showEarthshine?
+    .025+.045*Math.pow(1-m.illuminated,2):0;
+   const shade=clamp(earthshine+sunlit,0,1.18);
    const fade=clamp((1-Math.sqrt(rr))*radius,0,1);
    const q=(y*size+x)*4;
    let red=180,green=185,blue=195;
@@ -76,6 +82,13 @@ export function renderMoon(canvas,when,latitude,longitude,zoom=1){
  c.save();c.translate(w/2,h/2);c.rotate(tilt.parallactic*Math.PI/180);
  c.shadowBlur=8;c.shadowColor='#a7bcd355';
  c.drawImage(temp,-radius,-radius);
+ // At exact new Moon the disc would otherwise be indistinguishable from a
+ // missing image. A thin, clearly-labelled educational outline is optional
+ // and deliberately does not count as illuminated surface.
+ if(showEarthshine&&m.illuminated<.015){
+  c.beginPath();c.arc(0,0,radius-.8,0,Math.PI*2);
+  c.strokeStyle='rgba(170,192,218,.18)';c.lineWidth=1;c.stroke();
+ }
  c.restore();
  return {...tilt,photoLoaded:loading==='ready',illumination:m.illuminated};
 }

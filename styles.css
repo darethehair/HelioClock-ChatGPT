@@ -258,3 +258,9 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 .sky-debug-tools select,.sky-debug-tools button{background:#122c43;border:1px solid #426383;border-radius:5px;padding:6px 8px;color:#dceafa;font-size:11px}
 .sky-debug-tools button{cursor:pointer}
 #mw-debug-status{font-variant-numeric:tabular-nums;color:#d3bd89}
+
+/* Lunar Earthshine is an optional educational night-side visualization. */
+.earthshine-toggle{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:3px 0 8px;font-size:11px;color:#d2e2f2}
+.earthshine-toggle input{accent-color:#91cbe9}
+.earthshine-toggle span{color:#8d9fbb;font-size:10px}
+.earthshine-toggle[hidden]{display:none!important}
