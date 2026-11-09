@@ -658,6 +658,15 @@ function setPolarSkyZoom(next,clientX=null,clientY=null){
   const ratio=next/old;
   state.skyPanX+=(1-ratio)*(px-rect.width/2-state.skyPanX);
   state.skyPanY+=(1-ratio)*(py-rect.height/2-state.skyPanY);
+  // Test-only readout: record the precise inputs and resulting pan without
+  // modifying user-visible sky geometry or altering any event ordering.
+  if(window.__helioclockCaptureZoom){
+   window.__helioclockZoomTrace={old,next,ratio,px,py,
+    rectWidth:rect.width,rectHeight:rect.height,
+    canvasWidth:canvas.clientWidth,canvasHeight:canvas.clientHeight,
+    panX:state.skyPanX,panY:state.skyPanY,
+    scrollX:window.scrollX,scrollY:window.scrollY};
+  }
   if(next===1){state.skyPanX=0;state.skyPanY=0}
  }
  state.skyZoom=next;$('sky-zoom').value=String(next);
