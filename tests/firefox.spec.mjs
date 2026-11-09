@@ -509,12 +509,13 @@ test('Milky Way fixed mask is consistent across projections and polar zoom',asyn
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:8765/');
  await page.locator('[data-sky-light="black"]').click();
- // Wait until the asynchronously loaded contour data has actually been
- // rasterized; the previous assertion also matched "Mask planar: not generated".
+ // Polar mode intentionally renders with the preserved planar-legacy mask.
+ // Enter rectangular mode before awaiting diagnostics for the repaired
+ // "planar" mask; otherwise that mask has not been generated.
+ await page.locator('[data-sky-projection="rect"]').click();
  await expect(page.locator('#mw-debug-status')).toContainText(/Mask planar · [0-9.]+% equatorial pixels/);
  const stats=await page.locator('#mw-debug-status').innerText();
- await page.locator('[data-sky-projection="rect"]').click();
- await expect(page.locator('#mw-debug-status')).toHaveText(stats);
+ expect(stats).toContain('2 seam closures');
  await page.locator('[data-sky-projection="polar"]').click();
  await page.locator('#sky-zoom').fill('2');
  await page.locator('#sky-zoom').dispatchEvent('input');
