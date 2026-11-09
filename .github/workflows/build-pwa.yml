@@ -5,6 +5,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  actions: read
 jobs:
   quick-check:
     runs-on: ubuntu-latest
@@ -92,13 +93,37 @@ jobs:
           assert p.read_bytes()[:2] == bytes.fromhex('ffd8'), 'Invalid JPEG lunar mosaic'
           print('LRO lunar photo:',p.stat().st_size,'bytes')
           PY
+      # Keep a previously validated solar photograph available when NASA's
+      # realtime image endpoint temporarily refuses connections.
+      - name: Restore cached offline solar reference
+        uses: actions/cache/restore@v4
+        with:
+          path: /tmp/helioclock-solar-fallback.jpg
+          key: helioclock-solar-fallback-v1
       - name: Bundle fallback NASA SDO solar continuum image
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          curl --fail --location --retry 3 --max-time 120 --silent --show-error \
-            https://sdo.gsfc.nasa.gov/assets/img/latest/latest_1024_HMIIC.jpg \
-            --output dist/solar-fallback.jpg
+          if [ -s /tmp/helioclock-solar-fallback.jpg ]; then
+            cp /tmp/helioclock-solar-fallback.jpg dist/solar-fallback.jpg
+          else
+            # Solar observations are optional online data: do not make a
+            # temporary NASA outage break the offline PWA release.
+            if ! curl --fail --location --retry 2 --retry-delay 2 --max-time 25 --silent --show-error \
+              https://sdo.gsfc.nasa.gov/assets/img/latest/latest_1024_HMIIC.jpg \
+              --output dist/solar-fallback.jpg; then
+              echo "NASA SDO image unreachable; restoring last verified offline reference from the successful v35 build"
+              curl --fail --location --retry 2 --max-time 40 --silent --show-error \
+                -H "Authorization: Bearer ${GH_TOKEN}" \
+                -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/13710680763/zip" \
+                --output /tmp/helioclock-last-good.zip
+              unzip -p /tmp/helioclock-last-good.zip solar-fallback.jpg > dist/solar-fallback.jpg
+            fi
+            cp dist/solar-fallback.jpg /tmp/helioclock-solar-fallback.jpg
+          fi
           python3 - <<'PY'
           from pathlib import Path
           p=Path('dist/solar-fallback.jpg')
@@ -106,6 +131,11 @@ jobs:
           assert p.read_bytes()[:2] == bytes.fromhex('ffd8'), 'Invalid JPEG solar reference'
           print('Offline NASA SDO solar reference:',p.stat().st_size,'bytes')
           PY
+      - name: Save offline solar fallback for later builds
+        uses: actions/cache/save@v4
+        with:
+          path: /tmp/helioclock-solar-fallback.jpg
+          key: helioclock-solar-fallback-v1
       - name: Bundle offline star catalogue and constellation stick figures
         shell: bash
         run: |
