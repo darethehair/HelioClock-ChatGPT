@@ -5,8 +5,8 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#sunrise')).not.toHaveText('—');
  // Release identity and provenance are visible even offline.
- await expect(page.locator('#app-version')).toHaveText('v32');
- await expect(page.locator('#dock-version')).toHaveText('v32');
+ await expect(page.locator('#app-version')).toHaveText('v33');
+ await expect(page.locator('#dock-version')).toHaveText('v33');
  await expect(page.locator('.credits-footer')).toContainText('Created by Darethehair with assistance from ChatGPT');
  await expect(page.locator('.credits-footer a')).toHaveAttribute('href','https://github.com/darethehair/HelioClock-ChatGPT');
  await expect(page.locator('#build-meta')).toContainText('commit');
@@ -345,7 +345,7 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
  const errors=[];
  page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v32');
+ await expect(page.locator('#app-version')).toHaveText('v33');
  await expect(page.locator('.almanac-panel')).toBeHidden();
  await page.locator('#layout-sky').click();
  await expect(page.locator('.sky-panel')).toBeVisible();
@@ -448,7 +448,7 @@ test('Version 32 rectangular Milky Way mask changes the sky without a full-sky w
 test('Version 25 Sun and Moon use the same zoomable pannable fullscreen stage',async({page})=>{
  const errors=[];page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v32');
+ await expect(page.locator('#app-version')).toHaveText('v33');
  await expect(page.locator('#moon')).toBeVisible();
  await expect(page.locator('#solar-photo')).toBeHidden();
  await page.locator('[data-disc-view="sun"]').click();
@@ -668,7 +668,7 @@ test('Version 32 rectangular black sky stays black outside the fixed Milky Way m
  }
  await page.waitForFunction(()=>document.querySelector('#milkyway-status').textContent.includes('loaded'));
  await page.locator('#observe-date').fill('2026-11-09');
- for(const hour of ['09:48','10:48','11:48','15:48']){
+ for(const hour of ['09:48','10:48','11:48','12:44','15:48']){
   await page.locator('#observe-time').fill(hour);
   await page.locator('#observe-time').dispatchEvent('change');
   await page.locator('#show-milkyway-shade').uncheck();
@@ -697,5 +697,65 @@ test('Version 32 rectangular black sky stays black outside the fixed Milky Way m
   expect(shaded/checked).toBeLessThan(.55);
   expect(shaded).toBeGreaterThan(10);
  }
+ expect(errors).toEqual([]);
+});
+
+
+test('Version 33 avoids false Milky Way bands far from galactic plane at 07:44 Manitoba time',async({page})=>{
+ test.setTimeout(90000);
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('#layout-sky').click();
+ await page.locator('[data-sky-projection="rect"]').click();
+ await page.locator('[data-sky-light="black"]').click();
+ for(const id of ['show-stars','show-constellations','show-sky-paths','show-labels','show-galactic-center','show-milkyway-outline']){
+  await page.locator('#'+id).uncheck();
+ }
+ await page.waitForFunction(()=>document.querySelector('#milkyway-status').textContent.includes('loaded'));
+ await page.locator('#latitude').fill('49.19');
+ await page.locator('#longitude').fill('-98.10');
+ await page.locator('#observe-date').fill('2026-11-09');
+ // Screenshot: 07:44 America/Winnipeg (UTC-05:00) = 12:44 UTC.
+ await page.locator('#observe-time').fill('12:44');
+ await page.locator('#observe-time').dispatchEvent('change');
+ const canvas=page.locator('#sky');
+ await page.locator('#show-milkyway-shade').uncheck();
+ const off=await canvas.evaluate(el=>({
+  w:el.width,h:el.height,data:Array.from(el.getContext('2d').getImageData(0,0,el.width,el.height).data)
+ }));
+ await page.locator('#show-milkyway-shade').check();
+ const region=await canvas.evaluate((el,off)=>{
+  const on=el.getContext('2d').getImageData(0,0,el.width,el.height).data;
+  const w=off.w,h=off.h;
+  const R=Math.PI/180;
+  // Latitude of the galactic north pole in ICRS/J2000.
+  const np=[Math.cos(27.12825*R)*Math.cos(192.85948*R),
+   Math.cos(27.12825*R)*Math.sin(192.85948*R),Math.sin(27.12825*R)];
+  const lat=49.19*R,phiSin=Math.sin(lat),phiCos=Math.cos(lat);
+  const date=new Date('2026-11-09T12:44:00Z');
+  const J=date.getTime()/86400000+2440587.5,T=(J-2451545)/36525;
+  const lst=((280.46061837+360.98564736629*(J-2451545)+.000387933*T*T-T*T*T/38710000-98.10)%360+360)%360;
+  let high=0,falseBand=0,mid=0;
+  for(let y=Math.floor(h*.10);y<h*.90;y+=5){
+   const altitude=(90-y/h*180)*R,sa=Math.sin(altitude),ca=Math.cos(altitude);
+   for(let x=Math.floor(w*.09);x<w*.91;x+=5){
+    const i=(y*w+x)*4;
+    if(off.data[i]>3||off.data[i+1]>3||off.data[i+2]>3)continue;
+    const az=(x/w*360)*R;
+    const dec=Math.asin(Math.max(-1,Math.min(1,sa*phiSin+ca*phiCos*Math.cos(az))));
+    const H=Math.atan2(-ca*Math.sin(az),sa*phiCos-ca*phiSin*Math.cos(az));
+    const ra=lst*R-H;
+    const dot=Math.cos(dec)*(Math.cos(ra)*np[0]+Math.sin(ra)*np[1])+Math.sin(dec)*np[2];
+    const glat=Math.asin(Math.max(-1,Math.min(1,dot)))/R;
+    const change=on[i]-off.data[i]>6||on[i+1]-off.data[i+1]>6;
+    if(Math.abs(glat)>50){high++;if(change)falseBand++}
+    else if(change)mid++;
+   }
+  }
+  return {high,falseBand,mid};
+ },off);
+ expect(region.high).toBeGreaterThan(100);
+ expect(region.mid).toBeGreaterThan(25);
+ expect(region.falseBand/region.high).toBeLessThan(.03);
  expect(errors).toEqual([]);
 });
