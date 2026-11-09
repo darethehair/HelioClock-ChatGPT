@@ -537,8 +537,12 @@ test('Version 36 stores, restores, imports, exports and resets preferences',asyn
  const file=await downloaded;
  expect(file.suggestedFilename()).toBe('HelioClock-settings.json');
  const savedJson=await page.evaluate(()=>localStorage.getItem('helioclock-preferences-v1'));
- await page.locator('#prefs-reset').click();
+ await Promise.all([
+  page.waitForEvent('load'),
+  page.locator('#prefs-reset').click()
+ ]);
  await expect(page.locator('#latitude')).toHaveValue('49.19');
+ await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('helioclock-preferences-v1'))?.observer?.lat)).toBe(49.19);
  await expect(page.locator('#prefs-remember-view')).not.toBeChecked();
  await page.locator('#prefs-file').setInputFiles({
   name:'settings.json',mimeType:'application/json',buffer:Buffer.from(savedJson)
