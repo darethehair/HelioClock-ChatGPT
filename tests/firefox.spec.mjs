@@ -448,7 +448,7 @@ test('Version 32 rectangular Milky Way mask changes the sky without a full-sky w
 test('Version 35 lunar Earthshine is optional and full Moon remains bright',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:8765/');
- await page.locator('#layout-moon').click();
+ await expect(page.locator('.moon-panel')).toBeVisible();
  await expect(page.locator('#show-earthshine')).toBeChecked();
  await page.waitForFunction(()=>document.querySelector('#moon-source')?.textContent.includes('NASA LRO near-side'));
  const centerPixel=()=>page.locator('#moon').evaluate(el=>{
