@@ -1,5 +1,5 @@
 import {geoEquirectangular,geoAzimuthalEquidistant,geoPath,geoArea} from 'd3-geo';
-import {RAD,DEG,wrap,horizontal,precessJ2000} from './astronomy.js';
+import {RAD,DEG,wrap,horizontal,precessJ2000,sidereal} from './astronomy.js';
 import {projectRect,rectGeometry} from './sky-projection.js';
 
 /**
@@ -131,58 +131,141 @@ function paintContours(c,levels,projectPoint,opts,visibility,shade,outline){
  }
 }
 /**
- * Rectangular projection: let D3's spherical antimeridian clipper split closed
- * Milky Way contours at the azimuth seam. Naive x-coordinate unwrapping plus
- * closePath() can draw long horizontal chords through the chart, especially
- * where a ring winds around the zenith/nadir or crosses a projection pole.
+ * Fixed equatorial contour mask for rectangular shading. The Vieira outlines
+ * are ordinary J2000 RA/Dec curves and never enter the azimuth projection
+ * when deciding which points are *inside*. All topology (rings and holes)
+ * is resolved once in a fixed 360° by 180° map. Rendering merely samples
+ * that map through the inverse local horizontal projection.
  *
- * The published catalogue is a MultiPolygon. Maintain each polygon's hole
- * rings, convert its equatorial vertices to local azimuth/altitude, and let
- * spherical clipping form proper seam-edge closures. We stretch the resulting
- * equirectangular latitude axis to match the existing ±90° altitude chart.
+ * This avoids D3's time-dependent spherical complement/winding ambiguity
+ * whenever a contour sweeps across the local azimuth seam or a sky pole.
+ * The polar projection retains its established separate implementation.
  */
-function paintRectContours(c,levels,{date,lat,lon,width,height,heading,precession},visibility,shade,outline){
+const MASK_WIDTH=1440,MASK_HEIGHT=720;
+const CONTOUR_ALPHA=[.095,.060,.060,.070,.085];
+let fixedContourMask=null;
+function makeCanvas(w,h){
+ const cv=document.createElement('canvas');
+ cv.width=w;cv.height=h;
+ return cv;
+}
+function fixedEquatorialMask(){
+ if(fixedContourMask)return fixedContourMask;
+ const total=new Float32Array(MASK_WIDTH*MASK_HEIGHT);
+ const cv=makeCanvas(MASK_WIDTH,MASK_HEIGHT),ctx=cv.getContext('2d',{willReadFrequently:true});
+ // The atlas contours never reach the celestial poles; simple unwrapped
+ // RA/Dec paths preserve their geometry without the projection-pole closures
+ // that caused the large erroneous grey background.
+ for(let tier=0;tier<levels.length;tier++){
+  ctx.clearRect(0,0,MASK_WIDTH,MASK_HEIGHT);
+  for(const polygon of (levels[tier].polygons||[])){
+   if(!polygon.length)continue;
+   const path=new Path2D();
+   let outerAnchor=null;
+   for(const ring of polygon){
+    if(ring.length<3)continue;
+    let previous=null;
+    let first=null;
+    for(const [ra,dec] of ring){
+     let x=wrap(ra,360);
+     if(previous!==null)x+=360*Math.round((previous-x)/360);
+     else if(outerAnchor!==null)x+=360*Math.round((outerAnchor-x)/360);
+     if(first===null){first=x;if(outerAnchor===null)outerAnchor=x}
+     const px=x*MASK_WIDTH/360,py=(90-dec)*MASK_HEIGHT/180;
+     if(previous===null)path.moveTo(px,py);else path.lineTo(px,py);
+     previous=x;
+    }
+    path.closePath();
+   }
+   ctx.fillStyle='#fff';
+   // Repeat whole polygon, *with identical hole offsets*, at the RA seam.
+   for(const dx of [-2,-1,0,1,2]){
+    ctx.save();ctx.translate(dx*MASK_WIDTH,0);
+    ctx.fill(path,'evenodd');
+    ctx.restore();
+   }
+  }
+  const pixels=ctx.getImageData(0,0,MASK_WIDTH,MASK_HEIGHT).data;
+  const alpha=CONTOUR_ALPHA[Math.min(tier,CONTOUR_ALPHA.length-1)];
+  for(let i=0,j=3;i<total.length;i++,j+=4){
+   if(pixels[j])total[i]=1-(1-total[i])*(1-alpha*pixels[j]/255);
+  }
+ }
+ fixedContourMask=new Uint8Array(total.length);
+ for(let i=0;i<total.length;i++)fixedContourMask[i]=Math.round(255*total[i]);
+ return fixedContourMask;
+}
+function precessionInverse(date){
+ // Inverse of astronomy.js's IAU 1976 J2000-to-date rotation.
+ const T=(date.getTime()/86400000+2440587.5-2451545)/36525;
+ const arcsec=RAD/3600;
+ const zeta=(2306.2181*T+.30188*T*T+.017998*T*T*T)*arcsec;
+ const z=(2306.2181*T+1.09468*T*T+.018203*T*T*T)*arcsec;
+ const theta=(2004.3109*T-.42665*T*T-.041833*T*T*T)*arcsec;
+ return {zeta,z,ct:Math.cos(theta),st:Math.sin(theta)};
+}
+function paintRectMask(c,{date,lat,lon,width,height,heading,precession},visibility){
+ const source=fixedEquatorialMask(),g=rectGeometry(width,height);
+ // 2px nominal cells are smoothed on display, reducing costly coordinate
+ // inversions for large fullscreen charts without smearing contour structure.
+ const step=2,cols=Math.ceil((g.right-g.left)/step),rows=Math.ceil((g.bottom-g.top)/step);
+ const cv=makeCanvas(cols,rows),ctx=cv.getContext('2d');
+ const out=ctx.createImageData(cols,rows),dst=out.data;
+ const siderealDegrees=sidereal(date,lon);
+ const phi=lat*RAD,sp=Math.sin(phi),cp=Math.cos(phi);
+ const inv=precession?precessionInverse(date):null;
+ const cosAz=new Float64Array(cols),sinAz=new Float64Array(cols);
+ for(let x=0;x<cols;x++){
+  const az=wrap((x+.5)/cols*360+heading)*RAD;
+  cosAz[x]=Math.cos(az);sinAz[x]=Math.sin(az);
+ }
+ for(let y=0;y<rows;y++){
+  const altitude=(90-(y+.5)/rows*180)*RAD;
+  const sa=Math.sin(altitude),ca=Math.cos(altitude);
+  for(let x=0;x<cols;x++){
+   const cosA=cosAz[x],sinA=sinAz[x];
+   const dec=Math.asin(Math.max(-1,Math.min(1,sa*sp+ca*cp*cosA)));
+   const hourAngle=Math.atan2(-ca*sinA,sa*cp-ca*sp*cosA)*DEG;
+   let ra=wrap(siderealDegrees-hourAngle)*RAD,decl=dec;
+   if(inv){
+    const a=ra-inv.z,cosd=Math.cos(decl),B=cosd*Math.cos(a),A=cosd*Math.sin(a),C=Math.sin(decl);
+    ra=Math.atan2(A,inv.ct*B+inv.st*C)-inv.zeta;
+    decl=Math.asin(Math.max(-1,Math.min(1,-inv.st*B+inv.ct*C)));
+   }
+   const u=Math.min(MASK_WIDTH-1,Math.floor(wrap(ra*DEG,360)*MASK_WIDTH/360));
+   const v=Math.max(0,Math.min(MASK_HEIGHT-1,Math.floor((90-decl*DEG)*MASK_HEIGHT/180)));
+   const intensity=source[v*MASK_WIDTH+u],p=(y*cols+x)*4;
+   dst[p]=190;dst[p+1]=198;dst[p+2]=209;dst[p+3]=Math.round(intensity*visibility);
+  }
+ }
+ ctx.putImageData(out,0,0);
+ c.drawImage(cv,g.left,g.top,g.right-g.left,g.bottom-g.top);
+}
+/**
+ * Outlines still use the existing vector projection and spherical seam
+ * clipping. Only *fills* use the fixed mask: an outline never affects the
+ * physical inside/outside choice of a contour.
+ */
+function paintRectContours(c,levels,opts,visibility,shade,outline){
+ if(shade)paintRectMask(c,opts,visibility);
+ if(!outline)return;
+ const {date,lat,lon,width,height,heading,precession}=opts;
  const g=rectGeometry(width,height),span=g.right-g.left;
  const xCenter=(g.left+g.right)/2,yCenter=(g.top+g.bottom)/2;
  const baseScale=span/(Math.PI*2),verticalScale=(g.bottom-g.top)/(Math.PI*baseScale);
- const projection=geoEquirectangular().scale(baseScale)
-  .translate([xCenter,yCenter]).precision(.15);
- const path=geoPath(projection,c),alpha=[.095,.060,.060,.070,.085];
- c.save();
- c.translate(0,yCenter);c.scale(1,verticalScale);c.translate(0,-yCenter);
+ // Dynamic vector outlines alone cannot cause a full-sky grey wash.
+ const projection=geoEquirectangular().scale(baseScale).translate([xCenter,yCenter]).precision(.15);
+ const path=geoPath(projection,c);
+ c.save();c.translate(0,yCenter);c.scale(1,verticalScale);c.translate(0,-yCenter);
  for(let k=0;k<levels.length;k++){
-  const polygons=levels[k].polygons||[];
-  const converted=[];
-  for(const polygon of polygons){
-   // Decide spherical interior in fixed J2000 coordinates, *before*
-   // rotating to the observer's horizon. geoArea() on transformed vertex
-   // rings can change its complement decision as the local azimuth seam
-   // sweeps across them, producing the observed hour-to-hour grey reversal.
-   // Reverse all rings together so catalogue holes retain their parity.
-   const source={type:'Polygon',coordinates:polygon};
-   const canonical=geoArea(source)>2*Math.PI
-    ?polygon.map(ring=>[...ring].reverse()):polygon;
-   const rings=canonical.map(ring=>ring.map(([ra,dec])=>{
-    const h=toAltAz(ra,dec,date,lat,lon,precession);
-    // D3 longitude zero projects to the *middle* of the rectangle,
-    // whereas the sky chart puts azimuth zero at both edges and 180°
-    // at the centre. Shift by 180°, rather than merely normalizing az.
-    return [wrap(h.az-heading,360)-180,h.alt];
-   }));
-   if(!rings.length)continue;
-   // The canonical winding is independent of the selected hour.
-   // D3 still performs the seam clipping and closes the split boundaries.
-   converted.push(rings);
-  }
-  if(!converted.length)continue;
-  c.beginPath();
-  path({type:'MultiPolygon',coordinates:converted});
-  if(shade){c.fillStyle='rgba(190,198,209,'+(alpha[k]*visibility)+')';c.fill('evenodd')}
-  if(outline){
-   c.strokeStyle='rgba(192,204,222,'+((.14+.035*k)*visibility)+')';
-   c.lineWidth=(k===0?1:.7)/Math.max(1,verticalScale);
-   c.stroke();
-  }
+  const converted=(levels[k].polygons||[]).map(polygon=>polygon.map(ring=>ring.map(([ra,dec])=>{
+   const h=toAltAz(ra,dec,date,lat,lon,precession);
+   return [wrap(h.az-heading,360)-180,h.alt];
+  })));
+  c.beginPath();path({type:'MultiPolygon',coordinates:converted});
+  c.strokeStyle='rgba(192,204,222,'+((.14+.035*k)*visibility)+')';
+  c.lineWidth=(k===0?1:.7)/Math.max(1,verticalScale);
+  c.stroke();
  }
  c.restore();
 }
