@@ -251,3 +251,10 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 
 /* Live astronomical cursor information remains outside the canvas drawing. */
 .sky-cursor-readout{display:block;margin:8px 2px 0;padding:7px 10px;min-height:28px;border:1px solid #324a64;border-radius:6px;background:#0d2034;color:#c8dcf1;font-size:11px;font-variant-numeric:tabular-nums;letter-spacing:.15px}
+
+/* Troubleshooting tools remain available even when sky panel is fullscreen. */
+.sky-debug-tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 0;font-size:11px;color:#b4cde7}
+.sky-debug-tools label{display:flex;align-items:center;gap:8px}
+.sky-debug-tools select,.sky-debug-tools button{background:#122c43;border:1px solid #426383;border-radius:5px;padding:6px 8px;color:#dceafa;font-size:11px}
+.sky-debug-tools button{cursor:pointer}
+#mw-debug-status{font-variant-numeric:tabular-nums;color:#d3bd89}
