@@ -494,6 +494,21 @@ test('Version 25 Sun and Moon use the same zoomable pannable fullscreen stage',a
  expect(errors).toEqual([]);
 });
 
+test('Milky Way fixed mask is consistent across projections and polar zoom',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('[data-sky-light="black"]').click();
+ await expect(page.locator('#mw-debug-status')).toContainText('Mask planar');
+ const stats=await page.locator('#mw-debug-status').innerText();
+ await page.locator('[data-sky-projection="rect"]').click();
+ await expect(page.locator('#mw-debug-status')).toHaveText(stats);
+ await page.locator('[data-sky-projection="polar"]').click();
+ await page.locator('#sky-zoom').fill('2');
+ await page.locator('#sky-zoom').dispatchEvent('input');
+ await expect(page.locator('#mw-debug-status')).toHaveText(stats);
+ expect(errors).toEqual([]);
+});
+
 test('Version 26 polar zoom anchors cursor and dragging pans the sky',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:8765/');

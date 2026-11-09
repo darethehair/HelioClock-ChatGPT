@@ -139,7 +139,7 @@ function paintContours(c,levels,projectPoint,opts,visibility,shade,outline){
  *
  * This avoids D3's time-dependent spherical complement/winding ambiguity
  * whenever a contour sweeps across the local azimuth seam or a sky pole.
- * The polar projection retains its established separate implementation.
+ * Both sky projections sample the same fixed equatorial mask.
  */
 const MASK_WIDTH=1440,MASK_HEIGHT=720;
 const CONTOUR_ALPHA=[.095,.060,.060,.070,.085];
@@ -176,19 +176,28 @@ function fixedEquatorialMask(mode='planar'){
    }else{
     // Keep holes anchored to their outer boundary and repeat whole polygon
     // at every relevant RA wrap. Even-odd retains catalogue interior holes.
-    const path=new Path2D();let outerAnchor=null;
+    // Every ring receives a consistent seam copy. Anchor holes to the
+    // outer polygon centroid, not to an arbitrary starting vertex.
+    const path=new Path2D();let outerCentre=null;
     for(const ring of polygon){
      if(ring.length<3)continue;
-     let previous=null;
+     const points=[];let previous=null;
      for(const [ra,dec] of ring){
       let x=wrap(ra,360);
       if(previous!==null)x+=360*Math.round((previous-x)/360);
-      else if(outerAnchor!==null)x+=360*Math.round((outerAnchor-x)/360);
-      if(previous===null){path.moveTo(x*MASK_WIDTH/360,(90-dec)*MASK_HEIGHT/180);if(outerAnchor===null)outerAnchor=x}
-      else path.lineTo(x*MASK_WIDTH/360,(90-dec)*MASK_HEIGHT/180);
-      previous=x;
+      points.push([x,(90-dec)*MASK_HEIGHT/180]);previous=x;
      }
-     path.closePath();
+     const count=points.length>1&&
+      Math.abs(points[0][0]-points.at(-1)[0])<1e-6&&
+      Math.abs(points[0][1]-points.at(-1)[1])<1e-6?
+      points.length-1:points.length;
+     const centre=points.slice(0,count).reduce((sum,p)=>sum+p[0],0)/count;
+     if(outerCentre===null)outerCentre=centre;
+     const offset=360*Math.round((outerCentre-centre)/360);
+     points.forEach(([x,y],i)=>{
+      const px=(x+offset)*MASK_WIDTH/360;
+      if(i===0)path.moveTo(px,y);else path.lineTo(px,y);
+     });path.closePath();
     }
     ctx.fillStyle='#fff';
     for(const dx of [-2,-1,0,1,2]){
@@ -326,7 +335,7 @@ function paintRectContours(c,levels,opts,visibility,shade,outline){
  c.restore();
 }
 /**
- * Polar brightness polygons must be clipped on the sphere before drawing.
+ * Polar outlines remain spherical paths; they never affect the fill.
  * Directly connecting J2000 rings after local Alt/Az projection can select
  * the *complement* of a Milky Way region when the contour crosses the
  * observer's horizon or encloses the zenith. Flattening MultiPolygons into
@@ -338,61 +347,64 @@ function paintRectContours(c,levels,opts,visibility,shade,outline){
  * the horizon, rather than connecting their hidden vertices through the
  * visible hemisphere. Each original Polygon retains its interior rings.
  */
-function paintPolarContours(c,levels,{date,lat,lon,width,height,zoom,heading,precession},visibility,shade,outline){
- const radius=(Math.min(width-35,height-20)/2-14)*zoom;
- const projection=geoAzimuthalEquidistant()
-  .rotate([0,-90]).clipAngle(90)
-  .scale(radius/(Math.PI/2))
-  .translate([width/2,height/2]).precision(.2);
- const alpha=[.095,.060,.060,.070,.085];
- for(let k=0;k<levels.length;k++){
-  const polygons=levels[k].polygons||[];
-  for(const polygon of polygons){
-   const rings=polygon.filter(r=>r.length>2).map(ring=>ring.map(([ra,dec])=>{
-    const h=toAltAz(ra,dec,date,lat,lon,precession);
-    // Spherical azimuthal projection centred on north pole: azimuth 0
-    // (canvas up) corresponds to longitude 180°, 90° (right) to 90°.
-    return [wrap(180-h.az+heading+180,360)-180,h.alt];
-   }));
-   if(!rings.length)continue;
-   let shape={type:'Polygon',coordinates:rings};
-   // d3-geo interprets winding on the sphere, not in flat chart pixels.
-   // A contour represents its smaller physical region, not its complement.
-   if(geoArea(shape)>2*Math.PI){
-    shape={type:'Polygon',coordinates:rings.map(r=>[...r].reverse())};
+/**
+ * A single fixed J2000 mask determines which sky positions are shaded.
+ * Only inverse-projection sampling changes with zoom; no projected polygon
+ * can reverse its inside/outside meaning when the view is magnified.
+ */
+function paintPolarMask(c,{date,lat,lon,width,height,zoom,heading,precession,debugMaskMode='planar'},visibility){
+ const mask=fixedEquatorialMask(debugMaskMode);
+ const R=(Math.min(width-35,height-20)/2-14)*zoom;
+ const cols=Math.ceil(width/2),rows=Math.ceil(height/2);
+ const cv=makeCanvas(cols,rows),ctx=cv.getContext('2d');
+ const out=ctx.createImageData(cols,rows),dst=out.data;
+ const lst=sidereal(date,lon),phi=lat*RAD,sp=Math.sin(phi),cp=Math.cos(phi);
+ const inv=precession?precessionInverse(date):null;
+ for(let y=0;y<rows;y++){
+  const yy=(y+.5)*height/rows-height/2;
+  for(let x=0;x<cols;x++){
+   const xx=(x+.5)*width/cols-width/2;
+   const dist=Math.hypot(xx,yy);
+   if(dist>R)continue;
+   const alt=(90*(1-dist/R))*RAD;
+   const az=wrap(Math.atan2(yy,xx)*DEG+90+heading)*RAD;
+   const sa=Math.sin(alt),ca=Math.cos(alt);
+   const dec=Math.asin(Math.max(-1,Math.min(1,sa*sp+ca*cp*Math.cos(az))));
+   const ha=Math.atan2(-ca*Math.sin(az),sa*cp-ca*sp*Math.cos(az))*DEG;
+   let ra=wrap(lst-ha)*RAD,decl=dec;
+   if(inv){
+    const a=ra-inv.z,B=Math.cos(decl)*Math.cos(a),
+     A=Math.cos(decl)*Math.sin(a),C=Math.sin(decl);
+    ra=Math.atan2(A,inv.ct*B+inv.st*C)-inv.zeta;
+    decl=Math.asin(Math.max(-1,Math.min(1,-inv.st*B+inv.ct*C)));
    }
-   // Retain each contour as a real Path2D so it can be checked against the
-   // sky disc. Some horizon-crossing spherical rings have the *exterior*
-   // selected after clipping; those must be inverted, otherwise practically
-   // the entire polar sky acquires a grey wash.
-   const region=new Path2D();
-   geoPath(projection,region)(shape);
-   let inside=0,samples=0;
-   const sampleSteps=5;
-   for(let iy=0;iy<sampleSteps;iy++)for(let ix=0;ix<sampleSteps;ix++){
-    const sx=(ix+.5)/sampleSteps*2-1,sy=(iy+.5)/sampleSteps*2-1;
-    if(sx*sx+sy*sy>.94)continue;
-    samples++;
-    if(c.isPointInPath(region,width/2+sx*radius,height/2+sy*radius,'evenodd'))inside++;
-   }
-   const inverted=samples>0&&inside/samples>.55;
-   if(shade){
-    c.fillStyle='rgba(190,198,209,'+(alpha[k]*visibility)+')';
-    if(inverted){
-     // Even-odd XOR with the local horizon circle selects the intended
-     // smaller region. The existing outer clipping mask clips any excess.
-     const positive=new Path2D();
-     positive.arc(width/2,height/2,radius,0,Math.PI*2);
-     positive.addPath(region);
-     c.fill(positive,'evenodd');
-    }else c.fill(region,'evenodd');
-   }
-   if(outline){
-    c.strokeStyle='rgba(192,204,222,'+((.14+.035*k)*visibility)+')';
-    c.lineWidth=k===0?1:.7;
-    c.stroke(region);
-   }
+   const u=Math.min(MASK_WIDTH-1,Math.floor(wrap(ra*DEG,360)*MASK_WIDTH/360));
+   const v=Math.max(0,Math.min(MASK_HEIGHT-1,
+    Math.floor((90-decl*DEG)*MASK_HEIGHT/180)));
+   const i=(y*cols+x)*4;
+   dst[i]=190;dst[i+1]=198;dst[i+2]=209;
+   dst[i+3]=Math.round(mask[v*MASK_WIDTH+u]*visibility);
   }
+ }
+ ctx.putImageData(out,0,0);c.drawImage(cv,0,0,width,height);
+}
+function paintPolarContours(c,levels,opts,visibility,shade,outline){
+ if(shade)paintPolarMask(c,opts,visibility);
+ if(!outline)return;
+ const {date,lat,lon,width,height,zoom,heading,precession}=opts;
+ const R=(Math.min(width-35,height-20)/2-14)*zoom;
+ const proj=geoAzimuthalEquidistant().rotate([0,-90]).clipAngle(90)
+  .scale(R/(Math.PI/2)).translate([width/2,height/2]).precision(.2);
+ const path=geoPath(proj,c);
+ for(let k=0;k<levels.length;k++)for(const polygon of (levels[k].polygons||[])){
+  const rings=polygon.filter(r=>r.length>2).map(ring=>ring.map(([ra,dec])=>{
+   const h=toAltAz(ra,dec,date,lat,lon,precession);
+   return [wrap(180-h.az+heading+180,360)-180,h.alt];
+  }));
+  if(!rings.length)continue;
+  c.beginPath();path({type:'Polygon',coordinates:rings});
+  c.strokeStyle='rgba(192,204,222,'+((.14+.035*k)*visibility)+')';
+  c.lineWidth=k===0?1:.7;c.stroke();
  }
 }
 export function drawMilkyWay(c,opts){
@@ -429,7 +441,7 @@ export function drawMilkyWay(c,opts){
    paintRectContours(c,levels,{date,lat,lon,width,height,heading,precession,debugMaskMode},
     visibility,showShade,showOutline);
   }else{
-   paintPolarContours(c,levels,{date,lat,lon,width,height,zoom,heading,precession},
+   paintPolarContours(c,levels,{date,lat,lon,width,height,zoom,heading,precession,debugMaskMode},
     visibility,showShade,showOutline);
   }
  }
