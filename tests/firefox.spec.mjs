@@ -501,6 +501,7 @@ test('Version 26 polar zoom anchors cursor and dragging pans the sky',async({pag
  await page.locator('#sky').evaluate(el=>{
   const old=CanvasRenderingContext2D.prototype.translate;
   window.__skyTranslate=[0,0];
+  window.__helioclockCaptureZoom=true;
   CanvasRenderingContext2D.prototype.translate=function(x,y){
    if(this.canvas.id==='sky')window.__skyTranslate=[x,y];
    return old.call(this,x,y);
@@ -522,6 +523,12 @@ test('Version 26 polar zoom anchors cursor and dragging pans the sky',async({pag
  expect(zoomAfter).toBeGreaterThan(1);
  const ratio=zoomAfter;
  const anchored=await page.evaluate(()=>window.__skyTranslate);
+ const trace=await page.evaluate(()=>window.__helioclockZoomTrace);
+ console.log('POLAR_ZOOM_DIAGNOSTIC',JSON.stringify({geometry,trace,anchored,zoomAfter}));
+ expect(trace).toBeDefined();
+ // The rendered translation must be the application's actual pan state.
+ expect(anchored[0]).toBeCloseTo(trace.panX,4);
+ expect(anchored[1]).toBeCloseTo(trace.panY,4);
  // The chosen celestial point must remain precisely below the cursor.
  const projected=[
   geometry.cx+ratio*(geometry.px-geometry.cx)+anchored[0],
