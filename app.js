@@ -408,7 +408,7 @@ function selectDockLocal(){
 function updateCoords(){
  const lat=Number($('latitude').value),lon=Number($('longitude').value);
  if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180){notice('Enter latitude between −90° and +90°, and longitude between −180° and +180°.');return}
- state.lat=lat;state.lon=lon;notice('');render();
+ state.lat=lat;state.lon=lon;state.earthLon=lon;state.earthLat=lat;notice('');render();
 }
 $('latitude').addEventListener('change',updateCoords);$('longitude').addEventListener('change',updateCoords);
 $('observe-date').addEventListener('change',selectDate);
@@ -419,8 +419,9 @@ $('locate').addEventListener('click',()=>{
  notice('Requesting your location...');
  navigator.geolocation.getCurrentPosition(position=>{
   state.lat=position.coords.latitude;state.lon=position.coords.longitude;
+  state.earthLon=state.lon;state.earthLat=state.lat;
   $('latitude').value=state.lat.toFixed(4);$('longitude').value=state.lon.toFixed(4);
-  notice('');render();
+  notice('');render();persistPrefs();
  },error=>notice('Unable to determine location: '+error.message+'. You can enter coordinates manually.'),{enableHighAccuracy:false,timeout:12000});
 });
 function shiftTime(minutes){
@@ -842,3 +843,193 @@ $('almanac-content').addEventListener('click',e=>{
  pausePlayback();state.date=new Date(event.date);state.live=false;setDateInputs();render();
 });
 applyLayout(activeLayout);
+
+/**
+ * Versioned local, offline preferences. No account, cookies or network writes.
+ * Layout remains backward-compatible with the prior v21 storage key.
+ * Simulation date/time and temporary pan/zoom are excluded by default.
+ */
+const PREF_KEY='helioclock-preferences-v1',LEGACY_LAYOUT_KEY='helioclock-layout-v21';
+const PREF_CHECKBOXES=['show-au-rings','show-earthshine','show-constellations',
+ 'show-milkyway-shade','show-milkyway-outline','show-galactic-center',
+ 'show-stars','show-labels','show-sky-paths','show-below-horizon',
+ 'show-ecliptic','use-precession','show-stellar-colors'];
+const PREF_CHOICES={
+ earthProjection:['equal','globe','mercator'],
+ skyProjection:['polar','rect'],
+ skyLight:['daylight','black'],
+ orbitMode:['inner','outer'],
+ discView:['moon','sun']
+};
+const FACTORY_PREF={
+ version:1,observer:{lat:49.19,lon:-98.10},earthProjection:'equal',
+ skyProjection:'polar',skyLight:'daylight',orbitMode:'inner',discView:'moon',
+ magLimit:3.5,stellarColors:true,usePrecession:true,
+ checkboxes:null,layout:null,rememberView:false,view:null
+};
+let prefReady=false,lastSaved='';
+function validNumber(value,min,max){return typeof value==='number'&&Number.isFinite(value)&&value>=min&&value<=max}
+function capturePrefs(){
+ const checks={};
+ for(const key of PREF_CHECKBOXES)checks[key]=$(key).checked;
+ return {
+  version:1,observer:{lat:state.lat,lon:state.lon},
+  earthProjection:state.earthProjection,skyProjection:state.skyProjection,
+  skyLight:state.skyLight,orbitMode:state.orbitMode,discView:state.discView,
+  magLimit:state.magLimit,stellarColors:state.stellarColors,usePrecession:state.usePrecession,
+  checkboxes:checks,layout:{...activeLayout},
+  rememberView:$('prefs-remember-view').checked,
+  view:$('prefs-remember-view').checked?{
+   earthZoom:state.earthZoom,earthLon:state.earthLon,earthLat:state.earthLat,
+   skyZoom:state.skyZoom,skyHeading:state.skyHeading,
+   orreryZoom:state.orreryZoom,moonZoom:state.moonZoom,sunZoom:state.sunZoom
+  }:null
+ };
+}
+function persistPrefs(){
+ if(!prefReady)return;
+ try{
+  const value=JSON.stringify(capturePrefs());
+  if(value!==lastSaved){localStorage.setItem(PREF_KEY,value);lastSaved=value}
+ }catch{ $('prefs-status').textContent='Browser storage unavailable; export a settings file instead'; }
+}
+function useChoice(key,value){
+ if(PREF_CHOICES[key]?.includes(value))state[key]=value;
+}
+function applyPrefs(saved,{restoreLayout=true}={}){
+ if(!saved||typeof saved!=='object'||saved.version!==1)throw Error('Unsupported settings format');
+ const obs=saved.observer;
+ if(obs&&validNumber(obs.lat,-90,90)&&validNumber(obs.lon,-180,180)){
+  state.lat=obs.lat;state.lon=obs.lon;
+  $('latitude').value=String(state.lat);$('longitude').value=String(state.lon);
+  // The map follows a changed observing location by default.
+  state.earthLon=state.lon;state.earthLat=state.lat;
+ }
+ for(const key of Object.keys(PREF_CHOICES))useChoice(key,saved[key]);
+ if(validNumber(saved.magLimit,0,7))state.magLimit=saved.magLimit;
+ if(typeof saved.stellarColors==='boolean')state.stellarColors=saved.stellarColors;
+ if(typeof saved.usePrecession==='boolean')state.usePrecession=saved.usePrecession;
+ if(saved.checkboxes&&typeof saved.checkboxes==='object'){
+  for(const key of PREF_CHECKBOXES)
+   if(typeof saved.checkboxes[key]==='boolean')$(key).checked=saved.checkboxes[key];
+ }
+ // Two checkbox-backed model fields must always agree with the controls.
+ $('show-stellar-colors').checked=state.stellarColors;
+ $('use-precession').checked=state.usePrecession;
+ $('star-magnitude').value=state.magLimit;
+ $('below-horizon-setting').hidden=state.skyProjection!=='rect';
+ for(const [attribute,selected] of [
+  ['data-projection',state.earthProjection],
+  ['data-sky-projection',state.skyProjection],
+  ['data-sky-light',state.skyLight],
+  ['data-orbit-mode',state.orbitMode],
+  ['data-disc-view',state.discView]
+ ]){
+  for(const button of document.querySelectorAll('['+attribute+']')){
+   const active=button.getAttribute(attribute)===selected;
+   button.classList.toggle(attribute==='data-projection'?'is-active':'selected',active);
+   button.setAttribute('aria-pressed',String(active));
+  }
+ }
+ const sun=state.discView==='sun';
+ $('moon').hidden=sun;$('solar-photo').hidden=!sun;
+ $('moon-bottom').hidden=sun;$('solar-note').hidden=!sun;
+ $('solar-refresh').hidden=!sun;$('moon-phase').hidden=sun;
+ $('earthshine-setting').hidden=sun;
+ $('disc-kind').textContent=sun?'SOLAR OBSERVATION':'LUNAR CYCLE';
+ if(sun&&solarRequest===0)refreshSolarImage();
+ $('prefs-remember-view').checked=saved.rememberView===true;
+ if(saved.rememberView===true&&saved.view&&typeof saved.view==='object'){
+  const bounds={earthZoom:[1,4],earthLon:[-180,180],earthLat:[-75,75],
+   skyZoom:[1,3],skyHeading:[-180,180],orreryZoom:[.7,3],
+   moonZoom:[.7,2.8],sunZoom:[.7,2.8]};
+  for(const [key,[min,max]] of Object.entries(bounds))
+   if(validNumber(saved.view[key],min,max))state[key]=saved.view[key];
+ }
+ for(const [id,key] of [['earth-zoom','earthZoom'],['sky-zoom','skyZoom'],
+  ['sky-heading','skyHeading'],['orrery-zoom','orreryZoom'],['moon-zoom','moonZoom']])
+  $(id).value=state[key];
+ if(restoreLayout&&saved.layout&&typeof saved.layout==='object'){
+  const merged={...defaultLayout};
+  for(const key of Object.keys(defaultLayout))
+   if(typeof saved.layout[key]==='boolean')merged[key]=saved.layout[key];
+  applyLayout(merged);
+ }
+ updateDiscViewport();
+ render();
+}
+function readPrefs(){
+ try{
+  const raw=localStorage.getItem(PREF_KEY);
+  if(!raw)return null;
+  const value=JSON.parse(raw);
+  if(!value||value.version!==1)throw Error('Unsupported saved preferences');
+  return value;
+ }catch(error){
+  $('prefs-status').textContent='Saved preferences could not be read; defaults retained';
+  return null;
+ }
+}
+function downloadPrefs(){
+ const contents=JSON.stringify(capturePrefs(),null,2)+'\n';
+ const blob=new Blob([contents],{type:'application/json'});
+ const url=URL.createObjectURL(blob);
+ try{
+  const a=document.createElement('a');a.href=url;a.download='HelioClock-settings.json';
+  document.body.appendChild(a);a.click();a.remove();
+  $('prefs-status').textContent='Settings exported';
+ }finally{setTimeout(()=>URL.revokeObjectURL(url),2000)}
+}
+$('prefs-export').addEventListener('click',downloadPrefs);
+$('prefs-import').addEventListener('click',()=>$('prefs-file').click());
+$('prefs-file').addEventListener('change',async e=>{
+ const file=e.target.files?.[0];if(!file)return;
+ try{
+  if(file.size>65536)throw Error('Settings file is too large');
+  const value=JSON.parse(await file.text());
+  if(!value||value.version!==1||!value.observer||!value.checkboxes||!value.layout)
+   throw Error('Not a supported HelioClock settings file');
+  // Validate the imported document before mutating any settings.
+  if(!validNumber(value.observer.lat,-90,90)||!validNumber(value.observer.lon,-180,180))
+   throw Error('Invalid observer coordinates');
+  for(const [key,allowed] of Object.entries(PREF_CHOICES))
+   if(!allowed.includes(value[key]))throw Error('Invalid '+key);
+  if(!validNumber(value.magLimit,0,7))throw Error('Invalid magnitude limit');
+  for(const key of PREF_CHECKBOXES)
+   if(typeof value.checkboxes[key]!=='boolean')throw Error('Invalid '+key);
+  for(const key of Object.keys(defaultLayout))
+   if(typeof value.layout[key]!=='boolean')throw Error('Invalid layout');
+  applyPrefs(value);persistPrefs();
+  $('prefs-status').textContent='Settings imported successfully';
+ }catch(error){$('prefs-status').textContent='Import failed: '+error.message}
+ finally{e.target.value=''}
+});
+$('prefs-reset').addEventListener('click',()=>{
+ try{localStorage.removeItem(PREF_KEY);localStorage.removeItem(LEGACY_LAYOUT_KEY)}catch{}
+ // Full reload restores all factory UI defaults and current live time.
+ location.reload();
+});
+$('prefs-remember-view').addEventListener('change',persistPrefs);
+// Capture all persistent settings after existing handlers process the input.
+// Rendering/live-clock updates do not trigger change events, avoiding 15s writes.
+document.addEventListener('change',e=>{
+ if(e.target.closest('#time-dock')||e.target.id==='observe-date'||e.target.id==='observe-time')return;
+ queueMicrotask(persistPrefs);
+});
+document.addEventListener('click',e=>{
+ if(e.target.closest('#time-dock'))return;
+ const button=e.target.closest('button');
+ if(button&&!['prefs-export','prefs-import','prefs-reset'].includes(button.id))queueMicrotask(persistPrefs);
+});
+for(const id of ['earth-map','sky','disc-stage','orrery']){
+ const el=$(id);
+ if(el){el.addEventListener('pointerup',persistPrefs);el.addEventListener('wheel',()=>setTimeout(persistPrefs,0),{passive:true})}
+}
+function initializePreferences(){
+ const saved=readPrefs();
+ if(saved)applyPrefs(saved);
+ prefReady=true;
+ persistPrefs();
+}
+
+initializePreferences();

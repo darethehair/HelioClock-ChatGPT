@@ -150,3 +150,7 @@ The user-facing spherical-clip comparison toggle has been retired because its sh
 ## v35: Verified Milky Way and lunar display
 
 The fixed equatorial Milky Way masks are retained: repaired planar rendering for rectangular sky and the verified legacy mask for polar. The unreliable spherical-clip user toggle remains retired. Lunar visualization uses a slightly brighter midtone curve without changing lunar phase or ephemerides. The Moon panel adds a **Show Earthshine / dark-side detail** option (enabled by default), which subtly exposes the night-side lunar surface and adds a faint outline at near-new phase as a clearly identified educational display aid. Turn the option off for a naturally dark new-Moon presentation. Sun view hides this Moon-only setting.
+
+## v36: Browser-local preferences
+
+HelioClock now automatically remembers observer coordinates, Earth/sky/orrery modes, star magnitude, labels, Milky Way, Earthshine, other view checkboxes and panel layout using versioned browser localStorage. Optional **Remember zoom and map positions** restores zoom/angles as well. The simulation clock always opens **Live** by default. Export/import a human-readable `HelioClock-settings.json` to move settings between browsers, or use **Reset preferences** for factory defaults. The existing `helioclock-layout-v21` preferences migrate automatically. No cookies, account, or network request is needed for settings. Earth 4K and twilight controls are separate planned work; this release does not add them.

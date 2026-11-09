@@ -5,8 +5,8 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#sunrise')).not.toHaveText('—');
  // Release identity and provenance are visible even offline.
- await expect(page.locator('#app-version')).toHaveText('v35');
- await expect(page.locator('#dock-version')).toHaveText('v35');
+ await expect(page.locator('#app-version')).toHaveText('v36');
+ await expect(page.locator('#dock-version')).toHaveText('v36');
  await expect(page.locator('.credits-footer')).toContainText('Created by Darethehair with assistance from ChatGPT');
  await expect(page.locator('.credits-footer a')).toHaveAttribute('href','https://github.com/darethehair/HelioClock-ChatGPT');
  await expect(page.locator('#build-meta')).toContainText('commit');
@@ -345,7 +345,7 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
  const errors=[];
  page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v35');
+ await expect(page.locator('#app-version')).toHaveText('v36');
  await expect(page.locator('.almanac-panel')).toBeHidden();
  await page.locator('#layout-sky').click();
  await expect(page.locator('.sky-panel')).toBeVisible();
@@ -504,10 +504,55 @@ test('Version 35 lunar Earthshine is optional and full Moon remains bright',asyn
  expect(errors).toEqual([]);
 });
 
+test('Version 36 stores, restores, imports, exports and resets preferences',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('#latitude').fill('51.5000');await page.locator('#latitude').dispatchEvent('change');
+ await page.locator('#longitude').fill('-101.2500');await page.locator('#longitude').dispatchEvent('change');
+ await page.locator('[data-projection="globe"]').click();
+ await page.locator('[data-sky-light="black"]').click();
+ await page.locator('#show-earthshine').uncheck();
+ await page.locator('#star-magnitude').selectOption('5');
+ await page.locator('#prefs-remember-view').check();
+ await page.locator('#earth-zoom-in').click();
+ const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('helioclock-preferences-v1')));
+ expect(saved.version).toBe(1);
+ expect(saved.observer).toEqual({lat:51.5,lon:-101.25});
+ expect(saved.earthProjection).toBe('globe');
+ expect(saved.skyLight).toBe('black');
+ expect(saved.checkboxes['show-earthshine']).toBe(false);
+ expect(saved.rememberView).toBe(true);
+ await page.reload();
+ await expect(page.locator('#latitude')).toHaveValue('51.5');
+ await expect(page.locator('#longitude')).toHaveValue('-101.25');
+ await expect(page.locator('[data-projection="globe"]')).toHaveAttribute('aria-pressed','true');
+ await expect(page.locator('[data-sky-light="black"]')).toHaveAttribute('aria-pressed','true');
+ await expect(page.locator('#show-earthshine')).not.toBeChecked();
+ await expect(page.locator('#star-magnitude')).toHaveValue('5');
+ await expect(page.locator('#earth-zoom-value')).not.toHaveText('1.0×');
+ await expect(page.locator('#live-indicator')).toContainText('LIVE');
+ // A JSON export can be read back using the same schema.
+ const downloaded=page.waitForEvent('download');
+ await page.locator('#prefs-export').click();
+ const file=await downloaded;
+ expect(file.suggestedFilename()).toBe('HelioClock-settings.json');
+ const savedJson=await page.evaluate(()=>localStorage.getItem('helioclock-preferences-v1'));
+ await page.locator('#prefs-reset').click();
+ await expect(page.locator('#latitude')).toHaveValue('49.19');
+ await expect(page.locator('#prefs-remember-view')).not.toBeChecked();
+ await page.locator('#prefs-file').setInputFiles({
+  name:'settings.json',mimeType:'application/json',buffer:Buffer.from(savedJson)
+ });
+ await expect(page.locator('#prefs-status')).toContainText('Settings imported successfully');
+ await expect(page.locator('#latitude')).toHaveValue('51.5');
+ await expect(page.locator('#show-earthshine')).not.toBeChecked();
+ expect(errors).toEqual([]);
+});
+
 test('Version 25 Sun and Moon use the same zoomable pannable fullscreen stage',async({page})=>{
  const errors=[];page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v35');
+ await expect(page.locator('#app-version')).toHaveText('v36');
  await expect(page.locator('#moon')).toBeVisible();
  await expect(page.locator('#solar-photo')).toBeHidden();
  await page.locator('[data-disc-view="sun"]').click();
@@ -949,7 +994,7 @@ test('Version 34 offers comparable Milky Way masks and copyable exact debug stat
  });
  await page.locator('#mw-copy-debug').click();
  const data=await page.evaluate(()=>JSON.parse(window.__debugCopy));
- expect(data.version).toBe(35);
+ expect(data.version).toBe(36);
  expect(data.utc).toBe('2026-11-09T12:44:00.000Z');
  expect(data.observer).toEqual({lat:49.19,lon:-98.10});
  expect(data.sky.projection).toBe('rect');
