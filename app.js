@@ -9,7 +9,7 @@ import {renderEarth} from './earth-renderer.js';
 import {starsAbove} from './sky-catalog.js';
 import {RAD,PI,wrap,clamp,solar,sunHorizontal,sunEvents,moon,orbitPositions,sidereal,equatorialFromHorizontal,utcTime,durationText} from './astronomy.js';
 const $=id=>document.getElementById(id);
-const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyPanX:0,skyPanY:0,skyHeading:0,earthZoom:1,earthLon:0,earthLat:0,earthProjection:'equal',orreryZoom:1,moonZoom:1,discView:'moon',sunZoom:1,moonPanX:0,moonPanY:0,sunPanX:0,sunPanY:0,orbitMode:'inner',skyLight:'daylight',skyProjection:'polar',magLimit:3.5,stellarColors:true,usePrecession:true,playing:false};
+const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyPanX:0,skyPanY:0,skyHeading:0,earthZoom:1,earthLon:-98.10,earthLat:49.19,earthProjection:'equal',orreryZoom:1,moonZoom:1,discView:'moon',sunZoom:1,moonPanX:0,moonPanY:0,sunPanX:0,sunPanY:0,orbitMode:'inner',skyLight:'daylight',skyProjection:'polar',magLimit:3.5,stellarColors:true,usePrecession:true,playing:false};
 const fmt=d=>d.toISOString().slice(0,10);
 function setDateInputs(){$('observe-date').value=fmt(state.date);$('observe-time').value=utcTime(state.date)}
 function selectDate(){
@@ -649,7 +649,11 @@ function reset(id,defaults){
  render()});
 }
 reset('sky-reset',{skyZoom:1,skyPanX:0,skyPanY:0,skyHeading:0});
-reset('earth-reset',{earthZoom:1,earthLon:0,earthLat:0});
+// Reset map orientation to the observer, not Greenwich/the equator.
+$('earth-reset').addEventListener('click',()=>{
+ state.earthZoom=1;state.earthLon=state.lon;state.earthLat=state.lat;
+ $('earth-zoom').value=1;render();
+});
 reset('orrery-reset',{orreryZoom:1});
 function wheelZoom(canvasId,controlId,key,lo,hi){
  $(canvasId).addEventListener('wheel',e=>{e.preventDefault();state[key]=clamp(state[key]*(e.deltaY>0?.88:1.14),lo,hi);$(controlId).value=state[key];render()},{passive:false});

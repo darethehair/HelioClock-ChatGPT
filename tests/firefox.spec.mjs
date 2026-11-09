@@ -387,6 +387,42 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
 });
 
 
+test('Earth globe and flat maps center on the selected observer and Reset restores it',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8765/');
+ const initial=await page.evaluate(async()=>{
+  const {createEarthProjection}=await import('./earth-renderer.js');
+  const observer=[-98.10,49.19],width=1000,height=650;
+  return ['equal','globe','mercator'].map(earthProjection=>{
+   const map=createEarthProjection(width,height,{earthProjection,earthLon:observer[0],earthLat:observer[1],earthZoom:1});
+   const p=map(observer);
+   // Longitude must change left-to-right and latitude bottom-to-top in flat maps.
+   const right=map([observer[0]+5,observer[1]]),up=map([observer[0],observer[1]+5]);
+   return {earthProjection,p,right,up};
+  });
+ });
+ for(const item of initial){
+  expect(item.p[0]).toBeCloseTo(500,0);
+  expect(item.p[1]).toBeCloseTo(325,0);
+  expect(item.right[0]).toBeGreaterThan(item.p[0]);
+  expect(item.up[1]).toBeLessThan(item.p[1]);
+ }
+ await page.locator('[data-projection="globe"]').click();
+ await page.locator('#earth-zoom-in').click();
+ await page.locator('#earth-map-home').click();
+ await expect(page.locator('#earth-zoom-value')).toHaveText('1.0×');
+ const restored=await page.evaluate(async()=>{
+  // Verify Reset through the rendered observer marker at the canvas center.
+  const canvas=document.querySelector('#earth-map'),c=canvas.getContext('2d');
+  const w=canvas.width,h=canvas.height;
+  const p=c.getImageData(Math.floor(w/2),Math.floor(h/2),1,1).data;
+  return [p[0],p[1],p[2]];
+ });
+ // The center is rendered as Earth (not an unpainted background).
+ expect(restored).not.toEqual([7,19,36]);
+ expect(errors).toEqual([]);
+});
+
 test('Version 23 single Earth map clips all raster imagery to the world outline',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:8765/');

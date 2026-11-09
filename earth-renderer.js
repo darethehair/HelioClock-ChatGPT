@@ -9,6 +9,18 @@ const graticule=geoGraticule10();
 const memoCanvas=document.createElement('canvas');
 const memoCtx=memoCanvas.getContext('2d');
 const modeConstructors={equal:geoEqualEarth,globe:geoOrthographic,mercator:geoMercator};
+export function createEarthProjection(width,height,state){
+ const {earthProjection='equal',earthZoom=1,earthLon=0,earthLat=0}=state;
+ const projection=modeConstructors[earthProjection]||geoEqualEarth;
+ const map=projection();
+ if(earthProjection==='globe')map.rotate([-earthLon,-earthLat]);
+ else map.rotate([-earthLon,0]).center([0,earthLat]);
+ map.fitExtent([[9,9],[width-9,height-9]],{type:'Sphere'});
+ map.scale(map.scale()*earthZoom);
+ if(earthProjection==='globe')map.clipAngle(90);
+ return map;
+}
+
 const normLon=(v)=>wrap(v+180,360)-180;
 let earthPixels=null;
 let textureStatus='loading';
@@ -43,13 +55,8 @@ function sampleEarth(lon,lat){
  */
 export function renderEarth(context,width,height,date,state){
  const {earthProjection='equal',earthZoom=1,earthLon=0,earthLat=0,lat,lon}=state;
- const projection=modeConstructors[earthProjection]||geoEqualEarth;
- const map=projection()
-   .rotate([-earthLon,-earthLat])
-   .fitExtent([[9,9],[width-9,height-9]],{type:'Sphere'});
- // Fit a stable base projection before applying user zoom.
- map.scale(map.scale()*earthZoom);
- if(earthProjection==='globe')map.clipAngle(90);
+ // The same projection factory is used by regression tests.
+ const map=createEarthProjection(width,height,state);
  const d=solar(date);
  const utcMinutes=date.getUTCHours()*60+date.getUTCMinutes()+date.getUTCSeconds()/60;
  const sunLon=normLon((720-utcMinutes-d.eq)/4),sunLat=d.decl*RAD;
@@ -145,7 +152,7 @@ export function renderEarth(context,width,height,date,state){
    context.restore();
   }
  }
- const user=map([lon,lat]);
+ const user=isVisible([lon,lat])?map([lon,lat]):null;
  if(user){
   context.save();context.shadowColor='#fff9e3';context.shadowBlur=12;
   context.fillStyle='#fff7d8';context.beginPath();context.arc(user[0],user[1],4,0,Math.PI*2);context.fill();context.restore();
