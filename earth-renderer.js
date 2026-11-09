@@ -16,6 +16,14 @@ export function createEarthProjection(width,height,state){
  if(earthProjection==='globe')map.rotate([-earthLon,-earthLat]);
  else map.rotate([-earthLon,0]).center([0,earthLat]);
  map.fitExtent([[9,9],[width-9,height-9]],{type:'Sphere'});
+ // Fitting the complete Sphere recenters its overall bounds, overriding a
+ // flat projection's requested latitude center. Shift the fitted projection
+ // so the actual observer, not the full-world bounding box, is at the center.
+ const projectedObserver=map([earthLon,earthLat]);
+ if(projectedObserver){
+  const [tx,ty]=map.translate();
+  map.translate([tx+width/2-projectedObserver[0],ty+height/2-projectedObserver[1]]);
+ }
  map.scale(map.scale()*earthZoom);
  if(earthProjection==='globe')map.clipAngle(90);
  return map;
@@ -159,5 +167,13 @@ export function renderEarth(context,width,height,date,state){
   context.beginPath();context.arc(user[0],user[1],8,0,Math.PI*2);context.strokeStyle='#fff9e9b0';context.stroke();
  }
  context.restore();
- return {sunLon,sunDecl:d.decl,nadirLon,nadirLat,textureStatus};
+ // Expose the exact projection geometry drawn by this frame to the
+ // browser regression tests. No standalone source-module import is needed.
+ const observerScreen=map([lon,lat]);
+ const eastScreen=map([lon+5,lat]);
+ const northScreen=map([lon,Math.min(lat+5,89)]);
+ return {sunLon,sunDecl:d.decl,nadirLon,nadirLat,textureStatus,
+  projectionProbe:{projection:earthProjection,observer:observerScreen,
+   east:eastScreen,north:northScreen,viewCenter:[width/2,height/2]}};
+
 }

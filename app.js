@@ -49,6 +49,7 @@ function daylightChart(){
 function worldMap(){
  const o=canvas($('earth-map'));if(!o)return;
  const result=renderEarth(o.c,o.w,o.h,state.date,state);
+ $('earth-map').dataset.projectionProbe=JSON.stringify(result.projectionProbe);
  $('earth-zoom-value').textContent=state.earthZoom.toFixed(1)+'×';
  $('subsolar').textContent=Math.abs(result.sunDecl).toFixed(1)+'°'+(result.sunDecl>=0?'N':'S')+' / '+Math.abs(result.sunLon).toFixed(1)+'°'+(result.sunLon>=0?'E':'W');
  $('subsolar').title='Solar nadir (antipode): '+Math.abs(result.nadirLat).toFixed(1)+'°'+(result.nadirLat>=0?'N':'S')+' / '+Math.abs(result.nadirLon).toFixed(1)+'°'+(result.nadirLon>=0?'E':'W');
