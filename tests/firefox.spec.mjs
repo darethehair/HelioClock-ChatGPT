@@ -5,8 +5,8 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#sunrise')).not.toHaveText('—');
  // Release identity and provenance are visible even offline.
- await expect(page.locator('#app-version')).toHaveText('v31');
- await expect(page.locator('#dock-version')).toHaveText('v31');
+ await expect(page.locator('#app-version')).toHaveText('v32');
+ await expect(page.locator('#dock-version')).toHaveText('v32');
  await expect(page.locator('.credits-footer')).toContainText('Created by Darethehair with assistance from ChatGPT');
  await expect(page.locator('.credits-footer a')).toHaveAttribute('href','https://github.com/darethehair/HelioClock-ChatGPT');
  await expect(page.locator('#build-meta')).toContainText('commit');
@@ -355,7 +355,7 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
  const errors=[];
  page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v31');
+ await expect(page.locator('#app-version')).toHaveText('v32');
  await expect(page.locator('.almanac-panel')).toBeHidden();
  await page.locator('#layout-sky').click();
  await expect(page.locator('.sky-panel')).toBeVisible();
@@ -468,7 +468,7 @@ test('Version 23 Milky Way rectangular contour paths avoid interior seam bridges
 test('Version 25 Sun and Moon use the same zoomable pannable fullscreen stage',async({page})=>{
  const errors=[];page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v31');
+ await expect(page.locator('#app-version')).toHaveText('v32');
  await expect(page.locator('#moon')).toBeVisible();
  await expect(page.locator('#solar-photo')).toBeHidden();
  await page.locator('[data-disc-view="sun"]').click();
@@ -670,6 +670,51 @@ test('Version 30 polar Milky Way shading never fills most of the night sky',asyn
    if(on.data[i]-off.data[i]>8||on.data[i+1]-off.data[i+1]>8)shaded++;
   }
   expect(shaded/inside).toBeLessThan(.55);
+  expect(shaded).toBeGreaterThan(10);
+ }
+ expect(errors).toEqual([]);
+});
+
+
+test('Version 32 rectangular black sky stays black outside the fixed Milky Way mask',async({page})=>{
+ test.setTimeout(90000);
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('#layout-sky').click();
+ await page.locator('[data-sky-projection="rect"]').click();
+ await page.locator('[data-sky-light="black"]').click();
+ for(const id of ['show-stars','show-constellations','show-sky-paths','show-labels','show-galactic-center','show-milkyway-outline']){
+  await page.locator('#'+id).uncheck();
+ }
+ await page.waitForFunction(()=>document.querySelector('#milkyway-status').textContent.includes('loaded'));
+ await page.locator('#observe-date').fill('2026-11-09');
+ for(const hour of ['09:48','10:48','11:48','15:48']){
+  await page.locator('#observe-time').fill(hour);
+  await page.locator('#observe-time').dispatchEvent('change');
+  await page.locator('#show-milkyway-shade').uncheck();
+  const off=await page.locator('#sky').evaluate(el=>{
+   const c=el.getContext('2d'),w=el.width,h=el.height;
+   return {w,h,data:Array.from(c.getImageData(0,0,w,h).data)};
+  });
+  await page.locator('#show-milkyway-shade').check();
+  const on=await page.locator('#sky').evaluate(el=>{
+   const c=el.getContext('2d'),w=el.width,h=el.height;
+   return Array.from(c.getImageData(0,0,w,h).data);
+  });
+  let checked=0,black=0,shaded=0;
+  // Avoid the grid, labels and panel border; compare shade on/off at
+  // identical times to isolate the true Milky Way mask from annotations.
+  for(let y=Math.floor(off.h*.12);y<off.h*.88;y+=5){
+   for(let x=Math.floor(off.w*.12);x<off.w*.88;x+=5){
+    const i=(y*off.w+x)*4;
+    if(off.data[i]>3||off.data[i+1]>3||off.data[i+2]>3)continue;
+    checked++;black++;
+    if(on[i]>off.data[i]+8||on[i+1]>off.data[i+1]+8)shaded++;
+   }
+  }
+  expect(checked).toBeGreaterThan(100);
+  // A complement fill would shade virtually the entire blank sky.
+  expect(shaded/checked).toBeLessThan(.55);
   expect(shaded).toBeGreaterThan(10);
  }
  expect(errors).toEqual([]);
