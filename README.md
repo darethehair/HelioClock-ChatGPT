@@ -130,3 +130,7 @@ The sky atlas previously rejected points using unshifted polar projection coordi
 ## Version 31 — Stable Milky Way contour orientation
 
 The rectangular Milky Way renderer now normalizes each source contour's spherical winding in its fixed J2000 celestial coordinates **before** converting it to the rotating observer horizon. The prior orientation check on projected Alt/Az vertices could switch interior/complement when the azimuth seam moved across a contour as time advanced. D3 still splits polygons at the rectangular seam, with the catalogue MultiPolygon groupings and holes preserved. The polar renderer is unchanged. Check the same one-hour comparison that exposed the v30 issue to verify the visual result.
+
+## Version 32 — Inertial Milky Way shading in rectangular sky
+
+Rectangular Milky Way **fills** now sample a fixed, offline J2000 RA/Dec coverage mask rather than asking a spherical projector to resolve a polygon's winding after local rotation. This avoids the time-dependent selection of the complementary sky region and keeps all uncovered black-sky pixels black. Equatorial-to-horizontal inverse transformation respects sidereal time, observer, heading and optional precession. The mask includes the original five contour levels and hole rings; existing vector outlines and polar shading remain independently available. Firefox regression checks multiple hours around the reported reversal and requires the black background to remain unshaded outside the Milky Way.
