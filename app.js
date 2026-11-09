@@ -167,11 +167,11 @@ function sky(){
   showShade:$('show-milkyway-shade').checked,
   showOutline:$('show-milkyway-outline').checked,
   showCenter:$('show-galactic-center').checked,
-  debugMaskMode:$('mw-debug-mask-mode').value
+  debugMaskMode:'planar'
  });
  const milky=milkyWayStatus();
  $('milkyway-status').textContent=milky.failed?'Milky Way outlines unavailable':milky.ready?'Milky Way contours loaded':'Milky Way contours loading';
- const mwStats=milkyWayDebugStatus($('mw-debug-mask-mode').value);
+ const mwStats=milkyWayDebugStatus('planar');
  $('mw-debug-status').textContent=mwStats.status==='ready'?
   'Mask '+mwStats.mode+' · '+mwStats.filledPercent+'% equatorial pixels · '+mwStats.sourcePolygons+' polygons · '+(mwStats.seamClosures||0)+' seam closures · footprint ±'+mwStats.footprintLimitDeg+'°':
   'Mask '+mwStats.mode+': '+mwStats.status;
@@ -237,7 +237,7 @@ function updateSkyCursor(x,y){
   panX:state.skyPanX,panY:state.skyPanY
  });
  if(!coords){out.textContent='Cursor: outside plotted sky';return}
- const mode=$('mw-debug-mask-mode').value;
+ const mode='planar';
  const actualMode=state.skyProjection==='polar'&&mode==='planar'?'planar-legacy':mode;
  const sample=milkyWaySample(coords.ra,coords.dec,state.date,state.usePrecession,actualMode);
  const diagnostic=sample.ready?
@@ -603,9 +603,8 @@ $('star-magnitude').addEventListener('change',e=>{
 $('show-constellations').addEventListener('change',render);
 for(const id of ['show-milkyway-shade','show-milkyway-outline','show-galactic-center'])$(id).addEventListener('change',render);
 window.addEventListener('helioclock-milkyway-ready',render);
-$('mw-debug-mask-mode').addEventListener('change',render);
 $('mw-copy-debug').addEventListener('click',async()=>{
- const chosen=$('mw-debug-mask-mode').value;
+ const chosen='planar';
  const debug={
   version:34,utc:state.date.toISOString(),
   local:state.date.toLocaleString('en-CA',{timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone}),

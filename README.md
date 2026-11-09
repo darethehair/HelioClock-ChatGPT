@@ -142,3 +142,7 @@ Replaces the planar contour closing used to build the fixed J2000 mask with sphe
 ## Version 34 — Milky Way diagnostic comparison
 
 The rectangular Milky Way renderer exposes both fixed-mask construction algorithms (planar RA seam unwrapping and spherical clipping) under a diagnostic dropdown. The default is the guarded planar method for comparison against the more sparse v33 spherical shading. The status readout shows actual mask coverage, source polygon count and the catalogue-derived latitude guard; **Copy Debug State** exports a JSON report of the precise simulation date/time (UTC and browser local), observer, mode, controls, mask statistics and canvas dimensions. This build is instrumentation for diagnosing missing contour regions, not a claim that the mask geometry has been completely solved. Polar rendering remains unchanged.
+
+### Mask selection after visual verification
+
+The user-facing spherical-clip comparison toggle has been retired because its shading was incomplete. The repaired planar J2000 mask is selected automatically for rectangular views, and the previously validated legacy planar mask is retained for polar views. Copy Debug State and cursor diagnostics remain available. The internal source-mode comparison is no longer offered as a UI setting.

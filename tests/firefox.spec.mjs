@@ -879,11 +879,8 @@ test('Version 34 offers comparable Milky Way masks and copyable exact debug stat
  await page.locator('#observe-date').fill('2026-11-09');
  await page.locator('#observe-time').fill('12:44');
  await page.locator('#observe-time').dispatchEvent('change');
- await expect(page.locator('#mw-debug-mask-mode')).toHaveValue('planar');
- await expect(page.locator('#mw-debug-status')).toContainText('Mask planar');
- await page.locator('#mw-debug-mask-mode').selectOption('spherical');
- await expect(page.locator('#mw-debug-status')).toContainText('Mask spherical');
- await page.locator('#mw-debug-mask-mode').selectOption('planar');
+ await expect(page.locator('#mw-debug-mask-mode')).toHaveCount(0);
+ await expect(page.locator('#mw-debug-status')).toContainText(/Mask planar · [0-9.]+% equatorial pixels/);
  // Stub clipboard so we inspect the actual JSON payload without needing
  // permissions in headless Firefox.
  await page.evaluate(()=>{

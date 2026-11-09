@@ -302,8 +302,7 @@ export function milkyWaySample(raOfDate,decOfDate,date,precession=true,mode='pla
  const sinB=Math.sin(decl)*Math.sin(poleDec)+
   Math.cos(decl)*Math.cos(poleDec)*Math.cos(ra-poleRA);
  const galacticLatitude=Math.asin(Math.max(-1,Math.min(1,sinB)))*DEG;
- const maskMode=mode==='planar'?'planar':'spherical';
- const actualMode=mode==='planar-legacy'?'planar-legacy':maskMode;
+ const actualMode=mode==='planar-legacy'?'planar-legacy':'planar';
  const mask=fixedEquatorialMask(actualMode);
  const u=Math.min(MASK_WIDTH-1,Math.floor(raJ2000*MASK_WIDTH/360));
  const v=Math.max(0,Math.min(MASK_HEIGHT-1,
