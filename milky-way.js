@@ -282,6 +282,36 @@ function precessionInverse(date){
  const theta=(2004.3109*T-.42665*T*T-.041833*T*T*T)*arcsec;
  return {zeta,z,ct:Math.cos(theta),st:Math.sin(theta)};
 }
+/**
+ * Cursor diagnostic: evaluate a displayed equatorial position against the
+ * actual J2000 mask used by the selected sky projection. Never infer shade
+ * from the rendered screenshot or from an approximate galactic stripe.
+ */
+export function milkyWaySample(raOfDate,decOfDate,date,precession=true,mode='planar'){
+ if(!ready)return {ready:false};
+ const inverse=precession?precessionInverse(date):null;
+ let ra=raOfDate*RAD,decl=decOfDate*RAD;
+ if(inverse){
+  const angle=ra-inverse.z,cosd=Math.cos(decl);
+  const B=cosd*Math.cos(angle),A=cosd*Math.sin(angle),C=Math.sin(decl);
+  ra=Math.atan2(A,inverse.ct*B+inverse.st*C)-inverse.zeta;
+  decl=Math.asin(Math.max(-1,Math.min(1,-inverse.st*B+inverse.ct*C)));
+ }
+ const raJ2000=wrap(ra*DEG,360),decJ2000=decl*DEG;
+ const poleRA=192.85948*RAD,poleDec=27.12825*RAD;
+ const sinB=Math.sin(decl)*Math.sin(poleDec)+
+  Math.cos(decl)*Math.cos(poleDec)*Math.cos(ra-poleRA);
+ const galacticLatitude=Math.asin(Math.max(-1,Math.min(1,sinB)))*DEG;
+ const maskMode=mode==='planar'?'planar':'spherical';
+ const actualMode=mode==='planar-legacy'?'planar-legacy':maskMode;
+ const mask=fixedEquatorialMask(actualMode);
+ const u=Math.min(MASK_WIDTH-1,Math.floor(raJ2000*MASK_WIDTH/360));
+ const v=Math.max(0,Math.min(MASK_HEIGHT-1,
+  Math.floor((90-decJ2000)*MASK_HEIGHT/180)));
+ const intensity=mask[v*MASK_WIDTH+u];
+ return {ready:true,mode:actualMode,raJ2000,decJ2000,
+  galacticLatitude,intensity,alphaPercent:intensity/255*100};
+}
 function paintRectMask(c,{date,lat,lon,width,height,heading,precession,debugMaskMode='planar'},visibility){
  const source=fixedEquatorialMask(debugMaskMode),g=rectGeometry(width,height);
  // 2px nominal cells are smoothed on display, reducing costly coordinate

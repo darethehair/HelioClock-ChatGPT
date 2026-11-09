@@ -523,6 +523,36 @@ test('Milky Way fixed mask is consistent across projections and polar zoom',asyn
  expect(errors).toEqual([]);
 });
 
+test('Milky Way cursor reports independently computable galactic latitude and mask intensity',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('[data-sky-projection="rect"]').click();
+ await page.locator('#use-precession').uncheck();
+ await expect(page.locator('#mw-debug-status')).toContainText(/Mask planar · [0-9.]+% equatorial pixels/);
+ const sky=page.locator('#sky');
+ await sky.scrollIntoViewIfNeeded();
+ const box=await sky.boundingBox();
+ await page.mouse.move(box.x+box.width*.44,box.y+box.height*.36);
+ const readout=await page.locator('#sky-cursor-readout').innerText();
+ expect(readout).toContain('Galactic lat');
+ expect(readout).toMatch(/MW mask \d+\/255 \(\d+\.\d%\) · planar/);
+ const match=readout.match(/RA (\d+)h (\d+\.\d+)m · Dec ([+-]\d+\.\d+)°.*Galactic lat ([+-]\d+\.\d+)°/);
+ expect(match).not.toBeNull();
+ const ra=(Number(match[1])+Number(match[2])/60)*15,dec=Number(match[3]);
+ const poleRA=192.85948*Math.PI/180,poleDec=27.12825*Math.PI/180;
+ const r=ra*Math.PI/180,d=dec*Math.PI/180;
+ const b=Math.asin(Math.sin(d)*Math.sin(poleDec)+Math.cos(d)*Math.cos(poleDec)*Math.cos(r-poleRA))*180/Math.PI;
+ expect(Number(match[4])).toBeCloseTo(b,1);
+ // The working polar renderer deliberately continues sampling its legacy
+ // mask, which the diagnostic must identify accurately.
+ await page.locator('[data-sky-projection="polar"]').click();
+ await sky.scrollIntoViewIfNeeded();
+ const polar=await sky.boundingBox();
+ await page.mouse.move(polar.x+polar.width/2,polar.y+polar.height/2);
+ await expect(page.locator('#sky-cursor-readout')).toContainText('planar-legacy');
+ expect(errors).toEqual([]);
+});
+
 test('Version 26 polar zoom anchors cursor and dragging pans the sky',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:8765/');

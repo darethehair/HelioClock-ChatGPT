@@ -1,6 +1,6 @@
 import {renderAlmanac} from './almanac.js';
 import {drawEcliptic} from './ecliptic.js';
-import {drawMilkyWay,milkyWayStatus,milkyWayDebugStatus} from './milky-way.js';
+import {drawMilkyWay,milkyWayStatus,milkyWayDebugStatus,milkyWaySample} from './milky-way.js';
 import {rectGeometry,projectRect,rectHorizonY,paintRectAtmosphere} from './sky-projection.js';
 import {drawSkyAtlas,skyAtlasStatus} from './sky-atlas.js';
 import {renderMoon} from './moon-renderer.js';
@@ -237,8 +237,16 @@ function updateSkyCursor(x,y){
   panX:state.skyPanX,panY:state.skyPanY
  });
  if(!coords){out.textContent='Cursor: outside plotted sky';return}
+ const mode=$('mw-debug-mask-mode').value;
+ const actualMode=state.skyProjection==='polar'&&mode==='planar'?'planar-legacy':mode;
+ const sample=milkyWaySample(coords.ra,coords.dec,state.date,state.usePrecession,actualMode);
+ const diagnostic=sample.ready?
+  ' · Galactic lat '+(sample.galacticLatitude>=0?'+':'')+sample.galacticLatitude.toFixed(2)+'°'+
+  ' · MW mask '+sample.intensity+'/255 ('+sample.alphaPercent.toFixed(1)+'%)'+
+  ' · '+sample.mode:
+  ' · MW mask loading';
  out.textContent='Cursor: RA '+coords.raText+' · Dec '+(coords.dec>=0?'+':'')+
-  coords.dec.toFixed(2)+'° · Az '+coords.az.toFixed(2)+'° · Alt '+coords.alt.toFixed(2)+'°';
+  coords.dec.toFixed(2)+'° · Az '+coords.az.toFixed(2)+'° · Alt '+coords.alt.toFixed(2)+'°'+diagnostic;
 }
 let skyCursorPosition=null;
 $('sky').addEventListener('pointermove',e=>{
