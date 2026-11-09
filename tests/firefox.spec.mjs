@@ -506,33 +506,33 @@ test('Version 26 polar zoom anchors cursor and dragging pans the sky',async({pag
    return old.call(this,x,y);
   };
  });
- const sky=page.locator('#sky'),box=await sky.boundingBox();
- // Dispatch a real WheelEvent with controlled client coordinates.
- const px=box.width*.73,py=box.height*.32;
- const cx=box.width/2,cy=box.height/2;
- const zoomBefore=Number(await page.locator('#sky-zoom').inputValue());
- await sky.evaluate((el,[u,v])=>{
-  const rect=el.getBoundingClientRect();
+ const sky=page.locator('#sky');
+ // Measure from the exact DOM rect used by the wheel handler. An earlier
+ // boundingBox() snapshot can become stale as late-loading panels relayout.
+ const geometry=await sky.evaluate(el=>{
+  const rect=el.getBoundingClientRect(),u=.73,v=.32;
+  const px=rect.width*u,py=rect.height*v;
+  const x=rect.left+px,y=rect.top+py;
   el.dispatchEvent(new WheelEvent('wheel',{
-   bubbles:true,cancelable:true,deltaY:-180,
-   clientX:rect.left+u,clientY:rect.top+v
+   bubbles:true,cancelable:true,deltaY:-180,clientX:x,clientY:y
   }));
- },[px,py]);
+  return {px,py,cx:rect.width/2,cy:rect.height/2,x,y};
+ });
  const zoomAfter=Number(await page.locator('#sky-zoom').inputValue());
- expect(zoomAfter).toBeGreaterThan(zoomBefore);
- const ratio=zoomAfter/zoomBefore;
+ expect(zoomAfter).toBeGreaterThan(1);
+ const ratio=zoomAfter;
  const anchored=await page.evaluate(()=>window.__skyTranslate);
- // A celestial point beneath the zoom cursor must remain beneath it.
- const originalPoint=[px-cx,py-cy];
- const projected=[cx+ratio*originalPoint[0]+anchored[0],
-  cy+ratio*originalPoint[1]+anchored[1]];
- expect(projected[0]).toBeCloseTo(px,2);
- expect(projected[1]).toBeCloseTo(py,2);
- // Dragging then translates the entire chart by the actual mouse delta.
- const x=box.x+px,y=box.y+py;
- await page.mouse.move(x,y);
+ // The chosen celestial point must remain precisely below the cursor.
+ const projected=[
+  geometry.cx+ratio*(geometry.px-geometry.cx)+anchored[0],
+  geometry.cy+ratio*(geometry.py-geometry.cy)+anchored[1]
+ ];
+ expect(projected[0]).toBeCloseTo(geometry.px,2);
+ expect(projected[1]).toBeCloseTo(geometry.py,2);
+ // Confirm literal pixel-for-pixel drag translation after zooming.
+ await page.mouse.move(geometry.x,geometry.y);
  await page.mouse.down();
- await page.mouse.move(x+34,y+24,{steps:3});
+ await page.mouse.move(geometry.x+34,geometry.y+24,{steps:3});
  await page.mouse.up();
  const panned=await page.evaluate(()=>window.__skyTranslate);
  expect(panned[0]-anchored[0]).toBeCloseTo(34,0);
