@@ -1,6 +1,6 @@
 import {renderAlmanac} from './almanac.js';
 import {drawEcliptic} from './ecliptic.js';
-import {drawMilkyWay,milkyWayStatus} from './milky-way.js';
+import {drawMilkyWay,milkyWayStatus,milkyWayDebugStatus} from './milky-way.js';
 import {rectGeometry,projectRect,rectHorizonY,paintRectAtmosphere} from './sky-projection.js';
 import {drawSkyAtlas,skyAtlasStatus} from './sky-atlas.js';
 import {renderMoon} from './moon-renderer.js';
@@ -166,10 +166,15 @@ function sky(){
   showBelowHorizon:state.skyProjection==='rect'&&$('show-below-horizon').checked,
   showShade:$('show-milkyway-shade').checked,
   showOutline:$('show-milkyway-outline').checked,
-  showCenter:$('show-galactic-center').checked
+  showCenter:$('show-galactic-center').checked,
+  debugMaskMode:$('mw-debug-mask-mode').value
  });
  const milky=milkyWayStatus();
  $('milkyway-status').textContent=milky.failed?'Milky Way outlines unavailable':milky.ready?'Milky Way contours loaded':'Milky Way contours loading';
+ const mwStats=milkyWayDebugStatus($('mw-debug-mask-mode').value);
+ $('mw-debug-status').textContent=mwStats.status==='ready'?
+  'Mask '+mwStats.mode+' · '+mwStats.filledPercent+'% equatorial pixels · '+mwStats.sourcePolygons+' polygons · footprint ±'+mwStats.footprintLimitDeg+'°':
+  'Mask '+mwStats.mode+': '+mwStats.status;
  const plotted=drawSkyAtlas(c,{
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
   mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
@@ -590,6 +595,32 @@ $('star-magnitude').addEventListener('change',e=>{
 $('show-constellations').addEventListener('change',render);
 for(const id of ['show-milkyway-shade','show-milkyway-outline','show-galactic-center'])$(id).addEventListener('change',render);
 window.addEventListener('helioclock-milkyway-ready',render);
+$('mw-debug-mask-mode').addEventListener('change',render);
+$('mw-copy-debug').addEventListener('click',async()=>{
+ const chosen=$('mw-debug-mask-mode').value;
+ const debug={
+  version:34,utc:state.date.toISOString(),
+  local:state.date.toLocaleString('en-CA',{timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone}),
+  timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,
+  observer:{lat:state.lat,lon:state.lon},
+  sky:{projection:state.skyProjection,light:state.skyLight,heading:state.skyHeading,
+   zoom:state.skyZoom,panX:state.skyPanX,panY:state.skyPanY,
+   precession:state.usePrecession,belowHorizon:$('show-below-horizon').checked,
+   milkyShade:$('show-milkyway-shade').checked,milkyOutline:$('show-milkyway-outline').checked,
+   galacticCenter:$('show-galactic-center').checked,stellarColors:state.stellarColors,
+   magLimit:state.magLimit,stars:$('show-stars').checked,labels:$('show-labels').checked},
+  milkyWay:{maskMode:chosen,mask:milkyWayDebugStatus(chosen),catalog:milkyWayStatus()},
+  canvas:{width:$('sky').width,height:$('sky').height}
+ };
+ const value=JSON.stringify(debug,null,2);
+ try{await navigator.clipboard.writeText(value);$('mw-debug-status').textContent='Debug state copied to clipboard';}
+ catch{
+  const field=document.createElement('textarea');field.value=value;field.style.cssText='position:absolute;left:-9999px';
+  document.body.appendChild(field);field.select();const ok=document.execCommand('copy');field.remove();
+  $('mw-debug-status').textContent=ok?'Debug state copied to clipboard':'Clipboard unavailable';
+ }
+});
+
 $('use-precession').addEventListener('change',e=>{state.usePrecession=e.target.checked;render()});
 $('show-stellar-colors').addEventListener('change',e=>{state.stellarColors=e.target.checked;render()});
 window.addEventListener('helioclock-sky-atlas-ready',render);
