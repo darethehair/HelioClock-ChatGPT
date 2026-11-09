@@ -5,8 +5,8 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#sunrise')).not.toHaveText('—');
  // Release identity and provenance are visible even offline.
- await expect(page.locator('#app-version')).toHaveText('v33');
- await expect(page.locator('#dock-version')).toHaveText('v33');
+ await expect(page.locator('#app-version')).toHaveText('v34');
+ await expect(page.locator('#dock-version')).toHaveText('v34');
  await expect(page.locator('.credits-footer')).toContainText('Created by Darethehair with assistance from ChatGPT');
  await expect(page.locator('.credits-footer a')).toHaveAttribute('href','https://github.com/darethehair/HelioClock-ChatGPT');
  await expect(page.locator('#build-meta')).toContainText('commit');
@@ -345,7 +345,7 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
  const errors=[];
  page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v33');
+ await expect(page.locator('#app-version')).toHaveText('v34');
  await expect(page.locator('.almanac-panel')).toBeHidden();
  await page.locator('#layout-sky').click();
  await expect(page.locator('.sky-panel')).toBeVisible();
@@ -448,7 +448,7 @@ test('Version 32 rectangular Milky Way mask changes the sky without a full-sky w
 test('Version 25 Sun and Moon use the same zoomable pannable fullscreen stage',async({page})=>{
  const errors=[];page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v33');
+ await expect(page.locator('#app-version')).toHaveText('v34');
  await expect(page.locator('#moon')).toBeVisible();
  await expect(page.locator('#solar-photo')).toBeHidden();
  await page.locator('[data-disc-view="sun"]').click();
@@ -757,5 +757,43 @@ test('Version 33 avoids false Milky Way bands far from galactic plane at 07:44 M
  expect(region.high).toBeGreaterThan(100);
  expect(region.mid).toBeGreaterThan(25);
  expect(region.falseBand/region.high).toBeLessThan(.03);
+ expect(errors).toEqual([]);
+});
+
+
+test('Version 34 offers comparable Milky Way masks and copyable exact debug state',async({page})=>{
+ test.setTimeout(90000);
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('#layout-sky').click();
+ await page.locator('[data-sky-projection="rect"]').click();
+ await page.locator('[data-sky-light="black"]').click();
+ await page.waitForFunction(()=>document.querySelector('#milkyway-status').textContent.includes('loaded'));
+ await page.locator('#observe-date').fill('2026-11-09');
+ await page.locator('#observe-time').fill('12:44');
+ await page.locator('#observe-time').dispatchEvent('change');
+ await expect(page.locator('#mw-debug-mask-mode')).toHaveValue('planar');
+ await expect(page.locator('#mw-debug-status')).toContainText('Mask planar');
+ await page.locator('#mw-debug-mask-mode').selectOption('spherical');
+ await expect(page.locator('#mw-debug-status')).toContainText('Mask spherical');
+ await page.locator('#mw-debug-mask-mode').selectOption('planar');
+ // Stub clipboard so we inspect the actual JSON payload without needing
+ // permissions in headless Firefox.
+ await page.evaluate(()=>{
+  Object.defineProperty(navigator,'clipboard',{configurable:true,value:{
+   writeText:async text=>{window.__debugCopy=text;}
+  }});
+ });
+ await page.locator('#mw-copy-debug').click();
+ const data=await page.evaluate(()=>JSON.parse(window.__debugCopy));
+ expect(data.version).toBe(34);
+ expect(data.utc).toBe('2026-11-09T12:44:00.000Z');
+ expect(data.observer).toEqual({lat:49.19,lon:-98.10});
+ expect(data.sky.projection).toBe('rect');
+ expect(data.sky.light).toBe('black');
+ expect(data.milkyWay.maskMode).toBe('planar');
+ expect(data.milkyWay.mask.status).toBe('ready');
+ expect(data.milkyWay.mask.filledPixels).toBeGreaterThan(100);
+ expect(data.milkyWay.mask.sourceLevels).toBe(5);
  expect(errors).toEqual([]);
 });
