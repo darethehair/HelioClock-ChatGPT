@@ -13,9 +13,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        run: npm install --no-audit --no-fund
       - name: Syntax checks
         run: |
           for file in astronomy.js app.js solar-chart.js moon-renderer.js sky-atlas.js milky-way.js sky-projection.js ecliptic.js almanac.js; do
@@ -36,9 +35,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
       - name: Install build dependencies
-        run: npm ci --no-audit --no-fund
+        run: npm install --no-audit --no-fund
       - name: Bundle independent visualizations
         run: npm run build
       # Static astronomy imagery and catalogues are immutable within a
