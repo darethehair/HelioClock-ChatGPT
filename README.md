@@ -126,3 +126,7 @@ The sky atlas previously rejected points using unshifted polar projection coordi
 - The bundled star catalogue keeps its stellar B−V colours and magnitude data, and now joins a compact descriptive designation for stars where an actual name is available. These names are real catalogue metadata, never inferred from star positions.
 - A new **Cursor: RA / Dec / Az / Alt** strip appears beneath the sky canvas. It converts the pointer's screen position to sky coordinates in both polar and rectangular modes, accounting for the observer's latitude/longitude, simulation time, sky heading and polar zoom/pan. The RA/Dec readout follows the current chart coordinate model, and the display clears when the pointer leaves.
 - Tests cover inverse equatorial/horizontal coordinate round trips, large-magnitude labels and both cursor projections. Milky Way geometry, source star positions, and the orrery are unchanged.
+
+## Version 31 — Stable Milky Way contour orientation
+
+The rectangular Milky Way renderer now normalizes each source contour's spherical winding in its fixed J2000 celestial coordinates **before** converting it to the rotating observer horizon. The prior orientation check on projected Alt/Az vertices could switch interior/complement when the azimuth seam moved across a contour as time advanced. D3 still splits polygons at the rectangular seam, with the catalogue MultiPolygon groupings and holes preserved. The polar renderer is unchanged. Check the same one-hour comparison that exposed the v30 issue to verify the visual result.
