@@ -185,8 +185,44 @@ function fixedEquatorialMask(){
    if(pixels[j])total[i]=1-(1-total[i])*(1-alpha*pixels[j]/255);
   }
  }
+ // Every published Vieira contour boundary lies close to the galactic
+ // plane. A global complement or erroneous RA closure cannot legitimately
+ // shade points farther from that plane than *all* boundary vertices.
+ // Derive this bound from the catalogue rather than a guessed sky width.
+ const poleRa=192.85948*RAD,poleDec=27.12825*RAD;
+ const pole=[Math.cos(poleDec)*Math.cos(poleRa),
+  Math.cos(poleDec)*Math.sin(poleRa),Math.sin(poleDec)];
+ const galacticLatitude=(ra,dec)=>{
+  const r=ra*RAD,d=dec*RAD;
+  return Math.asin(Math.max(-1,Math.min(1,
+   Math.cos(d)*(Math.cos(r)*pole[0]+Math.sin(r)*pole[1])+Math.sin(d)*pole[2]
+  )))*DEG;
+ };
+ let maxBoundaryLat=0;
+ for(const tier of levels)for(const polygon of (tier.polygons||[]))
+  for(const ring of polygon)for(const [ra,dec] of ring)
+   maxBoundaryLat=Math.max(maxBoundaryLat,Math.abs(galacticLatitude(ra,dec)));
+ // Allow one degree for raster sampling and anti-aliasing. This guard is
+ // intentionally outside every original contour, so legitimate catalogue
+ // silhouettes are not cropped.
+ const safeLimit=maxBoundaryLat+1;
  fixedContourMask=new Uint8Array(total.length);
- for(let i=0;i<total.length;i++)fixedContourMask[i]=Math.round(255*total[i]);
+ const cosRa=new Float64Array(MASK_WIDTH),sinRa=new Float64Array(MASK_WIDTH);
+ for(let x=0;x<MASK_WIDTH;x++){
+  const ra=(x+.5)/MASK_WIDTH*2*Math.PI;
+  cosRa[x]=Math.cos(ra);sinRa[x]=Math.sin(ra);
+ }
+ for(let y=0;y<MASK_HEIGHT;y++){
+  const dec=(90-(y+.5)/MASK_HEIGHT*180)*RAD;
+  const cosd=Math.cos(dec),sind=Math.sin(dec);
+  for(let x=0;x<MASK_WIDTH;x++){
+   const b=Math.asin(Math.max(-1,Math.min(1,
+    cosd*(cosRa[x]*pole[0]+sinRa[x]*pole[1])+sind*pole[2]
+   )))*DEG;
+   const i=y*MASK_WIDTH+x;
+   fixedContourMask[i]=Math.abs(b)>safeLimit?0:Math.round(255*total[i]);
+  }
+ }
  return fixedContourMask;
 }
 function precessionInverse(date){
