@@ -521,21 +521,27 @@ test('Version 26 polar zoom anchors cursor and dragging pans the sky',async({pag
  });
  const zoomAfter=Number(await page.locator('#sky-zoom').inputValue());
  expect(zoomAfter).toBeGreaterThan(1);
- const ratio=zoomAfter;
  const anchored=await page.evaluate(()=>window.__skyTranslate);
  const trace=await page.evaluate(()=>window.__helioclockZoomTrace);
- console.log('POLAR_ZOOM_DIAGNOSTIC',JSON.stringify({geometry,trace,anchored,zoomAfter}));
+ expect(trace).toBeDefined();
+ // Slider and renderer must agree: a range step of .1 previously coerced
+ // internal 1.14 zoom to 1.1, making the cursor appear to drift.
+ expect(zoomAfter).toBeCloseTo(trace.next,2);
+ const ratio=trace.ratio;
+ const trace=await page.evaluate(()=>window.__helioclockZoomTrace);
  expect(trace).toBeDefined();
  // The rendered translation must be the application's actual pan state.
  expect(anchored[0]).toBeCloseTo(trace.panX,4);
  expect(anchored[1]).toBeCloseTo(trace.panY,4);
  // The chosen celestial point must remain precisely below the cursor.
+ // Firefox normalizes fractional WheelEvent client coordinates. Compare
+ // against what the handler actually received, not the requested fraction.
  const projected=[
-  geometry.cx+ratio*(geometry.px-geometry.cx)+anchored[0],
-  geometry.cy+ratio*(geometry.py-geometry.cy)+anchored[1]
+  trace.rectWidth/2+ratio*(trace.px-trace.rectWidth/2)+anchored[0],
+  trace.rectHeight/2+ratio*(trace.py-trace.rectHeight/2)+anchored[1]
  ];
- expect(projected[0]).toBeCloseTo(geometry.px,2);
- expect(projected[1]).toBeCloseTo(geometry.py,2);
+ expect(projected[0]).toBeCloseTo(trace.px,2);
+ expect(projected[1]).toBeCloseTo(trace.py,2);
  // Confirm literal pixel-for-pixel drag translation after zooming.
  await page.mouse.move(geometry.x,geometry.y);
  await page.mouse.down();
