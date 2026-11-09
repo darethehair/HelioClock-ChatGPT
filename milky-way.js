@@ -143,41 +143,58 @@ function paintContours(c,levels,projectPoint,opts,visibility,shade,outline){
  */
 const MASK_WIDTH=1440,MASK_HEIGHT=720;
 const CONTOUR_ALPHA=[.095,.060,.060,.070,.085];
-let fixedContourMask=null;
+let fixedContourMasks=new Map();
+let fixedMaskDiagnostics=new Map();
+export function milkyWayDebugStatus(mode='planar'){
+ return fixedMaskDiagnostics.get(mode)||{mode,status:ready?'not generated':'loading'};
+}
 function makeCanvas(w,h){
  const cv=document.createElement('canvas');
  cv.width=w;cv.height=h;
  return cv;
 }
-function fixedEquatorialMask(){
- if(fixedContourMask)return fixedContourMask;
+function fixedEquatorialMask(mode='planar'){
+ if(fixedContourMasks.has(mode))return fixedContourMasks.get(mode);
  const total=new Float32Array(MASK_WIDTH*MASK_HEIGHT);
  const cv=makeCanvas(MASK_WIDTH,MASK_HEIGHT),ctx=cv.getContext('2d',{willReadFrequently:true});
- // Construct the mask with D3's spherical antimeridian clipper in the
- // *fixed* J2000 frame. The v32 planar unwrapping was not topology-safe:
- // closing a contour at a celestial seam could create a long artificial arc.
- // A spherical clipper adds only the appropriate seam-edge closure instead.
- const projection=geoEquirectangular()
-  .scale(MASK_WIDTH/(2*Math.PI))
+ // Diagnostics compare two independent J2000 rasterization methods.
+ // 'planar': periodic RA unwrapping, which restores large continuous regions.
+ // 'spherical': D3 great-circle clipping, which v33 showed loses regions.
+ const projection=geoEquirectangular().scale(MASK_WIDTH/(2*Math.PI))
   .translate([MASK_WIDTH/2,MASK_HEIGHT/2]).precision(.12);
- const path=geoPath(projection,ctx);
+ const d3path=geoPath(projection,ctx);
  for(let tier=0;tier<levels.length;tier++){
   ctx.clearRect(0,0,MASK_WIDTH,MASK_HEIGHT);
   for(const polygon of (levels[tier].polygons||[])){
    if(!polygon.length)continue;
-   const rings=polygon.filter(r=>r.length>2).map(ring=>ring.map(([ra,dec])=>[
-    wrap(ra+180,360)-180,dec
-   ]));
-   if(!rings.length)continue;
-   let shape={type:'Polygon',coordinates:rings};
-   // GeoJSON winding determines which *spherical* region is inside. Always
-   // select the smaller side of each original catalogue contour, in J2000.
-   // All rings reverse together, preserving holes.
-   if(geoArea(shape)>2*Math.PI){
-    shape={type:'Polygon',coordinates:rings.map(r=>[...r].reverse())};
+   if(mode==='spherical'){
+    const rings=polygon.filter(r=>r.length>2).map(ring=>ring.map(([ra,dec])=>[wrap(ra+180,360)-180,dec]));
+    if(!rings.length)continue;
+    let shape={type:'Polygon',coordinates:rings};
+    if(geoArea(shape)>2*Math.PI)shape={type:'Polygon',coordinates:rings.map(r=>[...r].reverse())};
+    ctx.beginPath();d3path(shape);ctx.fillStyle='#fff';ctx.fill('evenodd');
+   }else{
+    // Keep holes anchored to their outer boundary and repeat whole polygon
+    // at every relevant RA wrap. Even-odd retains catalogue interior holes.
+    const path=new Path2D();let outerAnchor=null;
+    for(const ring of polygon){
+     if(ring.length<3)continue;
+     let previous=null;
+     for(const [ra,dec] of ring){
+      let x=wrap(ra,360);
+      if(previous!==null)x+=360*Math.round((previous-x)/360);
+      else if(outerAnchor!==null)x+=360*Math.round((outerAnchor-x)/360);
+      if(previous===null){path.moveTo(x*MASK_WIDTH/360,(90-dec)*MASK_HEIGHT/180);if(outerAnchor===null)outerAnchor=x}
+      else path.lineTo(x*MASK_WIDTH/360,(90-dec)*MASK_HEIGHT/180);
+      previous=x;
+     }
+     path.closePath();
+    }
+    ctx.fillStyle='#fff';
+    for(const dx of [-2,-1,0,1,2]){
+     ctx.save();ctx.translate(dx*MASK_WIDTH,0);ctx.fill(path,'evenodd');ctx.restore();
+    }
    }
-   ctx.beginPath();path(shape);
-   ctx.fillStyle='#fff';ctx.fill('evenodd');
   }
   const pixels=ctx.getImageData(0,0,MASK_WIDTH,MASK_HEIGHT).data;
   const alpha=CONTOUR_ALPHA[Math.min(tier,CONTOUR_ALPHA.length-1)];
@@ -206,7 +223,7 @@ function fixedEquatorialMask(){
  // intentionally outside every original contour, so legitimate catalogue
  // silhouettes are not cropped.
  const safeLimit=maxBoundaryLat+1;
- fixedContourMask=new Uint8Array(total.length);
+ const fixedContourMask=new Uint8Array(total.length);
  const cosRa=new Float64Array(MASK_WIDTH),sinRa=new Float64Array(MASK_WIDTH);
  for(let x=0;x<MASK_WIDTH;x++){
   const ra=(x+.5)/MASK_WIDTH*2*Math.PI;
@@ -223,6 +240,15 @@ function fixedEquatorialMask(){
    fixedContourMask[i]=Math.abs(b)>safeLimit?0:Math.round(255*total[i]);
   }
  }
+ let filled=0,totalIntensity=0;
+ for(const intensity of fixedContourMask){if(intensity>0)filled++;totalIntensity+=intensity}
+ const stats={mode,status:'ready',maskWidth:MASK_WIDTH,maskHeight:MASK_HEIGHT,
+  footprintLimitDeg:Number(safeLimit.toFixed(3)),filledPixels:filled,
+  filledPercent:Number((filled/fixedContourMask.length*100).toFixed(2)),
+  meanAlpha:Number((totalIntensity/fixedContourMask.length/255).toFixed(4)),
+  sourceLevels:levels.length,sourcePolygons:levels.reduce((n,l)=>n+(l.polygons||[]).length,0)};
+ fixedContourMasks.set(mode,fixedContourMask);
+ fixedMaskDiagnostics.set(mode,stats);
  return fixedContourMask;
 }
 function precessionInverse(date){
@@ -234,8 +260,8 @@ function precessionInverse(date){
  const theta=(2004.3109*T-.42665*T*T-.041833*T*T*T)*arcsec;
  return {zeta,z,ct:Math.cos(theta),st:Math.sin(theta)};
 }
-function paintRectMask(c,{date,lat,lon,width,height,heading,precession},visibility){
- const source=fixedEquatorialMask(),g=rectGeometry(width,height);
+function paintRectMask(c,{date,lat,lon,width,height,heading,precession,debugMaskMode='planar'},visibility){
+ const source=fixedEquatorialMask(debugMaskMode),g=rectGeometry(width,height);
  // 2px nominal cells are smoothed on display, reducing costly coordinate
  // inversions for large fullscreen charts without smearing contour structure.
  const step=2,cols=Math.ceil((g.right-g.left)/step),rows=Math.ceil((g.bottom-g.top)/step);
@@ -372,6 +398,7 @@ function paintPolarContours(c,levels,{date,lat,lon,width,height,zoom,heading,pre
 export function drawMilkyWay(c,opts){
  const {date,lat,lon,width,height,mode='polar',zoom=1,heading=0,
   precession=true,showBelowHorizon=true,showShade=false,showOutline=false,
+  debugMaskMode='planar',
   showCenter=false,skyLight='black',sunAltitude=-20,forceDaylight=false}=opts;
  if(!showShade&&!showOutline&&!showCenter)return;
  const position=projection({mode,width,height,zoom,heading,showBelowHorizon});
@@ -399,7 +426,7 @@ export function drawMilkyWay(c,opts){
   };
   const projectPoint=(ra,dec)=>rawProjection(toAltAz(ra,dec,date,lat,lon,precession));
   if(mode==='rect'){
-   paintRectContours(c,levels,{date,lat,lon,width,height,heading,precession},
+   paintRectContours(c,levels,{date,lat,lon,width,height,heading,precession,debugMaskMode},
     visibility,showShade,showOutline);
   }else{
    paintPolarContours(c,levels,{date,lat,lon,width,height,zoom,heading,precession},
