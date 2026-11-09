@@ -542,11 +542,30 @@ test('Version 26 polar zoom anchors cursor and dragging pans the sky',async({pag
  ];
  expect(projected[0]).toBeCloseTo(trace.px,2);
  expect(projected[1]).toBeCloseTo(trace.py,2);
- // Confirm literal pixel-for-pixel drag translation after zooming.
- await page.mouse.move(geometry.x,geometry.y);
+ // The synthetic wheel event above does not scroll the browser into a
+ // position suitable for physical mouse input. Explicitly bring the canvas
+ // into view and remeasure before using Playwright's real pointer events.
+ await sky.scrollIntoViewIfNeeded();
+ const dragBox=await sky.boundingBox();
+ expect(dragBox).not.toBeNull();
+ const x=dragBox.x+dragBox.width/2,y=dragBox.y+dragBox.height/2;
+ // Require a real canvas pointerdown and pointermove, not a silent drag on
+ // another element. This retains the strict pixel-for-pixel requirement.
+ await sky.evaluate(el=>{
+  window.__skyPointerEvents=[];
+  for(const type of ['pointerdown','pointermove','pointerup'])
+   el.addEventListener(type,e=>{
+    window.__skyPointerEvents.push({type,x:e.clientX,y:e.clientY});
+   });
+ });
+ await page.mouse.move(x,y);
  await page.mouse.down();
- await page.mouse.move(geometry.x+34,geometry.y+24,{steps:3});
+ await page.mouse.move(x+34,y+24,{steps:3});
  await page.mouse.up();
+ const events=await page.evaluate(()=>window.__skyPointerEvents);
+ expect(events.some(e=>e.type==='pointerdown')).toBe(true);
+ expect(events.some(e=>e.type==='pointermove')).toBe(true);
+ expect(events.some(e=>e.type==='pointerup')).toBe(true);
  const panned=await page.evaluate(()=>window.__skyTranslate);
  expect(panned[0]-anchored[0]).toBeCloseTo(34,0);
  expect(panned[1]-anchored[1]).toBeCloseTo(24,0);
