@@ -134,3 +134,7 @@ The rectangular Milky Way renderer now normalizes each source contour's spherica
 ## Version 32 — Inertial Milky Way shading in rectangular sky
 
 Rectangular Milky Way **fills** now sample a fixed, offline J2000 RA/Dec coverage mask rather than asking a spherical projector to resolve a polygon's winding after local rotation. This avoids the time-dependent selection of the complementary sky region and keeps all uncovered black-sky pixels black. Equatorial-to-horizontal inverse transformation respects sidereal time, observer, heading and optional precession. The mask includes the original five contour levels and hole rings; existing vector outlines and polar shading remain independently available. Firefox regression checks multiple hours around the reported reversal and requires the black background to remain unshaded outside the Milky Way.
+
+## Version 33 — Spherical seam-safe fixed Milky Way mask
+
+Replaces the planar contour closing used to build the fixed J2000 mask with spherical antimeridian clipping via D3, retaining the original five Vieira contour levels and their hole rings. This prevents long false arcs created by wrapping a planar polygon across the RA seam. Rectangular shading continues to sample the time-independent mask; the polar implementation is not changed. Adds the exact November 9, 2026 07:44 Manitoba local (12:44 UTC) artifact scene to Firefox regression coverage, including checks for spurious shading well outside the galactic plane.
