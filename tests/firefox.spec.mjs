@@ -208,19 +208,9 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.locator('#show-milkyway-shade').uncheck();
  await page.locator('#show-galactic-center').uncheck();
  const blankGalactic=await skyHash();
- // Record Canvas fill-rule usage: the contour renderer must shade actual
- // even-odd polygons (with dark holes), not apply a wide glowing line stroke.
- await page.locator('#sky').evaluate(el=>{
-  window.__milkyContourFills=0;
-  const original=CanvasRenderingContext2D.prototype.fill;
-  CanvasRenderingContext2D.prototype.fill=function(...args){
-   if(this.canvas.id==='sky'&&args[0]==='evenodd')window.__milkyContourFills++;
-   return original.apply(this,args);
-  };
- });
+ // v32 uses fixed equatorial raster coverage, rather than projected
+ // Canvas even-odd polygon fills. Inspect actual sky pixels instead.
  await page.locator('#show-milkyway-shade').check();
- const filledRegions=await page.evaluate(()=>window.__milkyContourFills);
- expect(filledRegions).toBeGreaterThanOrEqual(5);
  const withGlow=await skyHash();
  expect(withGlow).not.toEqual(blankGalactic);
  await page.locator('#show-milkyway-shade').uncheck();
@@ -426,7 +416,7 @@ test('Version 23 single Earth map clips all raster imagery to the world outline'
  expect(errors).toEqual([]);
 });
 
-test('Version 23 Milky Way rectangular contour paths avoid interior seam bridges',async({page})=>{
+test('Version 32 rectangular Milky Way mask changes the sky without a full-sky wash',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:8765/');
  await page.locator('#observe-date').fill('2026-11-08');
@@ -436,34 +426,24 @@ test('Version 23 Milky Way rectangular contour paths avoid interior seam bridges
  await page.locator('[data-sky-light="black"]').click();
  await expect(page.locator('#milkyway-status')).toContainText('loaded');
  await page.locator('#show-milkyway-shade').uncheck();
- await page.evaluate(()=>{
-  const p=CanvasRenderingContext2D.prototype;
-  const old={begin:p.beginPath,move:p.moveTo,line:p.lineTo,close:p.closePath,fill:p.fill};
-  let first=null,prior=null,bridges=0;
-  window.__milkyBridges=0;window.__milkyFills=0;
-  function check(x,y,ctx){
-   if(!prior)return;
-   const el=ctx.canvas,w=el.clientWidth,h=el.clientHeight;
-   // Exclude valid spherical-polygon seam closures along the top/bottom frame.
-   if(el.id==='sky'&&Math.abs(x-prior[0])>w*.6&&
-      Math.min(y,prior[1])>35&&Math.max(y,prior[1])<h-55)bridges++;
-  }
-  p.beginPath=function(...a){if(this.canvas.id==='sky'){first=null;prior=null;bridges=0}return old.begin.apply(this,a)};
-  p.moveTo=function(x,y){if(this.canvas.id==='sky'){first=[x,y];prior=[x,y]}return old.move.call(this,x,y)};
-  p.lineTo=function(x,y){if(this.canvas.id==='sky'){check(x,y,this);prior=[x,y]}return old.line.call(this,x,y)};
-  p.closePath=function(...a){if(this.canvas.id==='sky'&&first)check(first[0],first[1],this);return old.close.apply(this,a)};
-  p.fill=function(...a){
-   if(this.canvas.id==='sky'&&a[0]==='evenodd'){window.__milkyBridges+=bridges;window.__milkyFills++;}
-   return old.fill.apply(this,a);
-  };
- });
+ const before=await page.locator('#sky').evaluate(el=>({w:el.width,h:el.height,data:Array.from(el.getContext('2d').getImageData(0,0,el.width,el.height).data)}));
  await page.locator('#show-milkyway-shade').check();
- const counts=await page.evaluate(()=>({bridges:window.__milkyBridges,fills:window.__milkyFills}));
- expect(counts.fills).toBeGreaterThanOrEqual(5);
- expect(counts.bridges).toBe(0);
+ const result=await page.locator('#sky').evaluate((el,off)=>{
+  const on=el.getContext('2d').getImageData(0,0,el.width,el.height).data;
+  let clear=0,shaded=0;
+  for(let y=Math.floor(off.h*.15);y<off.h*.85;y+=6)for(let x=Math.floor(off.w*.15);x<off.w*.85;x+=6){
+   const i=(y*off.w+x)*4;
+   if(off.data[i]>3||off.data[i+1]>3||off.data[i+2]>3)continue;
+   clear++;
+   if(on[i]>off.data[i]+8)shaded++;
+  }
+  return {clear,shaded};
+ },before);
+ expect(result.clear).toBeGreaterThan(100);
+ expect(result.shaded).toBeGreaterThan(10);
+ expect(result.shaded/result.clear).toBeLessThan(.55);
  expect(errors).toEqual([]);
 });
-
 
 test('Version 25 Sun and Moon use the same zoomable pannable fullscreen stage',async({page})=>{
  const errors=[];page.on('pageerror',err=>errors.push(err.message));
