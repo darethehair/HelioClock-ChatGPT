@@ -528,7 +528,7 @@ test('Version 26 polar zoom anchors cursor and dragging pans the sky',async({pag
  // internal 1.14 zoom to 1.1, making the cursor appear to drift.
  expect(zoomAfter).toBeCloseTo(trace.next,2);
  const ratio=trace.ratio;
- const trace=await page.evaluate(()=>window.__helioclockZoomTrace);
+
  expect(trace).toBeDefined();
  // The rendered translation must be the application's actual pan state.
  expect(anchored[0]).toBeCloseTo(trace.panX,4);
