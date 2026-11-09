@@ -154,7 +154,15 @@ function paintRectContours(c,levels,{date,lat,lon,width,height,heading,precessio
   const polygons=levels[k].polygons||[];
   const converted=[];
   for(const polygon of polygons){
-   const rings=polygon.map(ring=>ring.map(([ra,dec])=>{
+   // Decide spherical interior in fixed J2000 coordinates, *before*
+   // rotating to the observer's horizon. geoArea() on transformed vertex
+   // rings can change its complement decision as the local azimuth seam
+   // sweeps across them, producing the observed hour-to-hour grey reversal.
+   // Reverse all rings together so catalogue holes retain their parity.
+   const source={type:'Polygon',coordinates:polygon};
+   const canonical=geoArea(source)>2*Math.PI
+    ?polygon.map(ring=>[...ring].reverse()):polygon;
+   const rings=canonical.map(ring=>ring.map(([ra,dec])=>{
     const h=toAltAz(ra,dec,date,lat,lon,precession);
     // D3 longitude zero projects to the *middle* of the rectangle,
     // whereas the sky chart puts azimuth zero at both edges and 180°
@@ -162,11 +170,9 @@ function paintRectContours(c,levels,{date,lat,lon,width,height,heading,precessio
     return [wrap(h.az-heading,360)-180,h.alt];
    }));
    if(!rings.length)continue;
-   // D3 uses spherical winding to choose a polygon interior. A contour
-   // should cover the smaller side of the sphere, never its complement.
-   let shape={type:'Polygon',coordinates:rings};
-   if(geoArea(shape)>2*Math.PI)shape={type:'Polygon',coordinates:rings.map(r=>[...r].reverse())};
-   converted.push(shape.coordinates);
+   // The canonical winding is independent of the selected hour.
+   // D3 still performs the seam clipping and closes the split boundaries.
+   converted.push(rings);
   }
   if(!converted.length)continue;
   c.beginPath();
