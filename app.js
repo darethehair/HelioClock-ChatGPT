@@ -173,7 +173,7 @@ function sky(){
  $('milkyway-status').textContent=milky.failed?'Milky Way outlines unavailable':milky.ready?'Milky Way contours loaded':'Milky Way contours loading';
  const mwStats=milkyWayDebugStatus($('mw-debug-mask-mode').value);
  $('mw-debug-status').textContent=mwStats.status==='ready'?
-  'Mask '+mwStats.mode+' · '+mwStats.filledPercent+'% equatorial pixels · '+mwStats.sourcePolygons+' polygons · footprint ±'+mwStats.footprintLimitDeg+'°':
+  'Mask '+mwStats.mode+' · '+mwStats.filledPercent+'% equatorial pixels · '+mwStats.sourcePolygons+' polygons · '+(mwStats.seamClosures||0)+' seam closures · footprint ±'+mwStats.footprintLimitDeg+'°':
   'Mask '+mwStats.mode+': '+mwStats.status;
  const plotted=drawSkyAtlas(c,{
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,

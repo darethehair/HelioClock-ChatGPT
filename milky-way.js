@@ -156,6 +156,7 @@ function makeCanvas(w,h){
 function fixedEquatorialMask(mode='planar'){
  if(fixedContourMasks.has(mode))return fixedContourMasks.get(mode);
  const total=new Float32Array(MASK_WIDTH*MASK_HEIGHT);
+ let seamClosures=0;
  const cv=makeCanvas(MASK_WIDTH,MASK_HEIGHT),ctx=cv.getContext('2d',{willReadFrequently:true});
  // Diagnostics compare two independent J2000 rasterization methods.
  // 'planar': periodic RA unwrapping, which restores large continuous regions.
@@ -197,7 +198,19 @@ function fixedEquatorialMask(mode='planar'){
      points.forEach(([x,y],i)=>{
       const px=(x+offset)*MASK_WIDTH/360;
       if(i===0)path.moveTo(px,y);else path.lineTo(px,y);
-     });path.closePath();
+     });
+     // Two Vieira boundary contours wind fully around RA. Their final
+     // coordinate is the *same sky point* but 360° away in unwrapped X.
+     // A direct closePath draws a false diagonal across the entire chart.
+     // Close via the north pole instead: both caps share the same pole,
+     // so even-odd filling produces the legitimate band between them.
+     // Keep the previously verified polar mask unchanged for comparison.
+     if(mode!=='planar-legacy'&&Math.abs(points.at(-1)[0]-points[0][0])>300){
+      path.lineTo((points.at(-1)[0]+offset)*MASK_WIDTH/360,0);
+      path.lineTo((points[0][0]+offset)*MASK_WIDTH/360,0);
+      seamClosures++;
+     }
+     path.closePath();
     }
     ctx.fillStyle='#fff';
     for(const dx of [-2,-1,0,1,2]){
@@ -255,7 +268,7 @@ function fixedEquatorialMask(mode='planar'){
   footprintLimitDeg:Number(safeLimit.toFixed(3)),filledPixels:filled,
   filledPercent:Number((filled/fixedContourMask.length*100).toFixed(2)),
   meanAlpha:Number((totalIntensity/fixedContourMask.length/255).toFixed(4)),
-  sourceLevels:levels.length,sourcePolygons:levels.reduce((n,l)=>n+(l.polygons||[]).length,0)};
+  sourceLevels:levels.length,sourcePolygons:levels.reduce((n,l)=>n+(l.polygons||[]).length,0),seamClosures};
  fixedContourMasks.set(mode,fixedContourMask);
  fixedMaskDiagnostics.set(mode,stats);
  return fixedContourMask;
@@ -353,7 +366,9 @@ function paintRectContours(c,levels,opts,visibility,shade,outline){
  * can reverse its inside/outside meaning when the view is magnified.
  */
 function paintPolarMask(c,{date,lat,lon,width,height,zoom,heading,precession,debugMaskMode='planar'},visibility){
- const mask=fixedEquatorialMask(debugMaskMode);
+ // Preserve the visually confirmed polar mask while repairing planar RA
+ // closure geometry for the rectangular projection only.
+ const mask=fixedEquatorialMask(debugMaskMode==='planar'?'planar-legacy':debugMaskMode);
  const R=(Math.min(width-35,height-20)/2-14)*zoom;
  const cols=Math.ceil(width/2),rows=Math.ceil(height/2);
  const cv=makeCanvas(cols,rows),ctx=cv.getContext('2d');

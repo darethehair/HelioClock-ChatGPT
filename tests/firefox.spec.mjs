@@ -494,6 +494,17 @@ test('Version 25 Sun and Moon use the same zoomable pannable fullscreen stage',a
  expect(errors).toEqual([]);
 });
 
+test('Rectangular Milky Way closes full-RA rings at the pole',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await expect(page.locator('#mw-debug-status')).toContainText('Mask planar');
+ // Two large Vieira boundary loops run all the way around RA. Closing them
+ // directly would draw an artificial 360-degree diagonal through the mask.
+ await page.locator('[data-sky-projection="rect"]').click();
+ await expect(page.locator('#mw-debug-status')).toContainText('2 seam closures');
+ await page.locator('[data-sky-projection="polar"]').click();
+ await expect(page.locator('#mw-debug-status')).toContainText('2 seam closures');
+});
+
 test('Milky Way fixed mask is consistent across projections and polar zoom',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:8765/');
