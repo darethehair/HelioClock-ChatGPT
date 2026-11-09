@@ -6,38 +6,71 @@ on:
 permissions:
   contents: read
 jobs:
-  package:
+  quick-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install build dependencies
-        run: npm install --no-audit --no-fund
-      - name: Validate JavaScript and astronomy
-        shell: bash
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Syntax checks
         run: |
-          node --check --experimental-default-type=module astronomy.js
-          node --check --experimental-default-type=module app.js
-          node --check --experimental-default-type=module solar-chart.js
-          node --check --experimental-default-type=module moon-renderer.js
-          node --check --experimental-default-type=module sky-atlas.js
-          node --check --experimental-default-type=module milky-way.js
-          node --check --experimental-default-type=module sky-projection.js
-          node --check --experimental-default-type=module ecliptic.js
-          node --check --experimental-default-type=module almanac.js
+          for file in astronomy.js app.js solar-chart.js moon-renderer.js sky-atlas.js milky-way.js sky-projection.js ecliptic.js almanac.js; do
+            node --check "$file"
+          done
           node --check sw.js
-          npx esbuild tests/astronomy.test.mjs --bundle --platform=node --format=esm --outfile=/tmp/helioclock-astronomy-test.mjs && node /tmp/helioclock-astronomy-test.mjs
+          node --check tests/firefox.spec.mjs
+          python3 -m py_compile scripts/build-milky-way.py scripts/build-sky-data.py
+      - name: Astronomy unit checks
+        run: npx esbuild tests/astronomy.test.mjs --bundle --platform=node --format=esm --outfile=/tmp/helioclock-astronomy-test.mjs && node /tmp/helioclock-astronomy-test.mjs
+      - name: Bundle application
+        run: npm run build
+  package:
+    needs: quick-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install build dependencies
+        run: npm ci --no-audit --no-fund
       - name: Bundle independent visualizations
         run: npm run build
+      # Static astronomy imagery and catalogues are immutable within a
+      # cache revision. Bump v1 when intentionally refreshing source data.
+      - name: Restore static astronomy data cache
+        uses: actions/cache@v4
+        with:
+          path: /tmp/helioclock-cache
+          key: helioclock-astronomy-assets-v1
+      - name: Stage cached assets
+        shell: bash
+        run: |
+          mkdir -p /tmp/helioclock-cache dist /tmp/helioclock-atlas
+          for file in earth-blue-marble.png moon-nearside-lro.jpg; do
+            if [ -s "/tmp/helioclock-cache/$file" ]; then
+              cp "/tmp/helioclock-cache/$file" "dist/$file"
+            fi
+          done
+          for file in stars.8.json constellations.lines.json starnames.json mw.json; do
+            if [ -s "/tmp/helioclock-cache/$file" ]; then
+              cp "/tmp/helioclock-cache/$file" "/tmp/helioclock-atlas/$file"
+            fi
+          done
       - name: Bundle NASA Blue Marble satellite texture
         shell: bash
         run: |
           set -euo pipefail
-          curl --fail --location --retry 3 --max-time 90 --silent --show-error \
-            https://svs.gsfc.nasa.gov/vis/a000000/a002900/a002915/bluemarble-2048.png \
-            --output dist/earth-blue-marble.png
+          if [ ! -s "dist/earth-blue-marble.png" ]; then
+            curl --fail --location --retry 3 --max-time 90 --silent --show-error \
+              https://svs.gsfc.nasa.gov/vis/a000000/a002900/a002915/bluemarble-2048.png \
+              --output dist/earth-blue-marble.png
+          fi
           python3 - <<'PY'
           from pathlib import Path
           p=Path('dist/earth-blue-marble.png')
@@ -49,9 +82,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          curl --fail --location --retry 3 --max-time 90 --silent --show-error \
-            https://upload.wikimedia.org/wikipedia/commons/c/c9/Moon_nearside_LRO.jpg \
-            --output dist/moon-nearside-lro.jpg
+          if [ ! -s "dist/moon-nearside-lro.jpg" ]; then
+            curl --fail --location --retry 3 --max-time 90 --silent --show-error \
+              https://upload.wikimedia.org/wikipedia/commons/c/c9/Moon_nearside_LRO.jpg \
+              --output dist/moon-nearside-lro.jpg
+          fi
           python3 - <<'PY'
           from pathlib import Path
           p=Path('dist/moon-nearside-lro.jpg')
@@ -78,24 +113,38 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p /tmp/helioclock-atlas
-          curl --fail --location --retry 3 --max-time 120 --silent --show-error \
-            https://raw.githubusercontent.com/ofrohn/d3-celestial/master/data/stars.8.json \
-            --output /tmp/helioclock-atlas/stars.8.json
-          curl --fail --location --retry 3 --max-time 120 --silent --show-error \
-            https://raw.githubusercontent.com/ofrohn/d3-celestial/master/data/constellations.lines.json \
-            --output /tmp/helioclock-atlas/constellations.lines.json
-          curl --fail --location --retry 3 --max-time 120 --silent --show-error \
-            https://raw.githubusercontent.com/ofrohn/d3-celestial/master/data/starnames.json \
-            --output /tmp/helioclock-atlas/starnames.json
+          if [ ! -s "/tmp/helioclock-atlas/stars.8.json" ]; then
+            curl --fail --location --retry 3 --max-time 120 --silent --show-error \
+              https://raw.githubusercontent.com/ofrohn/d3-celestial/master/data/stars.8.json \
+              --output /tmp/helioclock-atlas/stars.8.json
+          fi
+          if [ ! -s "/tmp/helioclock-atlas/constellations.lines.json" ]; then
+            curl --fail --location --retry 3 --max-time 120 --silent --show-error \
+              https://raw.githubusercontent.com/ofrohn/d3-celestial/master/data/constellations.lines.json \
+              --output /tmp/helioclock-atlas/constellations.lines.json
+          fi
+          if [ ! -s "/tmp/helioclock-atlas/starnames.json" ]; then
+            curl --fail --location --retry 3 --max-time 120 --silent --show-error \
+              https://raw.githubusercontent.com/ofrohn/d3-celestial/master/data/starnames.json \
+              --output /tmp/helioclock-atlas/starnames.json
+          fi
           python3 scripts/build-sky-data.py /tmp/helioclock-atlas dist
       - name: Bundle published Milky Way brightness outlines
         shell: bash
         run: |
           set -euo pipefail
-          curl --fail --location --retry 3 --max-time 90 --silent --show-error \
-            https://raw.githubusercontent.com/ofrohn/d3-celestial/master/data/mw.json \
-            --output /tmp/helioclock-atlas/mw.json
+          if [ ! -s "/tmp/helioclock-atlas/mw.json" ]; then
+            curl --fail --location --retry 3 --max-time 90 --silent --show-error \
+              https://raw.githubusercontent.com/ofrohn/d3-celestial/master/data/mw.json \
+              --output /tmp/helioclock-atlas/mw.json
+          fi
           python3 scripts/build-milky-way.py /tmp/helioclock-atlas/mw.json dist/sky-milkyway.json
+      - name: Update static astronomy cache for future builds
+        shell: bash
+        run: |
+          mkdir -p /tmp/helioclock-cache
+          cp dist/earth-blue-marble.png dist/moon-nearside-lro.jpg /tmp/helioclock-cache/
+          cp /tmp/helioclock-atlas/{stars.8.json,constellations.lines.json,starnames.json,mw.json} /tmp/helioclock-cache/
       - name: Stage static files for browser test
         run: cp index.html styles.css astronomy.js manifest.webmanifest sw.js icon.svg dist/ && printf '{"version":34,"test":true,"commit":"%s","built_utc":"%s"}\n' "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > dist/build-info.json
       - name: Install Firefox for browser checks

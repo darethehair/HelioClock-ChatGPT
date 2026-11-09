@@ -509,7 +509,9 @@ test('Milky Way fixed mask is consistent across projections and polar zoom',asyn
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:8765/');
  await page.locator('[data-sky-light="black"]').click();
- await expect(page.locator('#mw-debug-status')).toContainText('Mask planar');
+ // Wait until the asynchronously loaded contour data has actually been
+ // rasterized; the previous assertion also matched "Mask planar: not generated".
+ await expect(page.locator('#mw-debug-status')).toContainText(/Mask planar · [0-9.]+% equatorial pixels/);
  const stats=await page.locator('#mw-debug-status').innerText();
  await page.locator('[data-sky-projection="rect"]').click();
  await expect(page.locator('#mw-debug-status')).toHaveText(stats);
