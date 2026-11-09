@@ -153,37 +153,31 @@ function fixedEquatorialMask(){
  if(fixedContourMask)return fixedContourMask;
  const total=new Float32Array(MASK_WIDTH*MASK_HEIGHT);
  const cv=makeCanvas(MASK_WIDTH,MASK_HEIGHT),ctx=cv.getContext('2d',{willReadFrequently:true});
- // The atlas contours never reach the celestial poles; simple unwrapped
- // RA/Dec paths preserve their geometry without the projection-pole closures
- // that caused the large erroneous grey background.
+ // Construct the mask with D3's spherical antimeridian clipper in the
+ // *fixed* J2000 frame. The v32 planar unwrapping was not topology-safe:
+ // closing a contour at a celestial seam could create a long artificial arc.
+ // A spherical clipper adds only the appropriate seam-edge closure instead.
+ const projection=geoEquirectangular()
+  .scale(MASK_WIDTH/(2*Math.PI))
+  .translate([MASK_WIDTH/2,MASK_HEIGHT/2]).precision(.12);
+ const path=geoPath(projection,ctx);
  for(let tier=0;tier<levels.length;tier++){
   ctx.clearRect(0,0,MASK_WIDTH,MASK_HEIGHT);
   for(const polygon of (levels[tier].polygons||[])){
    if(!polygon.length)continue;
-   const path=new Path2D();
-   let outerAnchor=null;
-   for(const ring of polygon){
-    if(ring.length<3)continue;
-    let previous=null;
-    let first=null;
-    for(const [ra,dec] of ring){
-     let x=wrap(ra,360);
-     if(previous!==null)x+=360*Math.round((previous-x)/360);
-     else if(outerAnchor!==null)x+=360*Math.round((outerAnchor-x)/360);
-     if(first===null){first=x;if(outerAnchor===null)outerAnchor=x}
-     const px=x*MASK_WIDTH/360,py=(90-dec)*MASK_HEIGHT/180;
-     if(previous===null)path.moveTo(px,py);else path.lineTo(px,py);
-     previous=x;
-    }
-    path.closePath();
+   const rings=polygon.filter(r=>r.length>2).map(ring=>ring.map(([ra,dec])=>[
+    wrap(ra+180,360)-180,dec
+   ]));
+   if(!rings.length)continue;
+   let shape={type:'Polygon',coordinates:rings};
+   // GeoJSON winding determines which *spherical* region is inside. Always
+   // select the smaller side of each original catalogue contour, in J2000.
+   // All rings reverse together, preserving holes.
+   if(geoArea(shape)>2*Math.PI){
+    shape={type:'Polygon',coordinates:rings.map(r=>[...r].reverse())};
    }
-   ctx.fillStyle='#fff';
-   // Repeat whole polygon, *with identical hole offsets*, at the RA seam.
-   for(const dx of [-2,-1,0,1,2]){
-    ctx.save();ctx.translate(dx*MASK_WIDTH,0);
-    ctx.fill(path,'evenodd');
-    ctx.restore();
-   }
+   ctx.beginPath();path(shape);
+   ctx.fillStyle='#fff';ctx.fill('evenodd');
   }
   const pixels=ctx.getImageData(0,0,MASK_WIDTH,MASK_HEIGHT).data;
   const alpha=CONTOUR_ALPHA[Math.min(tier,CONTOUR_ALPHA.length-1)];
