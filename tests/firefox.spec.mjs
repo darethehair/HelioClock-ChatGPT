@@ -507,28 +507,36 @@ test('Version 26 polar zoom anchors cursor and dragging pans the sky',async({pag
   };
  });
  const sky=page.locator('#sky'),box=await sky.boundingBox();
- const x=box.x+box.width*.73,y=box.y+box.height*.32;
- await page.mouse.move(x,y);
- await page.mouse.wheel(0,-180);
- // The additional mask diagnostics can delay rendering under CI load.
- // Explicitly send a wheel event to the sky canvas if native delivery was
- // intercepted by the test runner during its first redraw.
- if(Number(await page.locator('#sky-zoom').inputValue())<=1){
-  await sky.dispatchEvent('wheel',{deltaY:-180,bubbles:true,cancelable:true});
- }
- await expect.poll(async()=>Number(await page.locator('#sky-zoom').inputValue())).toBeGreaterThan(1);
+ // Dispatch a real WheelEvent with controlled client coordinates.
+ const px=box.width*.73,py=box.height*.32;
+ const cx=box.width/2,cy=box.height/2;
+ const zoomBefore=Number(await page.locator('#sky-zoom').inputValue());
+ await sky.evaluate((el,[u,v])=>{
+  const rect=el.getBoundingClientRect();
+  el.dispatchEvent(new WheelEvent('wheel',{
+   bubbles:true,cancelable:true,deltaY:-180,
+   clientX:rect.left+u,clientY:rect.top+v
+  }));
+ },[px,py]);
+ const zoomAfter=Number(await page.locator('#sky-zoom').inputValue());
+ expect(zoomAfter).toBeGreaterThan(zoomBefore);
+ const ratio=zoomAfter/zoomBefore;
  const anchored=await page.evaluate(()=>window.__skyTranslate);
- // Offset direction depends on which side of the centre received the
- // pointer event; the invariant is a nonzero anchored pan and subsequent
- // one-to-one dragging, not a predetermined sign.
- expect(Math.hypot(...anchored)).toBeGreaterThan(1);
+ // A celestial point beneath the zoom cursor must remain beneath it.
+ const originalPoint=[px-cx,py-cy];
+ const projected=[cx+ratio*originalPoint[0]+anchored[0],
+  cy+ratio*originalPoint[1]+anchored[1]];
+ expect(projected[0]).toBeCloseTo(px,2);
+ expect(projected[1]).toBeCloseTo(py,2);
+ // Dragging then translates the entire chart by the actual mouse delta.
+ const x=box.x+px,y=box.y+py;
  await page.mouse.move(x,y);
  await page.mouse.down();
  await page.mouse.move(x+34,y+24,{steps:3});
  await page.mouse.up();
  const panned=await page.evaluate(()=>window.__skyTranslate);
- expect(panned[0]).toBeGreaterThan(anchored[0]+25);
- expect(panned[1]).toBeGreaterThan(anchored[1]+15);
+ expect(panned[0]-anchored[0]).toBeCloseTo(34,0);
+ expect(panned[1]-anchored[1]).toBeCloseTo(24,0);
  await page.locator('#sky-reset').click();
  await expect(page.locator('#sky-zoom')).toHaveValue('1');
  const home=await page.evaluate(()=>window.__skyTranslate);
