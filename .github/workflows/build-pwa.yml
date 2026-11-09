@@ -77,6 +77,54 @@ jobs:
           assert p.read_bytes()[:8] == bytes.fromhex('89504e470d0a1a0a'), 'Invalid PNG texture'
           print('Satellite texture validated:',p.stat().st_size,'bytes')
           PY
+      # Bundle a genuine NASA-derived 4096x2048 Earth mosaic, not an
+      # upscaled copy of the default 2K texture. Cache independently of
+      # the legacy static astronomy cache, which may already be immutable.
+      - name: Restore 4K Blue Marble texture
+        uses: actions/cache/restore@v4
+        with:
+          path: /tmp/helioclock-earth-4k.jpg
+          key: helioclock-earth-4k-nasa-july-v1
+      - name: Bundle offline 4K Earth texture
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -s /tmp/helioclock-earth-4k.jpg ]; then
+            cp /tmp/helioclock-earth-4k.jpg dist/earth-blue-marble-4k.jpg
+          else
+            curl --fail --location --retry 3 --max-time 120 --silent --show-error \
+              https://raw.githubusercontent.com/MaxwellLee/physics-lab/main/assets/textures/earth_4096.jpg \
+              --output dist/earth-blue-marble-4k.jpg
+            cp dist/earth-blue-marble-4k.jpg /tmp/helioclock-earth-4k.jpg
+          fi
+          python3 - <<'PY'
+          from pathlib import Path
+          from struct import unpack
+          p=Path('dist/earth-blue-marble-4k.jpg')
+          raw=p.read_bytes()
+          assert len(raw)>100000 and raw[:2]==b'\\xff\\xd8', 'Missing high resolution JPEG texture'
+          # Read JPEG SOF dimensions without installing imaging dependencies.
+          i=2
+          dims=None
+          while i<len(raw)-10:
+              if raw[i]!=0xff:
+                  i+=1
+                  continue
+              marker=raw[i+1]
+              if marker in (0xd8,0xd9) or 0xd0<=marker<=0xd7:
+                  i+=2;continue
+              length=unpack('>H',raw[i+2:i+4])[0]
+              if marker in (0xc0,0xc1,0xc2,0xc3):
+                  dims=unpack('>HH',raw[i+5:i+9]);break
+              i+=2+length
+          assert dims==(2048,4096),f'Unexpected 4K texture dimensions: {dims}'
+          print('4K NASA-derived Earth texture verified:',dims,len(raw),'bytes')
+          PY
+      - name: Save 4K texture for future offline builds
+        uses: actions/cache/save@v4
+        with:
+          path: /tmp/helioclock-earth-4k.jpg
+          key: helioclock-earth-4k-nasa-july-v1
       - name: Bundle NASA lunar near-side mosaic
         shell: bash
         run: |
@@ -174,7 +222,7 @@ jobs:
           cp dist/earth-blue-marble.png dist/moon-nearside-lro.jpg /tmp/helioclock-cache/
           cp /tmp/helioclock-atlas/{stars.8.json,constellations.lines.json,starnames.json,mw.json} /tmp/helioclock-cache/
       - name: Stage static files for browser test
-        run: cp index.html styles.css astronomy.js manifest.webmanifest sw.js icon.svg dist/ && printf '{"version":36,"test":true,"commit":"%s","built_utc":"%s"}\n' "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > dist/build-info.json
+        run: cp index.html styles.css astronomy.js manifest.webmanifest sw.js icon.svg dist/ && printf '{"version":37,"test":true,"commit":"%s","built_utc":"%s"}\n' "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > dist/build-info.json
       - name: Install Firefox for browser checks
         run: npx playwright install --with-deps firefox
       - name: Exercise browser controls in Firefox
@@ -185,7 +233,7 @@ jobs:
           set -euo pipefail
           mkdir -p dist
           cp index.html styles.css astronomy.js manifest.webmanifest sw.js icon.svg dist/
-          printf '{"version":36,"commit":"%s","built_utc":"%s","repository":"%s"}\n' "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$GITHUB_REPOSITORY" > dist/build-info.json
+          printf '{"version":37,"commit":"%s","built_utc":"%s","repository":"%s"}\n' "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$GITHUB_REPOSITORY" > dist/build-info.json
       - name: Upload PWA ZIP
         uses: actions/upload-artifact@v4
         with:

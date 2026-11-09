@@ -11,7 +11,7 @@
 <body>
 <div class="app">
 <header class="topbar">
-  <div class="identity"><div class="mark">☼</div><div><div class="eyebrow">PERSONAL OBSERVATORY <span class="edition">/ CHATGPT EDITION</span></div><h1>Helio<span>Clock</span> <span class="app-version" id="app-version" title="Release and build identifier">v36</span></h1></div></div>
+  <div class="identity"><div class="mark">☼</div><div><div class="eyebrow">PERSONAL OBSERVATORY <span class="edition">/ CHATGPT EDITION</span></div><h1>Helio<span>Clock</span> <span class="app-version" id="app-version" title="Release and build identifier">v37</span></h1></div></div>
   <div class="header-right"><span id="live-indicator" class="live-pill"><i></i> LIVE SKY</span><span id="local-clock" class="utc-clock">—</span><span id="utc-clock" class="utc-clock">—</span></div>
 </header>
 <section class="toolbar" aria-label="Observation controls">
@@ -80,12 +80,21 @@
   <button type="button" class="earth-projection" data-projection="globe" aria-pressed="false">3D Globe</button>
   <button type="button" class="earth-projection" data-projection="mercator" aria-pressed="false">Mercator</button>
  </div>
+ <label class="earth-quality-setting">Texture <select id="earth-texture-quality" aria-label="Earth texture quality"><option value="2k" selected>2K · Standard</option><option value="4k">4K · High detail</option></select></label>
  <div class="earth-zoom-buttons" role="group" aria-label="Map zoom">
   <button type="button" id="earth-zoom-out" title="Zoom out on Earth">−</button>
   <span id="earth-zoom-value">1.0×</span>
   <button type="button" id="earth-zoom-in" title="Zoom in on Earth">+</button>
   <button type="button" id="earth-map-home" title="Reset Earth position and zoom">↺ Reset</button>
  </div>
+</div>
+<div class="earth-twilight-controls" role="group" aria-label="Earth twilight bands">
+ <span>Twilight overlays</span>
+ <label><input type="checkbox" id="earth-twilight-civil" checked> Civil (0° to −6°)</label>
+ <label><input type="checkbox" id="earth-twilight-nautical" checked> Nautical (−6° to −12°)</label>
+ <label><input type="checkbox" id="earth-twilight-astronomical" checked> Astronomical (−12° to −18°)</label>
+ <label><input type="checkbox" id="earth-twilight-night"> Night (below −18°)</label>
+ <small id="earth-texture-status" role="status">2K image · offline</small>
 </div><div class="earth-map-stage"><canvas id="earth-map" aria-label="World map showing daylight and twilight by solar geometry"></canvas><span class="earth-map-credit">Satellite Earth texture · solar twilight computed live</span></div><div class="map-legend"><span><i style="background:#f0b765"></i> Day</span><span><i style="background:#7087b4"></i> Civil</span><span><i style="background:#475780"></i> Nautical</span><span><i style="background:#253250"></i> Astronomical</span><span><i style="background:#101b31"></i> Night</span><span><i style="background:#ffd580"></i> Sun zenith ○</span><span><i style="background:#daacff"></i> Sun nadir ◇</span></div></section>
  <section class="panel sky-panel"><button class="panel-fullscreen" type="button" data-fullscreen="sky-panel" aria-label="Fullscreen sky panel" title="Fullscreen (Esc to return)">⛶ Expand</button><div class="panel-heading"><div><div class="section-kicker">03 / YOUR HORIZON</div><h2>Sky compass</h2><p>Local horizon · zoom toward the pointer · drag to pan when magnified</p></div><span class="panel-note">AZ / ALT</span></div><div class="sky-light-controls" role="group" aria-label="Sky illumination mode">
  <button type="button" data-sky-light="daylight" class="selected" aria-pressed="true">☀ Daylight sky</button>
@@ -132,7 +141,7 @@
  <div class="dock-adjust"><button id="dock-prev-day" title="Previous day">−1d</button><button id="dock-prev-hour" title="Previous hour">−1h</button><button id="dock-play" title="Play / pause">▶</button><button id="dock-next-hour" title="Next hour">+1h</button><button id="dock-next-day" title="Next day">+1d</button></div>
  <div class="dock-date-fields"><label for="dock-date">Date</label><input id="dock-date" type="date"><label for="dock-time">Time (device)</label><input id="dock-time" type="time" step="60"></div>
  <input id="dock-scrubber" type="range" min="0" max="1439" step="1" aria-label="Scrub through the selected day in device local time">
- <span class="dock-version" id="dock-version" title="HelioClock release">v36</span><span class="dock-sidereal" title="Local apparent sidereal time"><span>LST</span> <strong id="dock-sidereal">—</strong></span><button id="dock-live" class="dock-live" title="Return to current time">● LIVE</button>
+ <span class="dock-version" id="dock-version" title="HelioClock release">v37</span><span class="dock-sidereal" title="Local apparent sidereal time"><span>LST</span> <strong id="dock-sidereal">—</strong></span><button id="dock-live" class="dock-live" title="Return to current time">● LIVE</button>
 </section>
-<footer class="credits-footer"><div><strong>HelioClock-ChatGPT <span class="release-version">v36</span></strong><div>Created by Darethehair with assistance from ChatGPT</div><div id="build-meta" class="build-meta">Build information loading…</div></div><div><a href="https://github.com/darethehair/HelioClock-ChatGPT" target="_blank" rel="noopener">Source on GitHub ↗</a><details class="source-credits"><summary>About &amp; data credits</summary><p>Moon ephemerides: Astronomy Engine, Donald Cross (MIT). Star and constellation catalogues and Vieira Milky Way contours: D3-Celestial (BSD). Earth texture: NASA Blue Marble; lunar imagery: NASA Lunar Reconnaissance Orbiter; latest solar continuum images: NASA SDO/HMI. Approximate solar methods: NOAA / Meeus. Visualizations and integration: Darethehair with ChatGPT assistance.</p></details></div></footer>
+<footer class="credits-footer"><div><strong>HelioClock-ChatGPT <span class="release-version">v37</span></strong><div>Created by Darethehair with assistance from ChatGPT</div><div id="build-meta" class="build-meta">Build information loading…</div></div><div><a href="https://github.com/darethehair/HelioClock-ChatGPT" target="_blank" rel="noopener">Source on GitHub ↗</a><details class="source-credits"><summary>About &amp; data credits</summary><p>Moon ephemerides: Astronomy Engine, Donald Cross (MIT). Star and constellation catalogues and Vieira Milky Way contours: D3-Celestial (BSD). Earth texture: NASA Blue Marble; lunar imagery: NASA Lunar Reconnaissance Orbiter; latest solar continuum images: NASA SDO/HMI. Approximate solar methods: NOAA / Meeus. Visualizations and integration: Darethehair with ChatGPT assistance.</p></details></div></footer>
 </div></body></html>

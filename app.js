@@ -5,11 +5,11 @@ import {rectGeometry,projectRect,rectHorizonY,paintRectAtmosphere} from './sky-p
 import {drawSkyAtlas,skyAtlasStatus} from './sky-atlas.js';
 import {renderMoon} from './moon-renderer.js';
 import {drawSolarYear} from './solar-chart.js';
-import {renderEarth} from './earth-renderer.js';
+import {renderEarth,earthTextureStatus} from './earth-renderer.js';
 import {starsAbove} from './sky-catalog.js';
 import {RAD,PI,wrap,clamp,solar,sunHorizontal,sunEvents,moon,orbitPositions,sidereal,equatorialFromHorizontal,utcTime,durationText} from './astronomy.js';
 const $=id=>document.getElementById(id);
-const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyPanX:0,skyPanY:0,skyHeading:0,earthZoom:1,earthLon:-98.10,earthLat:49.19,earthProjection:'equal',orreryZoom:1,moonZoom:1,discView:'moon',sunZoom:1,moonPanX:0,moonPanY:0,sunPanX:0,sunPanY:0,orbitMode:'inner',skyLight:'daylight',skyProjection:'polar',magLimit:3.5,stellarColors:true,usePrecession:true,playing:false};
+const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyPanX:0,skyPanY:0,skyHeading:0,earthZoom:1,earthLon:-98.10,earthLat:49.19,earthProjection:'equal',earthTextureQuality:'2k',orreryZoom:1,moonZoom:1,discView:'moon',sunZoom:1,moonPanX:0,moonPanY:0,sunPanX:0,sunPanY:0,orbitMode:'inner',skyLight:'daylight',skyProjection:'polar',magLimit:3.5,stellarColors:true,usePrecession:true,playing:false};
 const fmt=d=>d.toISOString().slice(0,10);
 function setDateInputs(){$('observe-date').value=fmt(state.date);$('observe-time').value=utcTime(state.date)}
 function selectDate(){
@@ -48,7 +48,18 @@ function daylightChart(){
 }
 function worldMap(){
  const o=canvas($('earth-map'));if(!o)return;
- const result=renderEarth(o.c,o.w,o.h,state.date,state);
+ const twilight={
+  civil:$('earth-twilight-civil').checked,
+  nautical:$('earth-twilight-nautical').checked,
+  astronomical:$('earth-twilight-astronomical').checked,
+  night:$('earth-twilight-night').checked
+ };
+ const result=renderEarth(o.c,o.w,o.h,state.date,{...state,earthTwilight:twilight});
+ const highStatus=earthTextureStatus(state.earthTextureQuality);
+ $('earth-texture-status').textContent=state.earthTextureQuality==='4k'
+  ?highStatus.status==='ready'?'4K image · 4096 × 2048 · offline':
+    highStatus.status==='failed'?'4K unavailable · using 2K fallback':'Loading 4K · showing 2K temporarily'
+  :'2K image · 2048 × 1024 · offline';
  $('earth-map').dataset.projectionProbe=JSON.stringify(result.projectionProbe);
  $('earth-zoom-value').textContent=state.earthZoom.toFixed(1)+'×';
  $('subsolar').textContent=Math.abs(result.sunDecl).toFixed(1)+'°'+(result.sunDecl>=0?'N':'S')+' / '+Math.abs(result.sunLon).toFixed(1)+'°'+(result.sunLon>=0?'E':'W');
@@ -576,6 +587,12 @@ function adjustEarthZoom(factor){
 $('earth-zoom-in').addEventListener('click',()=>adjustEarthZoom(1.25));
 $('earth-zoom-out').addEventListener('click',()=>adjustEarthZoom(.8));
 $('earth-map-home').addEventListener('click',()=>{$('earth-reset').click()});
+$('earth-texture-quality').addEventListener('change',e=>{
+ state.earthTextureQuality=e.target.value==='4k'?'4k':'2k';
+ render();
+});
+for(const id of ['earth-twilight-civil','earth-twilight-nautical','earth-twilight-astronomical','earth-twilight-night'])
+ $(id).addEventListener('change',render);
 window.addEventListener('helioclock-earth-texture-ready',render);
 $('show-earthshine').addEventListener('change',render);
 window.addEventListener('helioclock-moon-texture-ready',render);
@@ -853,16 +870,19 @@ const PREF_KEY='helioclock-preferences-v1',LEGACY_LAYOUT_KEY='helioclock-layout-
 const PREF_CHECKBOXES=['show-au-rings','show-earthshine','show-constellations',
  'show-milkyway-shade','show-milkyway-outline','show-galactic-center',
  'show-stars','show-labels','show-sky-paths','show-below-horizon',
- 'show-ecliptic','use-precession','show-stellar-colors'];
+ 'show-ecliptic','use-precession','show-stellar-colors',
+ 'earth-twilight-civil','earth-twilight-nautical',
+ 'earth-twilight-astronomical','earth-twilight-night'];
 const PREF_CHOICES={
  earthProjection:['equal','globe','mercator'],
+ earthTextureQuality:['2k','4k'],
  skyProjection:['polar','rect'],
  skyLight:['daylight','black'],
  orbitMode:['inner','outer'],
  discView:['moon','sun']
 };
 const FACTORY_PREF={
- version:1,observer:{lat:49.19,lon:-98.10},earthProjection:'equal',
+ version:1,observer:{lat:49.19,lon:-98.10},earthProjection:'equal',earthTextureQuality:'2k',
  skyProjection:'polar',skyLight:'daylight',orbitMode:'inner',discView:'moon',
  magLimit:3.5,stellarColors:true,usePrecession:true,
  checkboxes:null,layout:null,rememberView:false,view:null
@@ -874,7 +894,8 @@ function capturePrefs(){
  for(const key of PREF_CHECKBOXES)checks[key]=$(key).checked;
  return {
   version:1,observer:{lat:state.lat,lon:state.lon},
-  earthProjection:state.earthProjection,skyProjection:state.skyProjection,
+  earthProjection:state.earthProjection,earthTextureQuality:state.earthTextureQuality,
+  skyProjection:state.skyProjection,
   skyLight:state.skyLight,orbitMode:state.orbitMode,discView:state.discView,
   magLimit:state.magLimit,stellarColors:state.stellarColors,usePrecession:state.usePrecession,
   checkboxes:checks,layout:{...activeLayout},
@@ -906,6 +927,7 @@ function applyPrefs(saved,{restoreLayout=true}={}){
   state.earthLon=state.lon;state.earthLat=state.lat;
  }
  for(const key of Object.keys(PREF_CHOICES))useChoice(key,saved[key]);
+ $('earth-texture-quality').value=state.earthTextureQuality;
  if(validNumber(saved.magLimit,0,7))state.magLimit=saved.magLimit;
  if(typeof saved.stellarColors==='boolean')state.stellarColors=saved.stellarColors;
  if(typeof saved.usePrecession==='boolean')state.usePrecession=saved.usePrecession;
@@ -993,7 +1015,8 @@ $('prefs-file').addEventListener('change',async e=>{
   if(!validNumber(value.observer.lat,-90,90)||!validNumber(value.observer.lon,-180,180))
    throw Error('Invalid observer coordinates');
   for(const [key,allowed] of Object.entries(PREF_CHOICES))
-   if(!allowed.includes(value[key]))throw Error('Invalid '+key);
+   if(key==='earthTextureQuality'&&value[key]===undefined)continue;
+   else if(!allowed.includes(value[key]))throw Error('Invalid '+key);
   if(!validNumber(value.magLimit,0,7))throw Error('Invalid magnitude limit');
   for(const key of PREF_CHECKBOXES)
    if(typeof value.checkboxes[key]!=='boolean')throw Error('Invalid '+key);
@@ -1036,6 +1059,7 @@ function initializePreferences(){
  $('prefs-remember-view').checked=false;
  const saved=readPrefs();
  if(saved)applyPrefs(saved);
+ $('earth-texture-quality').value=state.earthTextureQuality;
  $('latitude').value=String(state.lat);
  $('longitude').value=String(state.lon);
  prefReady=true;

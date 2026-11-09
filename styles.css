@@ -275,3 +275,12 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 .preferences-actions button{background:#152c42;border:1px solid #48617d;color:#dceafb;border-radius:5px;padding:7px 9px;font-size:11px}
 .preferences-actions button:hover{border-color:#91cbe9}
 #prefs-status{font-size:10px;color:#d9bf8f}
+
+/* Earth: selectable bundled 2K/4K texture and physical solar-altitude bands. */
+.earth-quality-setting{display:flex;align-items:center;gap:7px;color:#b7cde6;font-size:11px}
+.earth-quality-setting select{background:#12243a;color:#e1eefc;border:1px solid #46617e;border-radius:5px;padding:6px 9px;font:inherit;max-width:170px}
+.earth-twilight-controls{display:flex;align-items:center;flex-wrap:wrap;gap:8px 15px;padding:9px 0 12px;color:#b8cce6;font-size:10px}
+.earth-twilight-controls>span{font-weight:700;color:#ecc47b}
+.earth-twilight-controls label{display:flex;align-items:center;gap:5px;white-space:nowrap}
+.earth-twilight-controls input{accent-color:#86c6e9}
+.earth-twilight-controls small{margin-left:auto;color:#91aac7;font-size:10px}

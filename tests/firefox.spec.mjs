@@ -5,8 +5,8 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#sunrise')).not.toHaveText('—');
  // Release identity and provenance are visible even offline.
- await expect(page.locator('#app-version')).toHaveText('v36');
- await expect(page.locator('#dock-version')).toHaveText('v36');
+ await expect(page.locator('#app-version')).toHaveText('v37');
+ await expect(page.locator('#dock-version')).toHaveText('v37');
  await expect(page.locator('.credits-footer')).toContainText('Created by Darethehair with assistance from ChatGPT');
  await expect(page.locator('.credits-footer a')).toHaveAttribute('href','https://github.com/darethehair/HelioClock-ChatGPT');
  await expect(page.locator('#build-meta')).toContainText('commit');
@@ -345,7 +345,7 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
  const errors=[];
  page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v36');
+ await expect(page.locator('#app-version')).toHaveText('v37');
  await expect(page.locator('.almanac-panel')).toBeHidden();
  await page.locator('#layout-sky').click();
  await expect(page.locator('.sky-panel')).toBeVisible();
@@ -386,6 +386,40 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
  expect(errors).toEqual([]);
 });
 
+
+test('Version 37 Earth twilight controls and bundled 4K image work across all map projections',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8765/');
+ await expect(page.locator('#earth-texture-quality')).toHaveValue('2k');
+ for(const id of ['civil','nautical','astronomical'])await expect(page.locator('#earth-twilight-'+id)).toBeChecked();
+ await expect(page.locator('#earth-twilight-night')).not.toBeChecked();
+ const high=await page.evaluate(async()=>{
+  const image=new Image();image.src='./earth-blue-marble-4k.jpg';await image.decode();
+  return [image.naturalWidth,image.naturalHeight];
+ });
+ expect(high).toEqual([4096,2048]);
+ await page.locator('#earth-texture-quality').selectOption('4k');
+ await expect(page.locator('#earth-texture-status')).toContainText('4K image · 4096 × 2048',{timeout:30000});
+ for(const projection of ['globe','equal','mercator']){
+  await page.locator('[data-projection="'+projection+'"]').click();
+  const probe=await page.locator('#earth-map').evaluate(el=>JSON.parse(el.dataset.projectionProbe));
+  expect(probe.observer[0]).toBeCloseTo(probe.viewCenter[0],0);
+  expect(probe.observer[1]).toBeCloseTo(probe.viewCenter[1],0);
+ }
+ await page.locator('[data-projection="globe"]').click();
+ await page.locator('#observe-date').fill('2026-11-09');
+ await page.locator('#observe-time').fill('17:00');
+ await page.locator('#observe-time').dispatchEvent('change');
+ const before=await page.locator('#earth-map').evaluate(el=>el.toDataURL());
+ await page.locator('#earth-twilight-civil').uncheck();
+ const after=await page.locator('#earth-map').evaluate(el=>el.toDataURL());
+ expect(after).not.toEqual(before);
+ await page.reload();
+ await expect(page.locator('#earth-texture-quality')).toHaveValue('4k');
+ await expect(page.locator('#earth-twilight-civil')).not.toBeChecked();
+ await expect(page.locator('#earth-twilight-nautical')).toBeChecked();
+ expect(errors).toEqual([]);
+});
 
 test('Earth globe and flat maps center on the selected observer and Reset restores it',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
@@ -558,7 +592,7 @@ test('Version 36 stores, restores, imports, exports and resets preferences',asyn
 test('Version 25 Sun and Moon use the same zoomable pannable fullscreen stage',async({page})=>{
  const errors=[];page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v36');
+ await expect(page.locator('#app-version')).toHaveText('v37');
  await expect(page.locator('#moon')).toBeVisible();
  await expect(page.locator('#solar-photo')).toBeHidden();
  await page.locator('[data-disc-view="sun"]').click();
@@ -1000,7 +1034,7 @@ test('Version 34 offers comparable Milky Way masks and copyable exact debug stat
  });
  await page.locator('#mw-copy-debug').click();
  const data=await page.evaluate(()=>JSON.parse(window.__debugCopy));
- expect(data.version).toBe(36);
+ expect(data.version).toBe(37);
  expect(data.utc).toBe('2026-11-09T12:44:00.000Z');
  expect(data.observer).toEqual({lat:49.19,lon:-98.10});
  expect(data.sky.projection).toBe('rect');
