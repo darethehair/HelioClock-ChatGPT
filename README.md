@@ -162,3 +162,7 @@ The Earth panel now includes a 2K (default) / 4K texture selector, using a separ
 ### v37 Earth presentation correction
 
 The initial 2K option failed to start its image loader because its loading state was initialized prematurely. Both resolutions now load and report readiness independently. The Earth renderer also uses achromatic, brightness-only shading for civil/nautical/astronomical/night stages; no coloured purple/blue overlays are applied to the satellite image. The gradient's per-channel tint offsets were removed to preserve the real satellite texture's natural colours.
+
+### v37 flat projection reset correction
+
+Reset fits the complete Equal Earth or Mercator world vertically with the equator at the canvas center and the observer's longitude centered horizontally; the user's northern latitude stays above center, rather than cropping the Southern Hemisphere. 3D Globe Reset remains centered on observer longitude and latitude. Firefox tests now assert the world bounds stay in the viewport rather than incorrectly requiring all projections to place the observer at canvas center.

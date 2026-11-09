@@ -13,17 +13,16 @@ export function createEarthProjection(width,height,state){
  const {earthProjection='equal',earthZoom=1,earthLon=0,earthLat=0}=state;
  const projection=modeConstructors[earthProjection]||geoEqualEarth;
  const map=projection();
- if(earthProjection==='globe')map.rotate([-earthLon,-earthLat]);
- else map.rotate([-earthLon,0]).center([0,earthLat]);
- map.fitExtent([[9,9],[width-9,height-9]],{type:'Sphere'});
- // Fitting the complete Sphere recenters its overall bounds, overriding a
- // flat projection's requested latitude center. Shift the fitted projection
- // so the actual observer, not the full-world bounding box, is at the center.
- const projectedObserver=map([earthLon,earthLat]);
- if(projectedObserver){
-  const [tx,ty]=map.translate();
-  map.translate([tx+width/2-projectedObserver[0],ty+height/2-projectedObserver[1]]);
+ if(earthProjection==='globe'){
+  // A globe is centered on the observing point in both axes.
+  map.rotate([-earthLon,-earthLat]);
+ }else{
+  // Flat maps are world maps: longitude follows the observer, but the
+  // latitude center remains the equator so the poles are not cut off.
+  // Do not shift the fitted world down to put Manitoba at canvas center.
+  map.rotate([-earthLon,0]).center([0,0]);
  }
+ map.fitExtent([[9,9],[width-9,height-9]],{type:'Sphere'});
  map.scale(map.scale()*earthZoom);
  if(earthProjection==='globe')map.clipAngle(90);
  return map;
@@ -205,6 +204,7 @@ export function renderEarth(context,width,height,date,state){
  return {sunLon,sunDecl:d.decl,nadirLon,nadirLat,
   textureStatus:earthTextureStatus(earthTextureQuality).status,
   projectionProbe:{projection:earthProjection,observer:observerScreen,
-   east:eastScreen,north:northScreen,viewCenter:[width/2,height/2]}};
+   east:eastScreen,north:northScreen,viewCenter:[width/2,height/2],
+   equator:map([earthLon,0]),worldBounds:geoPath(map).bounds({type:'Sphere'})}};
 
 }

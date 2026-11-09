@@ -410,7 +410,13 @@ test('Version 37 Earth twilight controls and bundled 4K image work across all ma
   await page.locator('[data-projection="'+projection+'"]').click();
   const probe=await page.locator('#earth-map').evaluate(el=>JSON.parse(el.dataset.projectionProbe));
   expect(probe.observer[0]).toBeCloseTo(probe.viewCenter[0],0);
-  expect(probe.observer[1]).toBeCloseTo(probe.viewCenter[1],0);
+  if(projection==='globe')expect(probe.observer[1]).toBeCloseTo(probe.viewCenter[1],0);
+  else{
+   expect(probe.equator[1]).toBeCloseTo(probe.viewCenter[1],0);
+   expect(probe.observer[1]).toBeLessThan(probe.viewCenter[1]);
+   expect(probe.worldBounds[0][1]).toBeGreaterThanOrEqual(0);
+   expect(probe.worldBounds[1][1]).toBeLessThanOrEqual(probe.viewCenter[1]*2+1);
+  }
  }
  await page.locator('[data-projection="globe"]').click();
  await page.locator('#observe-date').fill('2026-11-09');
@@ -437,7 +443,13 @@ test('Earth globe and flat maps center on the selected observer and Reset restor
   const sample=await page.locator('#earth-map').evaluate(el=>JSON.parse(el.dataset.projectionProbe));
   expect(sample.projection).toBe(projection);
   expect(sample.observer[0]).toBeCloseTo(sample.viewCenter[0],0);
-  expect(sample.observer[1]).toBeCloseTo(sample.viewCenter[1],0);
+  if(projection==='globe')expect(sample.observer[1]).toBeCloseTo(sample.viewCenter[1],0);
+  else{
+   expect(sample.equator[1]).toBeCloseTo(sample.viewCenter[1],0);
+   expect(sample.observer[1]).toBeLessThan(sample.viewCenter[1]);
+   expect(sample.worldBounds[0][1]).toBeGreaterThanOrEqual(0);
+   expect(sample.worldBounds[1][1]).toBeLessThanOrEqual(sample.viewCenter[1]*2+1);
+  }
   expect(sample.east[0]).toBeGreaterThan(sample.observer[0]);
   expect(sample.north[1]).toBeLessThan(sample.observer[1]);
  }
