@@ -542,8 +542,10 @@ test('Version 36 stores, restores, imports, exports and resets preferences',asyn
   page.locator('#prefs-reset').click()
  ]);
  await expect(page.locator('#latitude')).toHaveValue('49.19');
+ await expect(page.locator('#longitude')).toHaveValue('-98.1');
  await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('helioclock-preferences-v1'))?.observer?.lat)).toBe(49.19);
  await expect(page.locator('#prefs-remember-view')).not.toBeChecked();
+ await expect(page.locator('#show-earthshine')).toBeChecked();
  await page.locator('#prefs-file').setInputFiles({
   name:'settings.json',mimeType:'application/json',buffer:Buffer.from(savedJson)
  });

@@ -1005,8 +1005,11 @@ $('prefs-file').addEventListener('change',async e=>{
  finally{e.target.value=''}
 });
 $('prefs-reset').addEventListener('click',()=>{
+ // Stop the old document from writing its settings back during navigation.
+ prefReady=false;
  try{localStorage.removeItem(PREF_KEY);localStorage.removeItem(LEGACY_LAYOUT_KEY)}catch{}
- // Full reload restores all factory UI defaults and current live time.
+ // Firefox may restore form values from session history on reload, so
+ // initializePreferences explicitly resynchronizes the controls afterward.
  location.reload();
 });
 $('prefs-remember-view').addEventListener('change',persistPrefs);
@@ -1026,10 +1029,29 @@ for(const id of ['earth-map','sky','disc-stage','orrery']){
  if(el){el.addEventListener('pointerup',persistPrefs);el.addEventListener('wheel',()=>setTimeout(persistPrefs,0),{passive:true})}
 }
 function initializePreferences(){
+ // Firefox can restore stale form values independently of localStorage.
+ // Reset all preference-backed controls to their declared factory defaults
+ // before importing settings; a clean reset must not show the previous state.
+ for(const key of PREF_CHECKBOXES)$(key).checked=$(key).defaultChecked;
+ $('prefs-remember-view').checked=false;
  const saved=readPrefs();
  if(saved)applyPrefs(saved);
+ $('latitude').value=String(state.lat);
+ $('longitude').value=String(state.lon);
  prefReady=true;
  persistPrefs();
+ render();
 }
-
 initializePreferences();
+// Firefox can restore form history after module initialization. Reassert
+// preferences after page-show so coordinates and the model never disagree.
+window.addEventListener('pageshow',()=>{
+ $('latitude').value=String(state.lat);
+ $('longitude').value=String(state.lon);
+ const saved=readPrefs();
+ for(const key of PREF_CHECKBOXES)
+  $(key).checked=saved&&typeof saved.checkboxes?.[key]==='boolean'
+   ?saved.checkboxes[key]:$(key).defaultChecked;
+ $('prefs-remember-view').checked=saved?.rememberView===true;
+ render();
+});
