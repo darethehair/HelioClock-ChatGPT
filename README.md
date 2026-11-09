@@ -158,3 +158,7 @@ HelioClock now automatically remembers observer coordinates, Earth/sky/orrery mo
 ## v37 · offline Earth quality and twilight bands
 
 The Earth panel now includes a 2K (default) / 4K texture selector, using a separately bundled **4096 × 2048** NASA Blue Marble Next Generation July mosaic for high-detail mode (NASA original, derived image hosted in MaxwellLee/physics-lab). Both textures are packaged with the offline PWA. At higher zoom the renderer samples a denser intermediate buffer for 4K. Independent twilight overlays use the Sun's calculated altitude at each projected Earth point: civil (0° to −6°), nautical (−6° to −12°), astronomical (−12° to −18°), and optional night below −18°. Background satellite lighting and geographical centering are preserved. Settings persist via the existing v36 localStorage preferences, with safe defaults for existing records.
+
+### v37 Earth presentation correction
+
+The initial 2K option failed to start its image loader because its loading state was initialized prematurely. Both resolutions now load and report readiness independently. The Earth renderer also uses achromatic, brightness-only shading for civil/nautical/astronomical/night stages; no coloured purple/blue overlays are applied to the satellite image. The gradient's per-channel tint offsets were removed to preserve the real satellite texture's natural colours.

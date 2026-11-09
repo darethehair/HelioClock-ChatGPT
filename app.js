@@ -59,7 +59,8 @@ function worldMap(){
  $('earth-texture-status').textContent=state.earthTextureQuality==='4k'
   ?highStatus.status==='ready'?'4K image · 4096 × 2048 · offline':
     highStatus.status==='failed'?'4K unavailable · using 2K fallback':'Loading 4K · showing 2K temporarily'
-  :'2K image · 2048 × 1024 · offline';
+  :highStatus.status==='ready'?'2K image · 2048 × 1024 · offline':
+    highStatus.status==='failed'?'2K image unavailable':'Loading 2K image…';
  $('earth-map').dataset.projectionProbe=JSON.stringify(result.projectionProbe);
  $('earth-zoom-value').textContent=state.earthZoom.toFixed(1)+'×';
  $('subsolar').textContent=Math.abs(result.sunDecl).toFixed(1)+'°'+(result.sunDecl>=0?'N':'S')+' / '+Math.abs(result.sunLon).toFixed(1)+'°'+(result.sunLon>=0?'E':'W');

@@ -391,6 +391,9 @@ test('Version 37 Earth twilight controls and bundled 4K image work across all ma
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#earth-texture-quality')).toHaveValue('2k');
+ // Regression: the initial 2K image must actually load, rather than
+ // silently falling back to the flat synthetic day/night raster.
+ await expect(page.locator('#earth-texture-status')).toContainText('2K image · 2048 × 1024 · offline',{timeout:30000});
  for(const id of ['civil','nautical','astronomical'])await expect(page.locator('#earth-twilight-'+id)).toBeChecked();
  await expect(page.locator('#earth-twilight-night')).not.toBeChecked();
  const high=await page.evaluate(async()=>{
@@ -400,6 +403,9 @@ test('Version 37 Earth twilight controls and bundled 4K image work across all ma
  expect(high).toEqual([4096,2048]);
  await page.locator('#earth-texture-quality').selectOption('4k');
  await expect(page.locator('#earth-texture-status')).toContainText('4K image · 4096 × 2048',{timeout:30000});
+ await page.locator('#earth-texture-quality').selectOption('2k');
+ await expect(page.locator('#earth-texture-status')).toContainText('2K image · 2048 × 1024 · offline');
+ await page.locator('#earth-texture-quality').selectOption('4k');
  for(const projection of ['globe','equal','mercator']){
   await page.locator('[data-projection="'+projection+'"]').click();
   const probe=await page.locator('#earth-map').evaluate(el=>JSON.parse(el.dataset.projectionProbe));

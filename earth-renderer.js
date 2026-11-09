@@ -31,7 +31,7 @@ export function createEarthProjection(width,height,state){
 
 const normLon=(v)=>wrap(v+180,360)-180;
 const earthImages={};
-const earthLoadState={standard:'loading',high:'idle'};
+const earthLoadState={standard:'idle',high:'idle'};
 function loadEarthTexture(quality){
  const key=quality==='4k'?'high':'standard';
  if(earthImages[key]||earthLoadState[key]==='loading')return;
@@ -122,26 +122,23 @@ export function renderEarth(context,width,height,date,state){
    let r,g,b;
    if(photo){
     // Smoothly darken the satellite mosaic, preserving coastlines and mountains at dusk.
+    // Illuminate the real surface image with a single achromatic factor.
+    // No artificial blue/purple wash or channel-specific brightness offsets.
     const fraction=clamp((altitude+17)/20,0,1);
     const light=fraction*fraction*(3-2*fraction);
-    const twilight=Math.exp(-Math.pow((altitude+3)/5,2));
-    r=photo[0]*(.055+.945*light)+twilight*34;
-    g=photo[1]*(.07+.93*light)+twilight*12;
-    b=photo[2]*(.12+.88*light)+twilight*7;
+    const brightness=.055+.945*light;
+    r=photo[0]*brightness;
+    g=photo[1]*brightness;
+    b=photo[2]*brightness;
    }else [r,g,b]=sample(altitude,null);
-   // Physical solar-altitude bands. These are optional overlays over the
-   // continuous terminator, not painted onto the underlying Earth texture.
-   let band=null;
-   if(altitude<=0&&altitude>-6&&earthTwilight.civil)band=[120,152,209,.28];
-   else if(altitude<=-6&&altitude>-12&&earthTwilight.nautical)band=[83,110,167,.38];
-   else if(altitude<=-12&&altitude>-18&&earthTwilight.astronomical)band=[75,67,133,.46];
-   else if(altitude<=-18&&earthTwilight.night)band=[18,34,78,.22];
-   if(band){
-    const [R,G,B,alpha]=band;
-    r=r*(1-alpha)+R*alpha;
-    g=g*(1-alpha)+G*alpha;
-    b=b*(1-alpha)+B*alpha;
-   }
+   // Distinguish twilight stages by *brightness only*, preserving the
+   // satellite texture's natural RGB ratios at every stage.
+   let multiplier=1;
+   if(altitude<=0&&altitude>-6&&earthTwilight.civil)multiplier=.82;
+   else if(altitude<=-6&&altitude>-12&&earthTwilight.nautical)multiplier=.65;
+   else if(altitude<=-12&&altitude>-18&&earthTwilight.astronomical)multiplier=.48;
+   else if(altitude<=-18&&earthTwilight.night)multiplier=.78;
+   r*=multiplier;g*=multiplier;b*=multiplier;
    image.data[i]=r;image.data[i+1]=g;image.data[i+2]=b;image.data[i+3]=255;
   }
  }
