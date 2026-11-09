@@ -102,7 +102,7 @@ jobs:
           from struct import unpack
           p=Path('dist/earth-blue-marble-4k.jpg')
           raw=p.read_bytes()
-          assert len(raw)>100000 and raw[:2]==b'\\xff\\xd8', 'Missing high resolution JPEG texture'
+          assert len(raw)>100000 and raw[:2]==bytes.fromhex('ffd8'), 'Missing high resolution JPEG texture'
           # Read JPEG SOF dimensions without installing imaging dependencies.
           i=2
           dims=None
