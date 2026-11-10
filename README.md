@@ -182,3 +182,7 @@ The rectangular Alt/Az grid now uses a single 30° major-azimuth spacing system 
 ### Interior sky grid labels
 
 Coordinate labels for Alt/Az and RA/Dec are now positioned on visible grid curves inside the sky canvas. The label placement uses the same projection and polar pan as the grid strokes, avoids overlapping nearby labels, and adapts to zoom; coordinates no longer depend on outer edge labels being visible. Firefox tests check both sky projections and polar zoom/pan.
+
+### Rectangular sky navigation
+
+The rectangular sky now supports cursor-anchored wheel/slider zoom and two-axis dragging when magnified. At 1×, dragging still changes the heading; Shift+drag continues to rotate at higher zoom. A shared Canvas 2D viewport transform keeps the atmosphere, Milky Way, stars, planets, ecliptic, Sun/Moon and both coordinate grids in lockstep. Mouse cursor RA/Dec readouts undo that same transform. Pan and zoom are bounded; Reset returns to the original 360° × 180° world sky. Pan is saved with the optional Remember View preference. The polar projection is unaffected.

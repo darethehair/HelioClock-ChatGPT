@@ -83,7 +83,8 @@ export function drawSkyGrid(ctx,opts){
  // the equatorial labels are placed.
  const view=(p)=>{
   const [x,y]=plot(p.az,p.alt);
-  return [x+(mode==='polar'?panX:0),y+(mode==='polar'?panY:0)];
+  return mode==='polar'?[x+panX,y+panY]:
+   [w/2+(x-w/2)*zoom+panX,h/2+(y-h/2)*zoom+panY];
  };
  const inside=(point)=>{
   if(!allowed(point.alt))return false;
@@ -108,7 +109,8 @@ export function drawSkyGrid(ctx,opts){
   const [sx,sy]=best;
   occupied.push(best);drawnLabels.push({kind,text:textValue,x:sx,y:sy});
   // The actual canvas is already translated in polar mode.
-  const px=sx-(mode==='polar'?panX:0),py=sy-(mode==='polar'?panY:0);
+  const px=mode==='polar'?sx-panX:w/2+(sx-w/2-panX)/zoom;
+  const py=mode==='polar'?sy-panY:h/2+(sy-h/2-panY)/zoom;
   ctx.save();ctx.font='10px sans-serif';
   const tw=ctx.measureText(textValue).width;
   ctx.fillStyle='#071422d9';ctx.fillRect(px-3,py-11,tw+7,14);

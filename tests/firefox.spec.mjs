@@ -1,4 +1,42 @@
 import {test,expect} from '@playwright/test';
+test('Rectangular sky zoom and two-axis pan preserve planet, grid, and cursor projection',async({page})=>{
+ const errors=[];page.on('pageerror',err=>errors.push(err.message));
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('[data-sky-projection="rect"]').click();
+ await page.locator('#show-radec-grid').check();
+ const canvas=page.locator('#sky');
+ await canvas.scrollIntoViewIfNeeded();
+ const geometry=()=>canvas.evaluate(el=>({w:el.clientWidth,h:el.clientHeight,grid:JSON.parse(el.dataset.gridInfo),planets:JSON.parse(el.dataset.planets)}));
+ const before=await geometry();
+ expect(before.grid.decStep).toBe(15);
+ const mercury=before.planets.find(p=>p.name==='Mercury')||before.planets[0];
+ expect(mercury).toBeDefined();
+ const box=await canvas.boundingBox();
+ await page.mouse.move(box.x+box.width*.60,box.y+box.height*.42);
+ await page.mouse.wheel(0,-950);
+ await expect.poll(async()=>Number(page.locator('#sky-zoom').inputValue())).toBeGreaterThan(1.5);
+ const after=await geometry();
+ expect(after.grid.decStep).toBeLessThan(before.grid.decStep);
+ // The planet remains at the same base projected coordinates, now enlarged
+ // by the shared canvas transform, with a cursor-anchored pan.
+ const skyView=await canvas.evaluate(el=>el.toDataURL());
+ await page.mouse.move(box.x+box.width*.51,box.y+box.height*.49);
+ await page.mouse.down();
+ await page.mouse.move(box.x+box.width*.57,box.y+box.height*.57,{steps:4});
+ await page.mouse.up();
+ const dragged=await canvas.evaluate(el=>el.toDataURL());
+ expect(dragged).not.toEqual(skyView);
+ await canvas.click({position:{x:box.width*.50,y:box.height*.50}});
+ await expect(page.locator('#sky-cursor-readout')).toContainText('RA');
+ await page.locator('#sky-reset').click();
+ await expect(page.locator('#sky-zoom')).toHaveValue('1');
+ const reset=await geometry();
+ expect(reset.grid.decStep).toBe(15);
+ await page.locator('[data-sky-projection="polar"]').click();
+ await expect(page.locator('#sky')).toBeVisible();
+ expect(errors).toEqual([]);
+});
+
 test('Zoomed and panned sky keeps useful coordinate labels inside the visible canvas',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:8765/');

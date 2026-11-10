@@ -97,8 +97,19 @@ function sky(){
  const o=canvas($('sky'));if(!o)return;const{c,w,h}=o;
  const X=w/2,Y=h/2,rad=(Math.min(w-35,h-20)/2-14)*state.skyZoom;
  const skySun=sunHorizontal(state.date,state.lat,state.lon);
- if(state.skyProjection==='rect')paintRectAtmosphere(c,w,h,skySun,{black:state.skyLight==='black',heading:state.skyHeading});
- else fillSkyBackground(c,w,h,skySun.alt);
+ // Rectangular zoom uses one canvas transform shared by the atmosphere,
+ // galactic mask, stars, ecliptic, planets, coordinate grids and labels.
+ // Scaling the entire chart keeps these layers in exact alignment.
+ const rectSky=state.skyProjection==='rect';
+ c.save();
+ if(rectSky){
+  c.fillStyle='#000';c.fillRect(0,0,w,h);
+  c.beginPath();c.rect(0,0,w,h);c.clip();
+  c.translate(w/2+state.skyPanX,h/2+state.skyPanY);
+  c.scale(state.skyZoom,state.skyZoom);
+  c.translate(-w/2,-h/2);
+  paintRectAtmosphere(c,w,h,skySun,{black:state.skyLight==='black',heading:state.skyHeading});
+ }else fillSkyBackground(c,w,h,skySun.alt);
  $('sky-light-status').textContent=state.skyLight==='black'?'Pure black background':(skySun.alt>=0?'Daylight':skySun.alt>=-6?'Civil twilight':skySun.alt>=-12?'Nautical twilight':skySun.alt>=-18?'Astronomical twilight':'Night')+' · Sun '+skySun.alt.toFixed(1)+'°';
  c.save();
  // The background remains fixed; all polar sky geometry, stars, ecliptic,
@@ -242,6 +253,7 @@ function sky(){
  }
  $('sky').dataset.planets=JSON.stringify(plottedPlanets);
  c.restore();
+ c.restore(); // rectangular viewport scaling (identity in polar mode)
 }
 /**
  * Read inverse coordinates from the actual rendered canvas geometry.
@@ -261,9 +273,12 @@ function skyCursorCoordinates(x,y,width,height,opts={}){
   az=wrap(Math.atan2(dy,dx)/RAD+90+heading);
  }else{
   const g=rectGeometry(width,height),span=g.right-g.left;
-  if(x<g.left||x>g.right||y<g.top||y>g.bottom)return null;
-  az=wrap((x-g.left)/span*360+heading);
-  alt=90-(y-g.top)/(g.bottom-g.top)*180;
+  // Undo the same canvas transform used for rendering every sky layer.
+  const baseX=width/2+(x-width/2-panX)/zoom;
+  const baseY=height/2+(y-height/2-panY)/zoom;
+  if(baseX<g.left||baseX>g.right||baseY<g.top||baseY>g.bottom)return null;
+  az=wrap((baseX-g.left)/span*360+heading);
+  alt=90-(baseY-g.top)/(g.bottom-g.top)*180;
  }
  const eq=equatorialFromHorizontal(az,alt,state.date,state.lat,state.lon);
  const hours=eq.ra/15,h=Math.floor(hours),mins=(hours-h)*60;
@@ -715,7 +730,7 @@ function setPolarSkyZoom(next,clientX=null,clientY=null){
  if(next===old)return;
  const px=clientX===null?rect.width/2:clientX-rect.left;
  const py=clientY===null?rect.height/2:clientY-rect.top;
- if(state.skyProjection==='polar'){
+ if(state.skyProjection==='polar'||state.skyProjection==='rect'){
   const ratio=next/old;
   state.skyPanX+=(1-ratio)*(px-rect.width/2-state.skyPanX);
   state.skyPanY+=(1-ratio)*(py-rect.height/2-state.skyPanY);
@@ -729,14 +744,17 @@ function setPolarSkyZoom(next,clientX=null,clientY=null){
     scrollX:window.scrollX,scrollY:window.scrollY};
   }
   if(next===1){state.skyPanX=0;state.skyPanY=0}
+  else if(state.skyProjection==='rect'){
+   state.skyPanX=clamp(state.skyPanX,-rect.width*(next-1)/2,rect.width*(next-1)/2);
+   state.skyPanY=clamp(state.skyPanY,-rect.height*(next-1)/2,rect.height*(next-1)/2);
+  }
  }
  state.skyZoom=next;$('sky-zoom').value=String(next);
  render();
 }
 $('sky').addEventListener('wheel',e=>{
  e.preventDefault();
- if(state.skyProjection==='polar')setPolarSkyZoom(Math.round(clamp(state.skyZoom*(e.deltaY>0?.88:1.14),1,3)*100)/100,e.clientX,e.clientY);
- else{state.skyZoom=clamp(state.skyZoom*(e.deltaY>0?.88:1.14),1,3);$('sky-zoom').value=state.skyZoom;render()}
+ setPolarSkyZoom(Math.round(clamp(state.skyZoom*(e.deltaY>0?.88:1.14),1,3)*100)/100,e.clientX,e.clientY);
 },{passive:false});
 wheelZoom('earth-map','earth-zoom','earthZoom',1,4);
 wheelZoom('orrery','orrery-zoom','orreryZoom',.7,3);
@@ -754,8 +772,12 @@ function dragCanvas(id,onMove){
  el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);el.addEventListener('lostpointercapture',end);
 }
 dragCanvas('sky',(dx,dy,el,e)=>{
- if(state.skyProjection==='polar'&&state.skyZoom>1&&!e.shiftKey){
+ if(state.skyZoom>1&&!e.shiftKey){
   state.skyPanX+=dx;state.skyPanY+=dy;
+  if(state.skyProjection==='rect'){
+   state.skyPanX=clamp(state.skyPanX,-el.clientWidth*(state.skyZoom-1)/2,el.clientWidth*(state.skyZoom-1)/2);
+   state.skyPanY=clamp(state.skyPanY,-el.clientHeight*(state.skyZoom-1)/2,el.clientHeight*(state.skyZoom-1)/2);
+  }
  }else{
   // At normal zoom drag still rotates the compass. Shift+drag rotates when
   // zoomed in, and the rotation slider always remains available.
@@ -936,7 +958,7 @@ function capturePrefs(){
   rememberView:$('prefs-remember-view').checked,
   view:$('prefs-remember-view').checked?{
    earthZoom:state.earthZoom,earthLon:state.earthLon,earthLat:state.earthLat,
-   skyZoom:state.skyZoom,skyHeading:state.skyHeading,
+   skyZoom:state.skyZoom,skyPanX:state.skyPanX,skyPanY:state.skyPanY,skyHeading:state.skyHeading,
    orreryZoom:state.orreryZoom,moonZoom:state.moonZoom,sunZoom:state.sunZoom
   }:null
  };
@@ -997,7 +1019,7 @@ function applyPrefs(saved,{restoreLayout=true}={}){
  $('prefs-remember-view').checked=saved.rememberView===true;
  if(saved.rememberView===true&&saved.view&&typeof saved.view==='object'){
   const bounds={earthZoom:[1,4],earthLon:[-180,180],earthLat:[-165,165],
-   skyZoom:[1,3],skyHeading:[-180,180],orreryZoom:[.7,3],
+   skyZoom:[1,3],skyPanX:[-4000,4000],skyPanY:[-4000,4000],skyHeading:[-180,180],orreryZoom:[.7,3],
    moonZoom:[.7,2.8],sunZoom:[.7,2.8]};
   for(const [key,[min,max]] of Object.entries(bounds))
    if(validNumber(saved.view[key],min,max))state[key]=saved.view[key];
