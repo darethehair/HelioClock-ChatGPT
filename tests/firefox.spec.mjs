@@ -26,8 +26,7 @@ test('Sky compass planet option and independently controlled adaptive coordinate
   const both=await getGrid();
   expect(both.altAz&&both.raDec).toBe(true);
   if(projection==='polar'){
-   await page.locator('#sky-zoom').fill('3');
-   await page.locator('#sky-zoom').dispatchEvent('input');
+   await page.locator('#sky-zoom').evaluate(el=>{el.value='3';el.dispatchEvent(new Event('input',{bubbles:true}))});
    const finer=await getGrid();
    expect(finer.decStep).toBeLessThan(equatorial.decStep);
    expect(finer.raStep).toBeLessThan(equatorial.raStep);
