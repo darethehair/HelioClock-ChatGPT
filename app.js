@@ -190,6 +190,7 @@ function sky(){
  const gridResult=drawSkyGrid(c,{
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
   mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
+  panX:state.skyPanX,panY:state.skyPanY,
   showAltAz:$('show-altaz-grid').checked,showRaDec:$('show-radec-grid').checked,
   showBelowHorizon:state.skyProjection==='rect'&&$('show-below-horizon').checked
  });

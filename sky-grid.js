@@ -15,7 +15,7 @@ const fmtRA=degrees=>{
 };
 export function drawSkyGrid(ctx,opts){
  const {width:w,height:h,date,lat,lon,mode='polar',zoom=1,heading=0,
-  showAltAz=true,showRaDec=false,showBelowHorizon=false}=opts;
+  showAltAz=true,showRaDec=false,showBelowHorizon=false,panX=0,panY=0}=opts;
  const step=skyGridIntervals(zoom);
  const radius=(Math.min(w-35,h-20)/2-14)*zoom;
  const rect=rectGeometry(w,h),rectSpan=rect.right-rect.left;
@@ -73,22 +73,67 @@ export function drawSkyGrid(ctx,opts){
   }
  }
  ctx.restore();
- // Sparse equatorial labels for orientation. Position from the same
- // coordinates as the grid, and skip locations outside the visible field.
- if(showRaDec){
-  ctx.save();ctx.font='10px sans-serif';ctx.fillStyle='#f1c88ecb';
-  let labels=0;
-  for(let ra=0;ra<360;ra+=step.ra*2){
-   const p=horizontal(ra,0,date,lat,lon);
-   if(!allowed(p.alt))continue;
-   const [x,y]=plot(p.az,p.alt);
-   if(x<20||x>w-58||y<16||y>h-16)continue;
-   if(mode==='polar'&&Math.hypot(x-w/2,y-h/2)>radius-5)continue;
-   ctx.fillText(fmtRA(ra),x+3,y-4);labels++;
-   if(labels>=12)break;
+ // Place labels ON visible grid lines within the current viewport instead
+ // of only at the outside axes or at dec=0. In a zoomed/panned polar view,
+ // project() coordinates are translated by the parent canvas transform.
+ const occupied=[],drawnLabels=[];
+ const view=(p)=>{
+  const [x,y]=plot(p.az,p.alt);
+  return [x+(mode==='polar'?panX:0),y+(mode==='polar'?panY:0)];
+ };
+ const inside=(point)=>{
+  if(!allowed(point.alt))return false;
+  const [x,y]=view(point);
+  if(!Number.isFinite(x)||!Number.isFinite(y))return false;
+  if(x<46||x>w-68||y<30||y>h-48)return false;
+  if(mode==='rect')return x>rect.left+16&&x<rect.right-20&&y>rect.top+12&&y<rect.bottom-20;
+  return Math.hypot(x-w/2-panX,y-h/2-panY)<radius-8;
+ };
+ const addLabel=(textValue,points,kind,color,desiredX,desiredY)=>{
+  let best=null,score=Infinity;
+  for(const p of points){
+   if(!inside(p))continue;
+   const [x,y]=view(p);
+   const penalty=occupied.some(q=>Math.abs(q[0]-x)<72&&Math.abs(q[1]-y)<19);
+   if(penalty)continue;
+   const candidate=Math.abs(x-desiredX)+Math.abs(y-desiredY);
+   if(candidate<score){score=candidate;best=[x,y]}
   }
-  ctx.restore();
+  if(!best)return;
+  const [sx,sy]=best;
+  occupied.push(best);drawnLabels.push({kind,text:textValue,x:sx,y:sy});
+  // The actual canvas is already translated in polar mode.
+  const px=sx-(mode==='polar'?panX:0),py=sy-(mode==='polar'?panY:0);
+  ctx.save();ctx.font='10px sans-serif';
+  const tw=ctx.measureText(textValue).width;
+  ctx.fillStyle='#071422d9';ctx.fillRect(px-3,py-11,tw+7,14);
+  ctx.fillStyle=color;ctx.fillText(textValue,px,py);ctx.restore();
+ };
+ if(showAltAz){
+  const baseAlt=mode==='rect'&&showBelowHorizon?-90:0;
+  // Altitude labels prefer the left interior; azimuth labels prefer a
+  // horizontal strip inside the plot. Both remain visible after polar pan.
+  for(let alt=baseAlt;alt<=90;alt+=step.alt){
+   const pts=[];for(let az=0;az<360;az+=4)pts.push({az,alt});
+   addLabel((alt>0?'+':'')+alt+'°',pts,'alt','#bbd9ef',w*.22,h*.37);
+  }
+  for(let az=0;az<360;az+=step.az){
+   const pts=[];for(let alt=baseAlt;alt<=90;alt+=2)pts.push({az,alt});
+   addLabel(az+'°',pts,'az','#b7d6ef',w*.55,h*.72);
+  }
+ }
+ if(showRaDec){
+  for(let dec=-90;dec<=90;dec+=step.dec){
+   const pts=[];for(let ra=0;ra<360;ra+=Math.min(3,step.ra/3))
+    pts.push(horizontal(ra,dec,date,lat,lon));
+   addLabel((dec>0?'+':'')+dec+'°',pts,'dec','#eac894',w*.77,h*.36);
+  }
+  for(let ra=0;ra<360;ra+=step.ra){
+   const pts=[];for(let dec=-90;dec<=90;dec+=3)
+    pts.push(horizontal(ra,dec,date,lat,lon));
+   addLabel(fmtRA(ra),pts,'ra','#eac894',w*.34,h*.62);
+  }
  }
  return {altStep:step.alt,azStep:step.az,decStep:step.dec,raStep:step.ra,
-  altAz:showAltAz,raDec:showRaDec};
+  altAz:showAltAz,raDec:showRaDec,labels:drawnLabels};
 }

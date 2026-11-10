@@ -1,4 +1,33 @@
 import {test,expect} from '@playwright/test';
+test('Zoomed and panned sky keeps useful coordinate labels inside the visible canvas',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8765/');
+ const info=()=>page.locator('#sky').evaluate(el=>JSON.parse(el.dataset.gridInfo));
+ await page.locator('#show-radec-grid').check();
+ for(const projection of ['polar','rect']){
+  await page.locator('[data-sky-projection="'+projection+'"]').click();
+  if(projection==='polar'){
+   await page.locator('#sky-zoom').evaluate(el=>{el.value='3';el.dispatchEvent(new Event('input',{bubbles:true}))});
+   await page.locator('#sky').scrollIntoViewIfNeeded();
+   const box=await page.locator('#sky').boundingBox();
+   const x=box.x+box.width*.55,y=box.y+box.height*.48;
+   await page.mouse.move(x,y);await page.mouse.down();
+   await page.mouse.move(x+85,y+45,{steps:3});await page.mouse.up();
+  }
+  const result=await info();
+  expect(result.labels.filter(l=>l.kind==='az').length).toBeGreaterThan(0);
+  expect(result.labels.filter(l=>l.kind==='alt').length).toBeGreaterThan(0);
+  expect(result.labels.filter(l=>l.kind==='ra').length).toBeGreaterThan(0);
+  expect(result.labels.filter(l=>l.kind==='dec').length).toBeGreaterThan(0);
+  const bounds=await page.locator('#sky').evaluate(el=>({w:el.clientWidth,h:el.clientHeight}));
+  for(const l of result.labels){
+   expect(l.x).toBeGreaterThan(40);expect(l.x).toBeLessThan(bounds.w-60);
+   expect(l.y).toBeGreaterThan(25);expect(l.y).toBeLessThan(bounds.h-40);
+  }
+ }
+ expect(errors).toEqual([]);
+});
+
 test('Rectangular sky draws every 30-degree azimuth meridian visibly at 1x',async({page})=>{
  const errors=[];page.on('pageerror',error=>errors.push(error.message));
  await page.goto('http://127.0.0.1:8765/');

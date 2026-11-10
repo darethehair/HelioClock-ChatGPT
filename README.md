@@ -178,3 +178,7 @@ Both polar and rectangular sky views have independent persisted controls for pla
 ### Sky azimuth grid correction (v37 maintenance)
 
 The rectangular Alt/Az grid now uses a single 30° major-azimuth spacing system at the default zoom, with 15°/10°/5° subdivisions at greater zoom. Previously the legacy 30° grid and new 45° overlay created uneven meridians and the grid was drawn beneath the Milky Way. All new grid lines now draw over the Milky Way background and beneath stars, planets, and Sun/Moon. A browser regression test measures every 30° meridian's visible pixel contrast against adjacent sky.
+
+### Interior sky grid labels
+
+Coordinate labels for Alt/Az and RA/Dec are now positioned on visible grid curves inside the sky canvas. The label placement uses the same projection and polar pan as the grid strokes, avoids overlapping nearby labels, and adapts to zoom; coordinates no longer depend on outer edge labels being visible. Firefox tests check both sky projections and polar zoom/pan.
