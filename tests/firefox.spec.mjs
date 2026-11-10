@@ -38,6 +38,9 @@ test('Pinch zoom works on Earth, Moon/Sun, and orrery with single-touch drag int
  async function pinch(selector){
   await page.locator(selector).scrollIntoViewIfNeeded();
   return page.locator(selector).evaluate(el=>{
+   // Synthetic PointerEvents are not registered as active native touches.
+   // Simulate capture for this test; real touches use native pointer capture.
+   el.setPointerCapture=()=>{};
    const box=el.getBoundingClientRect(),cx=box.left+box.width/2,cy=box.top+box.height/2;
    const event=(name,id,x,y)=>el.dispatchEvent(new PointerEvent(name,{
     bubbles:true,cancelable:true,pointerId:id,pointerType:'touch',isPrimary:id===111,
