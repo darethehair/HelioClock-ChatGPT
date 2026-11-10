@@ -1006,13 +1006,8 @@ test('Version 26 polar zoom anchors cursor and dragging pans the sky',async({pag
  await page.goto('http://127.0.0.1:8765/');
  await page.locator('[data-sky-projection="polar"]').click();
  await page.locator('#sky').evaluate(el=>{
-  const old=CanvasRenderingContext2D.prototype.translate;
   window.__skyTranslate=[0,0];
   window.__helioclockCaptureZoom=true;
-  CanvasRenderingContext2D.prototype.translate=function(x,y){
-   if(this.canvas.id==='sky')window.__skyTranslate=[x,y];
-   return old.call(this,x,y);
-  };
  });
  const sky=page.locator('#sky');
  // Measure from the exact DOM rect used by the wheel handler. An earlier

@@ -125,7 +125,15 @@ function sky(){
  c.save();
  // The background remains fixed; all polar sky geometry, stars, ecliptic,
  // Milky Way and annotations share this one translated coordinate frame.
- if(state.skyProjection==='polar')c.translate(state.skyPanX,state.skyPanY);
+ if(state.skyProjection==='polar'){
+  c.translate(state.skyPanX,state.skyPanY);
+  // Test probe reads the actual applied sky transform, not subsequent
+  // translations used to draw individual text and star markers.
+  if(window.__helioclockCaptureZoom){
+   const transform=c.getTransform(),scale=$('sky').width/w;
+   window.__skyTranslate=[transform.e/scale,transform.f/scale];
+  }
+ }
  if(state.skyProjection==='polar'){
   c.strokeStyle='#395270';c.lineWidth=1.3;c.beginPath();c.arc(X,Y,rad,0,2*PI);c.stroke();
  if($('show-altaz-grid').checked)for(let a=0;a<360;a+=10){
