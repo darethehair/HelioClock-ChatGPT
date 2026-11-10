@@ -936,7 +936,7 @@ function restoreMobileFullscreenControls(){
 }
 function syncMobileFullscreenControls(){
  const panel=document.fullscreenElement;
- if(!compactFullscreenQuery.matches||!panel?.classList.contains('panel')||
+ if((!compactFullscreenQuery.matches&&!mobileFullscreenPanel)||!panel?.classList.contains('panel')||
     !compactControlSelectors[[...panel.classList].find(k=>compactControlSelectors[k])]){
   if(mobileFullscreenPanel)restoreMobileFullscreenControls();
   return;

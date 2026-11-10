@@ -288,8 +288,7 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 /* Mobile plot-first fullscreen, independently of portrait/landscape orientation.
    Original desktop fullscreen is unchanged. */
 .mobile-plot-settings,#dock-mobile-more{display:none}
-@media(max-width:1050px){
- .panel:fullscreen.mobile-plot-fullscreen{
+.panel:fullscreen.mobile-plot-fullscreen{
   display:flex;flex-direction:column;gap:0;overflow:hidden;
   height:100vh;height:100dvh;max-height:100dvh;
   padding:52px 5px 52px!important;
@@ -369,4 +368,4 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
  }
  .panel:fullscreen.mobile-plot-fullscreen>.time-dock.mobile-time-expanded #dock-scrubber{max-width:95vw}
  .panel:fullscreen.mobile-plot-fullscreen:has(.mobile-time-expanded){padding-bottom:120px!important}
-}
+
