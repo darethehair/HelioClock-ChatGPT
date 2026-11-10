@@ -123,27 +123,19 @@ function sky(){
   const g=rectGeometry(w,h),L=g.left,R=g.right,T=g.top,B=g.bottom;
   const horizon=rectHorizonY(w,h);
   c.strokeStyle='#d6e8fa66';c.strokeRect(L,T,R-L,B-T);
+  // Labels are retained from the original compass. The actual altitude
+  // and azimuth lines are drawn once by drawSkyGrid, *after* the Milky Way
+  // background, with one consistent 30°-at-1× spacing system.
   if($('show-altaz-grid').checked)for(let alt=-90;alt<=90;alt+=15){
    const y=projectRect(0,alt,w,h,state.skyHeading)[1];
-   line(c,L,y,R,y,alt===0?'#e8f3ff':'#8db5df40',alt===0?1.7:.8);
    label(c,(alt>0?'+':'')+alt+'°',L-4,y+3,'#d0e6fa',10,'right');
   }
   if($('show-altaz-grid').checked)for(let az=0;az<=360;az+=30){
    const x=L+az/360*(R-L);
-   line(c,x,T,x,B,'#9ebbd250',.75);
    const actual=wrap(az+state.skyHeading,360),name=actual===0?'N':actual===90?'E':actual===180?'S':actual===270?'W':Math.round(actual)+'°';
    label(c,name,x,B+14,'#d0e6fa',10,'center');
   }
  }
- // The coordinate grids share the existing azimuth/altitude geometry.
- // At 1× preserve conventional major divisions; subdivisions adapt to zoom.
- const gridResult=drawSkyGrid(c,{
-  date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
-  mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
-  showAltAz:$('show-altaz-grid').checked,showRaDec:$('show-radec-grid').checked,
-  showBelowHorizon:state.skyProjection==='rect'&&$('show-below-horizon').checked
- });
- $('sky').dataset.gridInfo=JSON.stringify(gridResult);
  const sun=sunHorizontal(state.date,state.lat,state.lon),m=moon(state.date,state.lat,state.lon);
  const place=(obj,col,name)=>{
   if(obj.alt<0&&(state.skyProjection!=='rect'||!$('show-below-horizon').checked))return;
@@ -193,6 +185,15 @@ function sky(){
   showCenter:$('show-galactic-center').checked,
   debugMaskMode:'planar'
  });
+ // Draw grid lines above the Milky Way background so every meridian
+ // remains visible. Stars, Sun, Moon and planets are drawn above the grid.
+ const gridResult=drawSkyGrid(c,{
+  date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
+  mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
+  showAltAz:$('show-altaz-grid').checked,showRaDec:$('show-radec-grid').checked,
+  showBelowHorizon:state.skyProjection==='rect'&&$('show-below-horizon').checked
+ });
+ $('sky').dataset.gridInfo=JSON.stringify(gridResult);
  const milky=milkyWayStatus();
  $('milkyway-status').textContent=milky.failed?'Milky Way outlines unavailable':milky.ready?'Milky Way contours loaded':'Milky Way contours loading';
  const mwStats=milkyWayDebugStatus('planar');

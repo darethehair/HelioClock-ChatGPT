@@ -174,3 +174,7 @@ Equal Earth and Mercator retain north-up, equator-centered Reset geometry while 
 ### Sky compass planets and adaptive coordinate grids
 
 Both polar and rectangular sky views have independent persisted controls for planets, Alt/Az grid, and RA/Dec grid. Mercury through Neptune use Astronomy Engine apparent topocentric coordinates. The two grid types can be hidden or shown together, with RA/Dec meridians and parallels computed against the selected date's local sidereal time. Grid density increases as the sky zooms; equatorial paths split correctly at the rectangular azimuth seam. Existing Sun, Moon, Milky Way, horizon and stellar features remain available. Older v36/v37 JSON settings exports can still be imported; absent grid options assume declared defaults.
+
+### Sky azimuth grid correction (v37 maintenance)
+
+The rectangular Alt/Az grid now uses a single 30° major-azimuth spacing system at the default zoom, with 15°/10°/5° subdivisions at greater zoom. Previously the legacy 30° grid and new 45° overlay created uneven meridians and the grid was drawn beneath the Milky Way. All new grid lines now draw over the Milky Way background and beneath stars, planets, and Sun/Moon. A browser regression test measures every 30° meridian's visible pixel contrast against adjacent sky.

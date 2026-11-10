@@ -1,4 +1,38 @@
 import {test,expect} from '@playwright/test';
+test('Rectangular sky draws every 30-degree azimuth meridian visibly at 1x',async({page})=>{
+ const errors=[];page.on('pageerror',error=>errors.push(error.message));
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('[data-sky-projection="rect"]').click();
+ await page.locator('[data-sky-light="black"]').click();
+ for(const id of ['show-stars','show-planets','show-sky-paths','show-ecliptic','show-milkyway-shade','show-milkyway-outline','show-galactic-center'])
+  await page.locator('#'+id).uncheck();
+ await page.locator('#show-radec-grid').uncheck();
+ await page.locator('#show-altaz-grid').check();
+ const check=await page.locator('#sky').evaluate(el=>{
+  const dpr=el.width/el.clientWidth;
+  const ctx=el.getContext('2d');
+  const w=el.clientWidth,h=el.clientHeight;
+  const left=Math.max(35,w*.035),right=w-Math.max(16,w*.016);
+  const top=12,bottom=h-28;
+  const y=Math.round((top+(bottom-top)*.32)*dpr);
+  const pixel=x=>{
+   const p=ctx.getImageData(Math.round(x*dpr),y,1,1).data;
+   return p[0]+p[1]+p[2];
+  };
+  return Array.from({length:11},(_,i)=>{
+   const x=left+(i+1)*(right-left)/12;
+   return {az:(i+1)*30,bright:pixel(x),off:pixel(x+8)};
+  });
+ });
+ for(const p of check)expect(p.bright,JSON.stringify(p)).toBeGreaterThan(p.off+20);
+ const grid=await page.locator('#sky').evaluate(el=>JSON.parse(el.dataset.gridInfo));
+ expect(grid.azStep).toBe(30);
+ await page.locator('#show-altaz-grid').uncheck();
+ const off=await page.locator('#sky').evaluate(el=>JSON.parse(el.dataset.gridInfo));
+ expect(off.altAz).toBe(false);
+ expect(errors).toEqual([]);
+});
+
 test('Sky compass planet option and independently controlled adaptive coordinate grids',async({page})=>{
  const errors=[];page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');

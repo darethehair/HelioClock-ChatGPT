@@ -3,10 +3,10 @@ import {projectRect,rectGeometry} from './sky-projection.js';
 
 /** Fine grids appear when the projected sky has room for their lines. */
 export function skyGridIntervals(zoom=1){
- if(zoom>=2.8)return {alt:5,az:10,dec:2,ra:3.75};
- if(zoom>=2.0)return {alt:10,az:15,dec:5,ra:7.5};
- if(zoom>=1.4)return {alt:15,az:20,dec:10,ra:15};
- return {alt:30,az:45,dec:15,ra:30};
+ if(zoom>=2.8)return {alt:5,az:5,dec:2,ra:3.75};
+ if(zoom>=2.0)return {alt:10,az:10,dec:5,ra:7.5};
+ if(zoom>=1.4)return {alt:15,az:15,dec:10,ra:15};
+ return {alt:15,az:30,dec:15,ra:30};
 }
 const fmtRA=degrees=>{
  const minutes=Math.round(wrap(degrees,360)*4); // 360° = 24h = 1440m.
@@ -48,11 +48,11 @@ export function drawSkyGrid(ctx,opts){
   const firstAlt=mode==='rect'&&showBelowHorizon?-90:0;
   for(let alt=firstAlt;alt<=90;alt+=step.alt){
    const points=[];for(let az=0;az<=360;az+=3)points.push({az,alt});
-   curve(points,alt===0?'#e8f3ff99':'#9cbedb58',alt===0?1.2:.7);
+   curve(points,alt===0?'#e8f3ffbb':'#9cbedb79',alt===0?1.2:.8);
   }
   for(let az=0;az<360;az+=step.az){
    const points=[];for(let alt=firstAlt;alt<=90;alt+=3)points.push({az,alt});
-   curve(points,'#9abbd35c',.7);
+   curve(points,'#90b9d89f',az%90===0?1.1:.85);
   }
  }
  if(showRaDec){
