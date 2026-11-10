@@ -14,7 +14,7 @@ test('Rectangular sky zoom and two-axis pan preserve planet, grid, and cursor pr
  const box=await canvas.boundingBox();
  await page.mouse.move(box.x+box.width*.60,box.y+box.height*.42);
  for(let n=0;n<5;n++)await page.mouse.wheel(0,-950);
- await expect.poll(async()=>Number(page.locator('#sky-zoom').inputValue())).toBeGreaterThan(1.5);
+ await expect.poll(async()=>Number(await page.locator('#sky-zoom').inputValue())).toBeGreaterThan(1.5);
  const after=await geometry();
  expect(after.grid.decStep).toBeLessThan(before.grid.decStep);
  // The planet remains at the same base projected coordinates, now enlarged
