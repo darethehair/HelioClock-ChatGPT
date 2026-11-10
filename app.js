@@ -594,20 +594,48 @@ $('moon-zoom-in').addEventListener('click',()=>zoomDisc(1.25));
 $('moon-zoom-out').addEventListener('click',()=>zoomDisc(.8));
 $('disc-reset').addEventListener('click',resetDisc);
 $('moon-reset').addEventListener('click',()=>{state.moonZoom=1;state.moonPanX=state.moonPanY=0;$('moon-zoom').value=1;if(state.discView==='moon')render()});
+// Two-finger pinch on both disc images. A second pointer suspends
+// single-finger panning, and a new pan begins only on a fresh touch.
+const discPointers=new Map();
+let discPinchDistance=0;
+function discTouchDistance(){
+ const [p,q]=[...discPointers.values()];
+ return Math.hypot(p.x-q.x,p.y-q.y);
+}
+function discTouchCentre(){
+ const [p,q]=[...discPointers.values()];
+ return {x:(p.x+q.x)/2,y:(p.y+q.y)/2};
+}
 discStage.addEventListener('pointermove',e=>{
  discFocus={x:e.clientX,y:e.clientY};
+ const previous=discPointers.get(e.pointerId);
+ if(!previous)return;
+ discPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ if(discPointers.size===2){
+  const d=discTouchDistance(),focus=discTouchCentre();
+  if(discPinchDistance>0&&d>0)zoomDisc(d/discPinchDistance,focus);
+  discPinchDistance=d;
+  return;
+ }
  if(!dragDisc||dragDisc.pointerId!==e.pointerId)return;
  const px=state.discView==='sun'?'sunPanX':'moonPanX',py=state.discView==='sun'?'sunPanY':'moonPanY';
- state[px]+=e.clientX-dragDisc.x;state[py]+=e.clientY-dragDisc.y;
- dragDisc.x=e.clientX;dragDisc.y=e.clientY;updateDiscViewport();
+ state[px]+=e.clientX-previous.x;state[py]+=e.clientY-previous.y;
+ updateDiscViewport();
 });
 discStage.addEventListener('pointerdown',e=>{
- if(e.button!==0)return;
- dragDisc={pointerId:e.pointerId,x:e.clientX,y:e.clientY};
+ if(e.pointerType==='mouse'&&e.button!==0)return;
+ discPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ if(discPointers.size===1)dragDisc={pointerId:e.pointerId};
+ else {dragDisc=null;if(discPointers.size===2)discPinchDistance=discTouchDistance()}
  discStage.setPointerCapture(e.pointerId);
 });
+function finishDiscPointer(e){
+ discPointers.delete(e.pointerId);
+ discPinchDistance=0;
+ dragDisc=null;
+}
 for(const name of ['pointerup','pointercancel','lostpointercapture'])
- discStage.addEventListener(name,()=>{dragDisc=null});
+ discStage.addEventListener(name,finishDiscPointer);
 discStage.addEventListener('pointerleave',()=>{discFocus=null});
 discStage.addEventListener('wheel',e=>{
  e.preventDefault();zoomDisc(e.deltaY<0?1.2:1/1.2,{x:e.clientX,y:e.clientY});
@@ -771,19 +799,28 @@ function dragCanvas(id,onMove){
  const distance=()=>{const [p,q]=[...pointers.values()];return Math.hypot(p.x-q.x,p.y-q.y)};
  const midpoint=()=>{const [p,q]=[...pointers.values()];return {x:(p.x+q.x)/2,y:(p.y+q.y)/2}};
  el.addEventListener('pointerdown',e=>{
+  if(e.pointerType==='mouse'&&e.button!==0)return;
   pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
   start={x:e.clientX,y:e.clientY};
-  if(id==='sky'&&pointers.size===2)pinchDistance=distance();
+  if(['sky','earth-map','orrery'].includes(id)&&pointers.size===2)pinchDistance=distance();
   el.setPointerCapture(e.pointerId);el.style.cursor='grabbing';
  });
  el.addEventListener('pointermove',e=>{
   if(!pointers.has(e.pointerId))return;
   const previous=pointers.get(e.pointerId);
   pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
-  if(id==='sky'&&pointers.size===2){
+  if(['sky','earth-map','orrery'].includes(id)&&pointers.size===2){
    const d=distance(),center=midpoint();
    if(pinchDistance>0&&d>0&&Math.abs(d-pinchDistance)>.1){
-    setPolarSkyZoom(state.skyZoom*d/pinchDistance,center.x,center.y);
+    const ratio=d/pinchDistance;
+    if(id==='sky')setPolarSkyZoom(state.skyZoom*ratio,center.x,center.y);
+    else if(id==='earth-map'){
+     state.earthZoom=clamp(Math.round(state.earthZoom*ratio*100)/100,1,4);
+     $('earth-zoom').value=state.earthZoom;render();
+    }else{
+     state.orreryZoom=clamp(Math.round(state.orreryZoom*ratio*100)/100,.7,3);
+     $('orrery-zoom').value=state.orreryZoom;render();
+    }
    }
    pinchDistance=d;return;
   }
@@ -814,6 +851,7 @@ dragCanvas('sky',(dx,dy,el,e)=>{
   $('sky-heading').value=state.skyHeading;
  }
 });
+dragCanvas('orrery',()=>{});
 dragCanvas('earth-map',(dx,dy,el)=>{
  state.earthLon=wrap(state.earthLon-dx/el.clientWidth*360/state.earthZoom+180,360)-180;
  const delta=dy/el.clientHeight*180/state.earthZoom;

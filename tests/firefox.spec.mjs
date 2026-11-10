@@ -32,6 +32,40 @@ test('Daylight polar grid labels have no solid boxes and all radial spokes share
  expect(errors).toEqual([]);
 });
 
+test('Pinch zoom works on Earth, Moon/Sun, and orrery with single-touch drag intact',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8765/');
+ async function pinch(selector){
+  await page.locator(selector).scrollIntoViewIfNeeded();
+  return page.locator(selector).evaluate(el=>{
+   const box=el.getBoundingClientRect(),cx=box.left+box.width/2,cy=box.top+box.height/2;
+   const event=(name,id,x,y)=>el.dispatchEvent(new PointerEvent(name,{
+    bubbles:true,cancelable:true,pointerId:id,pointerType:'touch',isPrimary:id===111,
+    clientX:x,clientY:y,button:0,buttons:name==='pointerup'?0:1
+   }));
+   event('pointerdown',111,cx-20,cy);
+   event('pointerdown',112,cx+20,cy);
+   event('pointermove',112,cx+45,cy);
+   event('pointermove',111,cx-35,cy);
+   event('pointerup',112,cx+45,cy);
+   event('pointerup',111,cx-35,cy);
+  });
+ }
+ await pinch('#earth-map');
+ expect(Number(await page.locator('#earth-zoom').inputValue())).toBeGreaterThan(1);
+ await page.locator('#earth-reset').click();
+ await pinch('#orrery');
+ expect(Number(await page.locator('#orrery-zoom').inputValue())).toBeGreaterThan(1);
+ await page.locator('#orrery-reset').click();
+ await pinch('#disc-stage');
+ await expect(page.locator('#moon-zoom-value')).not.toHaveText('1.0×');
+ await page.locator('#disc-reset').click();
+ await page.locator('[data-disc-view="sun"]').click();
+ await pinch('#disc-stage');
+ await expect(page.locator('#moon-zoom-value')).not.toHaveText('1.0×');
+ expect(errors).toEqual([]);
+});
+
 test('Rectangular sky zoom retains marker and text size, with mobile-friendly zoom controls',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:8765/');

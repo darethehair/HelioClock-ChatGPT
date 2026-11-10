@@ -194,3 +194,7 @@ Polar Alt/Az radials and altitude rings are now drawn only by the shared adaptiv
 ### Mobile sky pinch / fixed-size glyphs
 
 In the zoomed rectangular projection, sky-coordinate geometry still magnifies but star discs, planet markers, Sun/Moon symbols and sky/coordinate labels retain constant screen sizes. Star label collision checks now use transformed on-screen coordinates. The sky canvas supports two-pointer pinch-to-zoom (touch-action:none), and the existing sky zoom slider is supplemented with − and + buttons for touch devices; one-finger dragging retains navigation. Both projections use cursor/midpoint-anchored zoom.
+
+### Pinch-to-zoom in the other zoomable panels
+
+Two-finger pinch gestures are supported on the Earth map (all map projections), Moon image, Sun image and orrery, in addition to both sky projections. Disc pinch zooms about the touch midpoint and suspends single-finger panning; Earth and orrery pinch adjust the existing zoom controls and preserve the established Earth drag-to-rotate behavior. The daylight-year chart and nonzoomable readout panels remain unchanged. Firefox regression tests synthesize two independent touch pointers for all four visualizations.
