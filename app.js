@@ -924,7 +924,12 @@ function restoreMobileFullscreenControls(){
  if(mobileDrawer){mobileDrawer.remove();mobileDrawer=null}
  if(mobileFullscreenPanel){
   mobileFullscreenPanel.classList.remove('mobile-plot-fullscreen','mobile-controls-open');
-  mobileFullscreenPanel.querySelector('.mobile-plot-settings')?.setAttribute('aria-expanded','false');
+  const button=mobileFullscreenPanel.querySelector('.mobile-plot-settings');
+  if(button){
+   button.hidden=true;
+   button.textContent='⚙ Controls';
+   button.setAttribute('aria-expanded','false');
+  }
   mobileFullscreenPanel=null;
  }
  timeDock.classList.remove('mobile-time-expanded');
@@ -941,6 +946,8 @@ function syncMobileFullscreenControls(){
  restoreMobileFullscreenControls();
  mobileFullscreenPanel=panel;
  panel.classList.add('mobile-plot-fullscreen');
+ const settingsButton=panel.querySelector('.mobile-plot-settings');
+ if(settingsButton)settingsButton.hidden=false;
  const drawer=document.createElement('div');
  drawer.className='mobile-fullscreen-drawer';
  drawer.setAttribute('aria-label','Plot settings');
