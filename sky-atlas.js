@@ -41,9 +41,10 @@ export function stellarRadius(mag,zoom=1){
  return Math.max(.85,Math.min(6.1,4.6-.63*(mag+1.2)))*Math.max(.9,Math.min(1.45,zoom**.35));
 }
 function drawDot(c,x,y,r,color){
- c.save();c.translate(x,y);const glyphScale=c.__skyGlyphScale||1;
- c.scale(glyphScale,glyphScale);
- c.beginPath();c.arc(0,0,r,0,2*Math.PI);c.fillStyle=color;c.fill();c.restore();
+ c.save();const glyphScale=c.__skyGlyphScale||1;
+ if(glyphScale!==1){c.translate(x,y);c.scale(glyphScale,glyphScale)}
+ c.beginPath();c.arc(glyphScale===1?x:0,glyphScale===1?y:0,r,0,2*Math.PI);
+ c.fillStyle=color;c.fill();c.restore();
 }
 export function drawSkyAtlas(c,{
  date,lat,lon,width,height,mode='polar',zoom=1,heading=0,panX=0,panY=0,magLimit=3.5,
@@ -137,11 +138,11 @@ export function drawSkyAtlas(c,{
     const left=sx+dx-2,top=sy+dy-10,right=left+textWidth+4,bottom=top+13;
     if(left<3||right>width-3||top<2||bottom>height-2)continue;
     if(occupied.some(o=>left<o.right+4&&right>o.left-4&&top<o.bottom+3&&bottom>o.top-3))continue;
-    c.save();c.translate(p[0],p[1]);
-    const glyphScale=mode==='rect'?1/zoom:1;
-    c.scale(glyphScale,glyphScale);
+    c.save();const glyphScale=mode==='rect'?1/zoom:1;
+    if(glyphScale!==1){c.translate(p[0],p[1]);c.scale(glyphScale,glyphScale)}
     c.fillStyle=star.priority===0?'#bfd0e2':'#ffffff';
-    c.fillText(star.name,dx,dy);c.restore();
+    c.fillText(star.name,glyphScale===1?p[0]+dx:dx,glyphScale===1?p[1]+dy:dy);
+    c.restore();
     occupied.push({left,top,right,bottom});placed++;
     break;
    }
