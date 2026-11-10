@@ -40,7 +40,11 @@ export function stellarColor(bv){
 export function stellarRadius(mag,zoom=1){
  return Math.max(.85,Math.min(6.1,4.6-.63*(mag+1.2)))*Math.max(.9,Math.min(1.45,zoom**.35));
 }
-function drawDot(c,x,y,r,color){c.beginPath();c.arc(x,y,r,0,2*Math.PI);c.fillStyle=color;c.fill();}
+function drawDot(c,x,y,r,color){
+ c.save();c.translate(x,y);const glyphScale=c.__skyGlyphScale||1;
+ c.scale(glyphScale,glyphScale);
+ c.beginPath();c.arc(0,0,r,0,2*Math.PI);c.fillStyle=color;c.fill();c.restore();
+}
 export function drawSkyAtlas(c,{
  date,lat,lon,width,height,mode='polar',zoom=1,heading=0,panX=0,panY=0,magLimit=3.5,
  showLabels=true,showStars=true,showConstellations=false,precession=true,brightSky=false,showBelowHorizon=true,stellarColors=true
@@ -95,7 +99,7 @@ export function drawSkyAtlas(c,{
  // view zooms inward, allow progressively fainter proper, Bayer and Flamsteed
  // identifiers without turning the chart into an unreadable cloud of text.
  if(showLabels){
-  const labelLimit=Math.min(magLimit,3.4+Math.max(0,mode==='polar'?zoom-1:0)*1.8);
+  const labelLimit=Math.min(magLimit,3.4+Math.max(0,zoom-1)*1.8);
   const candidates=[];
   // Keep the original familiar bright names even in atlas fallback mode.
   for(const star of BRIGHT_STARS){
@@ -124,16 +128,20 @@ export function drawSkyAtlas(c,{
    if(placed>=budget)break;
    const h=toAltAz(star,date,lat,lon,precession),p=project(h.az,h.alt);
    if(!p)continue;
-   const sx=p[0]+(mode==='polar'?panX:0),sy=p[1]+(mode==='polar'?panY:0);
-   if(!skyPointVisible(p[0],p[1],width,height,mode,panX,panY))continue;
+   const sx=mode==='rect'?width/2+(p[0]-width/2)*zoom+panX:p[0]+panX;
+   const sy=mode==='rect'?height/2+(p[1]-height/2)*zoom+panY:p[1]+panY;
+   if(sx<0||sx>width||sy<0||sy>height)continue;
    const textWidth=c.measureText(star.name).width;
    const positions=[[7,-6],[-textWidth-7,-6],[7,14],[-textWidth-7,14]];
    for(const [dx,dy] of positions){
     const left=sx+dx-2,top=sy+dy-10,right=left+textWidth+4,bottom=top+13;
     if(left<3||right>width-3||top<2||bottom>height-2)continue;
     if(occupied.some(o=>left<o.right+4&&right>o.left-4&&top<o.bottom+3&&bottom>o.top-3))continue;
+    c.save();c.translate(p[0],p[1]);
+    const glyphScale=mode==='rect'?1/zoom:1;
+    c.scale(glyphScale,glyphScale);
     c.fillStyle=star.priority===0?'#bfd0e2':'#ffffff';
-    c.fillText(star.name,p[0]+dx,p[1]+dy);
+    c.fillText(star.name,dx,dy);c.restore();
     occupied.push({left,top,right,bottom});placed++;
     break;
    }

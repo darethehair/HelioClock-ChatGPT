@@ -111,13 +111,15 @@ export function drawSkyGrid(ctx,opts){
   // The actual canvas is already translated in polar mode.
   const px=mode==='polar'?sx-panX:w/2+(sx-w/2-panX)/zoom;
   const py=mode==='polar'?sy-panY:h/2+(sy-h/2-panY)/zoom;
-  ctx.save();ctx.font='10px sans-serif';ctx.lineJoin='round';
-  // A fine text halo preserves contrast on daylight and dark skies without
-  // opaque rectangular patches that obscure grid lines and the star field.
+  ctx.save();ctx.translate(px,py);
+  // Rectangular sky canvas is zoomed, but coordinate annotations keep
+  // a readable constant screen size.
+  if(mode==='rect')ctx.scale(1/zoom,1/zoom);
+  ctx.font='10px sans-serif';ctx.lineJoin='round';
   ctx.strokeStyle=skyLight==='black'?'#081322':'#24516c';
   ctx.lineWidth=2.5;
-  ctx.strokeText(textValue,px,py);
-  ctx.fillStyle=color;ctx.fillText(textValue,px,py);ctx.restore();
+  ctx.strokeText(textValue,0,0);
+  ctx.fillStyle=color;ctx.fillText(textValue,0,0);ctx.restore();
  };
  // Give each coordinate family a limited number of candidate labels.
  // Equatorial labels go first, so both enabled grids remain readable.

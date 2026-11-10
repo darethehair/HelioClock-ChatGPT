@@ -190,3 +190,7 @@ The rectangular sky now supports cursor-anchored wheel/slider zoom and two-axis 
 ### Polar daylight grid cleanup
 
 Polar Alt/Az radials and altitude rings are now drawn only by the shared adaptive grid renderer, eliminating the old mismatched dark 45° spokes. Labels use small contrast halos rather than opaque black rectangles, so daylight-blue sky remains visible beneath the coordinate text. An additional Firefox daylight-grid regression test guards the radial contrast.
+
+### Mobile sky pinch / fixed-size glyphs
+
+In the zoomed rectangular projection, sky-coordinate geometry still magnifies but star discs, planet markers, Sun/Moon symbols and sky/coordinate labels retain constant screen sizes. Star label collision checks now use transformed on-screen coordinates. The sky canvas supports two-pointer pinch-to-zoom (touch-action:none), and the existing sky zoom slider is supplemented with − and + buttons for touch devices; one-finger dragging retains navigation. Both projections use cursor/midpoint-anchored zoom.

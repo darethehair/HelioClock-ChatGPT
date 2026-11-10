@@ -32,11 +32,15 @@ function line(c,x,y,X,Y,color='#344661',width=1){
  c.strokeStyle=color;c.lineWidth=width;c.beginPath();c.moveTo(x,y);c.lineTo(X,Y);c.stroke();
 }
 function label(c,s,x,y,color='#90a4c0',size=11,align='left'){
- c.font=size+'px sans-serif';c.fillStyle=color;c.textAlign=align;c.fillText(s,x,y);
+ c.save();c.translate(x,y);const glyphScale=c.__skyGlyphScale||1;
+ c.scale(glyphScale,glyphScale);
+ c.font=size+'px sans-serif';c.fillStyle=color;c.textAlign=align;c.fillText(s,0,0);c.restore();
 }
 function dot(c,x,y,r,color,glow=0){
- c.save();c.fillStyle=color;if(glow){c.shadowBlur=glow;c.shadowColor=color}
- c.beginPath();c.arc(x,y,r,0,2*PI);c.fill();c.restore();
+ c.save();c.translate(x,y);const glyphScale=c.__skyGlyphScale||1;
+ c.scale(glyphScale,glyphScale);
+ c.fillStyle=color;if(glow){c.shadowBlur=glow;c.shadowColor=color}
+ c.beginPath();c.arc(0,0,r,0,2*PI);c.fill();c.restore();
 }
 function daylightChart(){
  const year=state.date.getUTCFullYear();
@@ -101,6 +105,9 @@ function sky(){
  // galactic mask, stars, ecliptic, planets, coordinate grids and labels.
  // Scaling the entire chart keeps these layers in exact alignment.
  const rectSky=state.skyProjection==='rect';
+ // Keep marker radii and lettering in screen pixels when rectangular
+ // celestial coordinates are magnified.
+ c.__skyGlyphScale=rectSky?1/state.skyZoom:1;
  c.save();
  if(rectSky){
   c.fillStyle='#000';c.fillRect(0,0,w,h);
@@ -248,7 +255,8 @@ function sky(){
  }
  $('sky').dataset.planets=JSON.stringify(plottedPlanets);
  c.restore();
- c.restore(); // rectangular viewport scaling (identity in polar mode)
+ c.restore();
+ c.__skyGlyphScale=1; // rectangular viewport scaling (identity in polar mode)
 }
 /**
  * Read inverse coordinates from the actual rendered canvas geometry.
@@ -495,6 +503,8 @@ function viewRange(id,key){$(id).addEventListener('input',e=>{state[key]=Number(
 viewRange('sky-heading','skyHeading');
 // Slider zoom is centred; wheel zoom targets the pointer position.
 $('sky-zoom').addEventListener('input',e=>setPolarSkyZoom(Number(e.target.value)));
+$('sky-zoom-out').addEventListener('click',()=>setPolarSkyZoom(Math.round(clamp(state.skyZoom/1.25,1,3)*100)/100));
+$('sky-zoom-in').addEventListener('click',()=>setPolarSkyZoom(Math.round(clamp(state.skyZoom*1.25,1,3)*100)/100));
 viewRange('earth-zoom','earthZoom');viewRange('orrery-zoom','orreryZoom');
 // Shared disc viewer handles the Moon slider and pan/zoom interaction.
 $('show-au-rings').addEventListener('change',render);
@@ -756,15 +766,39 @@ wheelZoom('orrery','orrery-zoom','orreryZoom',.7,3);
 // The shared Sun/Moon stage handles wheel zoom with cursor anchoring.
 function dragCanvas(id,onMove){
  const el=$(id);let start=null;
+ const pointers=new Map();let pinchDistance=0;
  el.style.cursor='grab';el.style.touchAction='none';
- el.addEventListener('pointerdown',e=>{start={x:e.clientX,y:e.clientY};el.setPointerCapture(e.pointerId);el.style.cursor='grabbing'});
+ const distance=()=>{const [p,q]=[...pointers.values()];return Math.hypot(p.x-q.x,p.y-q.y)};
+ const midpoint=()=>{const [p,q]=[...pointers.values()];return {x:(p.x+q.x)/2,y:(p.y+q.y)/2}};
+ el.addEventListener('pointerdown',e=>{
+  pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  start={x:e.clientX,y:e.clientY};
+  if(id==='sky'&&pointers.size===2)pinchDistance=distance();
+  el.setPointerCapture(e.pointerId);el.style.cursor='grabbing';
+ });
  el.addEventListener('pointermove',e=>{
-  if(!start)return;
-  const dx=e.clientX-start.x,dy=e.clientY-start.y;start={x:e.clientX,y:e.clientY};
+  if(!pointers.has(e.pointerId))return;
+  const previous=pointers.get(e.pointerId);
+  pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(id==='sky'&&pointers.size===2){
+   const d=distance(),center=midpoint();
+   if(pinchDistance>0&&d>0&&Math.abs(d-pinchDistance)>.1){
+    setPolarSkyZoom(state.skyZoom*d/pinchDistance,center.x,center.y);
+   }
+   pinchDistance=d;return;
+  }
+  if(pointers.size>1)return;
+  const dx=e.clientX-previous.x,dy=e.clientY-previous.y;
+  start={x:e.clientX,y:e.clientY};
   onMove(dx,dy,el,e);render();
  });
- const end=()=>{start=null;el.style.cursor='grab'};
- el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);el.addEventListener('lostpointercapture',end);
+ const end=e=>{
+  pointers.delete(e.pointerId);
+  pinchDistance=0;start=null;
+  el.style.cursor=pointers.size?'grabbing':'grab';
+ };
+ el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);
+ el.addEventListener('lostpointercapture',end);
 }
 dragCanvas('sky',(dx,dy,el,e)=>{
  if(state.skyZoom>1&&!e.shiftKey){

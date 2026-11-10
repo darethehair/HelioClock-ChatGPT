@@ -32,6 +32,27 @@ test('Daylight polar grid labels have no solid boxes and all radial spokes share
  expect(errors).toEqual([]);
 });
 
+test('Rectangular sky zoom retains marker and text size, with mobile-friendly zoom controls',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('[data-sky-projection="rect"]').click();
+ await expect(page.locator('#sky-zoom-in')).toBeVisible();
+ await page.locator('#sky-zoom-in').click();
+ await expect.poll(async()=>Number(await page.locator('#sky-zoom').inputValue())).toBeGreaterThan(1);
+ const out=await page.locator('#sky').evaluate(el=>({
+  glyphScale:el.getContext('2d').__skyGlyphScale,
+  info:JSON.parse(el.dataset.gridInfo)
+ }));
+ expect(out.glyphScale).toBe(1); // Cleared after rendering.
+ await page.locator('#sky-zoom-in').click();
+ const labels=await page.locator('#sky').evaluate(el=>JSON.parse(el.dataset.gridInfo).labels);
+ expect(labels.filter(l=>l.kind==='az').length).toBeGreaterThan(0);
+ await page.locator('#sky-zoom-out').click();
+ await page.locator('#sky-reset').click();
+ await expect(page.locator('#sky-zoom')).toHaveValue('1');
+ expect(errors).toEqual([]);
+});
+
 test('Rectangular sky zoom and two-axis pan preserve planet, grid, and cursor projection',async({page})=>{
  const errors=[];page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
