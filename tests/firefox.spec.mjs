@@ -463,6 +463,44 @@ test('Earth globe and flat maps center on the selected observer and Reset restor
  expect(errors).toEqual([]);
 });
 
+test('Flat Earth vertical drags restore old spherical tilt while Reset restores north-up fit',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8765/');
+ const probe=()=>page.locator('#earth-map').evaluate(el=>JSON.parse(el.dataset.projectionProbe));
+ for(const projection of ['equal','mercator']){
+  await page.locator('[data-projection="'+projection+'"]').click();
+  await page.locator('#earth-map-home').click();
+  const before=await probe();
+  expect(before.latitudeTilt).toBeCloseTo(0,5);
+  expect(before.equator[1]).toBeCloseTo(before.viewCenter[1],0);
+  const box=await page.locator('#earth-map').boundingBox();
+  expect(box).not.toBeNull();
+  const x=box.x+box.width*.50,y=box.y+box.height*.50;
+  await page.mouse.move(x,y);
+  await page.mouse.down();
+  await page.mouse.move(x,y+Math.min(100,box.height*.22),{steps:5});
+  await page.mouse.up();
+  const dragged=await probe();
+  expect(dragged.latitudeTilt).toBeGreaterThan(5);
+  // The projected equator genuinely changes when the full map tilts,
+  // rather than merely moving a marker or ignoring pointer input.
+  expect(Math.abs(dragged.equator[1]-before.equator[1])).toBeGreaterThan(5);
+  await page.locator('#earth-map-home').click();
+  const reset=await probe();
+  expect(reset.latitudeTilt).toBeCloseTo(0,5);
+  expect(reset.equator[1]).toBeCloseTo(reset.viewCenter[1],0);
+  expect(reset.worldBounds[0][1]).toBeGreaterThanOrEqual(-1);
+  expect(reset.worldBounds[1][1]).toBeLessThanOrEqual(reset.viewCenter[1]*2+1);
+ }
+ // The globe must still reset to the observer's actual latitude.
+ await page.locator('[data-projection="globe"]').click();
+ await page.locator('#earth-map-home').click();
+ const globe=await probe();
+ expect(globe.latitudeTilt).toBeCloseTo(49.19,2);
+ expect(globe.observer[1]).toBeCloseTo(globe.viewCenter[1],0);
+ expect(errors).toEqual([]);
+});
+
 test('Version 23 single Earth map clips all raster imagery to the world outline',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:8765/');

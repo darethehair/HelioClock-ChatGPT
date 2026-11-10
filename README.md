@@ -166,3 +166,7 @@ The initial 2K option failed to start its image loader because its loading state
 ### v37 flat projection reset correction
 
 Reset fits the complete Equal Earth or Mercator world vertically with the equator at the canvas center and the observer's longitude centered horizontally; the user's northern latitude stays above center, rather than cropping the Southern Hemisphere. 3D Globe Reset remains centered on observer longitude and latitude. Firefox tests now assert the world bounds stay in the viewport rather than incorrectly requiring all projections to place the observer at canvas center.
+
+### Restored flat-map vertical tilt (v37 maintenance)
+
+Equal Earth and Mercator retain north-up, equator-centered Reset geometry while allowing vertical dragging to apply an oblique spherical rotation to the map. The drag angle is measured relative to the current observer latitude, so Reset returns to 0° flat-map tilt without sacrificing the observer-centered globe. A Firefox regression test verifies both projection changes on vertical drag and correct Reset for each mode.

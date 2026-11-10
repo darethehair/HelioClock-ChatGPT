@@ -738,7 +738,12 @@ dragCanvas('sky',(dx,dy,el,e)=>{
 });
 dragCanvas('earth-map',(dx,dy,el)=>{
  state.earthLon=wrap(state.earthLon-dx/el.clientWidth*360/state.earthZoom+180,360)-180;
- state.earthLat=clamp(state.earthLat+dy/el.clientHeight*180/state.earthZoom,-75,75);
+ const delta=dy/el.clientHeight*180/state.earthZoom;
+ // Flat maps tilt relative to the observer's latitude (Reset is 0° tilt).
+ // The globe retains its independent absolute latitude rotation bounds.
+ state.earthLat=state.earthProjection==='globe'
+  ?clamp(state.earthLat+delta,-75,75)
+  :clamp(state.earthLat+delta,state.lat-75,state.lat+75);
 });
 
 for(const [id,minutes] of [['dock-prev-day',-1440],['dock-prev-hour',-60],['dock-next-hour',60],['dock-next-day',1440]]){
@@ -963,7 +968,7 @@ function applyPrefs(saved,{restoreLayout=true}={}){
  if(sun&&solarRequest===0)refreshSolarImage();
  $('prefs-remember-view').checked=saved.rememberView===true;
  if(saved.rememberView===true&&saved.view&&typeof saved.view==='object'){
-  const bounds={earthZoom:[1,4],earthLon:[-180,180],earthLat:[-75,75],
+  const bounds={earthZoom:[1,4],earthLon:[-180,180],earthLat:[-165,165],
    skyZoom:[1,3],skyHeading:[-180,180],orreryZoom:[.7,3],
    moonZoom:[.7,2.8],sunZoom:[.7,2.8]};
   for(const [key,[min,max]] of Object.entries(bounds))

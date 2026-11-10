@@ -10,17 +10,19 @@ const memoCanvas=document.createElement('canvas');
 const memoCtx=memoCanvas.getContext('2d');
 const modeConstructors={equal:geoEqualEarth,globe:geoOrthographic,mercator:geoMercator};
 export function createEarthProjection(width,height,state){
- const {earthProjection='equal',earthZoom=1,earthLon=0,earthLat=0}=state;
+ const {earthProjection='equal',earthZoom=1,earthLon=0,earthLat=0,lat=0}=state;
  const projection=modeConstructors[earthProjection]||geoEqualEarth;
  const map=projection();
  if(earthProjection==='globe'){
   // A globe is centered on the observing point in both axes.
   map.rotate([-earthLon,-earthLat]);
  }else{
-  // Flat maps are world maps: longitude follows the observer, but the
-  // latitude center remains the equator so the poles are not cut off.
-  // Do not shift the fitted world down to put Manitoba at canvas center.
-  map.rotate([-earthLon,0]).center([0,0]);
+  // A reset flat map starts north-up with the equator vertically centered.
+  // But vertical drag must still tilt the whole Earth, just as earlier
+  // HelioClock builds did. earthLat is the dragged orientation; subtract
+  // the observer latitude so Reset (earthLat=lat) returns to zero tilt.
+  const tilt=clamp(earthLat-lat,-75,75);
+  map.rotate([-earthLon,-tilt]).center([0,0]);
  }
  map.fitExtent([[9,9],[width-9,height-9]],{type:'Sphere'});
  map.scale(map.scale()*earthZoom);
@@ -205,6 +207,7 @@ export function renderEarth(context,width,height,date,state){
   textureStatus:earthTextureStatus(earthTextureQuality).status,
   projectionProbe:{projection:earthProjection,observer:observerScreen,
    east:eastScreen,north:northScreen,viewCenter:[width/2,height/2],
-   equator:map([earthLon,0]),worldBounds:geoPath(map).bounds({type:'Sphere'})}};
+   equator:map([earthLon,0]),worldBounds:geoPath(map).bounds({type:'Sphere'}),
+   latitudeTilt:earthProjection==='globe'?earthLat:clamp(earthLat-lat,-75,75)}};
 
 }
