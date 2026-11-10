@@ -473,9 +473,15 @@ test('Flat Earth vertical drags restore old spherical tilt while Reset restores 
   const before=await probe();
   expect(before.latitudeTilt).toBeCloseTo(0,5);
   expect(before.equator[1]).toBeCloseTo(before.viewCenter[1],0);
+  // Raw Playwright mouse coordinates do not automatically scroll the
+  // Earth panel into the viewport, unlike locator.click(). Confirm the
+  // pointer really targets the map before diagnosing a missing tilt.
+  await page.locator('#earth-map').scrollIntoViewIfNeeded();
   const box=await page.locator('#earth-map').boundingBox();
   expect(box).not.toBeNull();
   const x=box.x+box.width*.50,y=box.y+box.height*.50;
+  const hit=await page.evaluate(([px,py])=>document.elementFromPoint(px,py)?.id,[x,y]);
+  expect(hit).toBe('earth-map');
   await page.mouse.move(x,y);
   await page.mouse.down();
   await page.mouse.move(x,y+Math.min(100,box.height*.22),{steps:5});
