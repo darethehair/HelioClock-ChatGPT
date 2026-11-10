@@ -32,15 +32,19 @@ function line(c,x,y,X,Y,color='#344661',width=1){
  c.strokeStyle=color;c.lineWidth=width;c.beginPath();c.moveTo(x,y);c.lineTo(X,Y);c.stroke();
 }
 function label(c,s,x,y,color='#90a4c0',size=11,align='left'){
- c.save();c.translate(x,y);const glyphScale=c.__skyGlyphScale||1;
- c.scale(glyphScale,glyphScale);
- c.font=size+'px sans-serif';c.fillStyle=color;c.textAlign=align;c.fillText(s,0,0);c.restore();
+ c.save();
+ const glyphScale=c.__skyGlyphScale||1;
+ if(glyphScale!==1){c.translate(x,y);c.scale(glyphScale,glyphScale)}
+ c.font=size+'px sans-serif';c.fillStyle=color;c.textAlign=align;
+ c.fillText(s,glyphScale===1?x:0,glyphScale===1?y:0);c.restore();
 }
 function dot(c,x,y,r,color,glow=0){
- c.save();c.translate(x,y);const glyphScale=c.__skyGlyphScale||1;
- c.scale(glyphScale,glyphScale);
+ c.save();const glyphScale=c.__skyGlyphScale||1;
+ // Retain literal arc centre coordinates for the ordinary polar/orrery
+ // canvases. Only rectangular sky uses a local compensating scale.
+ if(glyphScale!==1){c.translate(x,y);c.scale(glyphScale,glyphScale)}
  c.fillStyle=color;if(glow){c.shadowBlur=glow;c.shadowColor=color}
- c.beginPath();c.arc(0,0,r,0,2*PI);c.fill();c.restore();
+ c.beginPath();c.arc(glyphScale===1?x:0,glyphScale===1?y:0,r,0,2*PI);c.fill();c.restore();
 }
 function daylightChart(){
  const year=state.date.getUTCFullYear();
