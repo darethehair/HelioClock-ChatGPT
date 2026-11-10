@@ -5,6 +5,8 @@ import {rectGeometry,projectRect,rectHorizonY,paintRectAtmosphere} from './sky-p
 import {drawSkyAtlas,skyAtlasStatus} from './sky-atlas.js';
 import {renderMoon} from './moon-renderer.js';
 import {drawSolarYear} from './solar-chart.js';
+import {drawSkyGrid} from './sky-grid.js';
+import {skyPlanets} from './sky-planets.js';
 import {renderEarth,earthTextureStatus} from './earth-renderer.js';
 import {starsAbove} from './sky-catalog.js';
 import {RAD,PI,wrap,clamp,solar,sunHorizontal,sunEvents,moon,orbitPositions,sidereal,equatorialFromHorizontal,utcTime,durationText} from './astronomy.js';
@@ -104,14 +106,14 @@ function sky(){
  if(state.skyProjection==='polar')c.translate(state.skyPanX,state.skyPanY);
  if(state.skyProjection==='polar'){
   c.strokeStyle='#395270';c.lineWidth=1.3;c.beginPath();c.arc(X,Y,rad,0,2*PI);c.stroke();
- for(let a=0;a<360;a+=10){
+ if($('show-altaz-grid').checked)for(let a=0;a<360;a+=10){
   const p=(a-90-state.skyHeading)*RAD;line(c,X+Math.cos(p)*(rad-5),Y+Math.sin(p)*(rad-5),X+Math.cos(p)*rad,Y+Math.sin(p)*rad,'#59708e',a%30?0.6:1.3);
  }
- for(let altitude=30;altitude<=90;altitude+=30){
+ if($('show-altaz-grid').checked)for(let altitude=30;altitude<=90;altitude+=30){
   c.beginPath();c.arc(X,Y,rad*(1-altitude/90),0,2*PI);
   c.strokeStyle='#344965';c.lineWidth=1;c.stroke();
  }
- for(let a=0;a<360;a+=45){
+ if($('show-altaz-grid').checked)for(let a=0;a<360;a+=45){
   const p=(a-90-state.skyHeading)*RAD;line(c,X,Y,X+Math.cos(p)*rad,Y+Math.sin(p)*rad,'#2b4059');
  }
  [['N',0],['E',90],['S',180],['W',270]].forEach(([t,a])=>{
@@ -121,18 +123,27 @@ function sky(){
   const g=rectGeometry(w,h),L=g.left,R=g.right,T=g.top,B=g.bottom;
   const horizon=rectHorizonY(w,h);
   c.strokeStyle='#d6e8fa66';c.strokeRect(L,T,R-L,B-T);
-  for(let alt=-90;alt<=90;alt+=15){
+  if($('show-altaz-grid').checked)for(let alt=-90;alt<=90;alt+=15){
    const y=projectRect(0,alt,w,h,state.skyHeading)[1];
    line(c,L,y,R,y,alt===0?'#e8f3ff':'#8db5df40',alt===0?1.7:.8);
    label(c,(alt>0?'+':'')+alt+'°',L-4,y+3,'#d0e6fa',10,'right');
   }
-  for(let az=0;az<=360;az+=30){
+  if($('show-altaz-grid').checked)for(let az=0;az<=360;az+=30){
    const x=L+az/360*(R-L);
    line(c,x,T,x,B,'#9ebbd250',.75);
    const actual=wrap(az+state.skyHeading,360),name=actual===0?'N':actual===90?'E':actual===180?'S':actual===270?'W':Math.round(actual)+'°';
    label(c,name,x,B+14,'#d0e6fa',10,'center');
   }
  }
+ // The coordinate grids share the existing azimuth/altitude geometry.
+ // At 1× preserve conventional major divisions; subdivisions adapt to zoom.
+ const gridResult=drawSkyGrid(c,{
+  date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
+  mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
+  showAltAz:$('show-altaz-grid').checked,showRaDec:$('show-radec-grid').checked,
+  showBelowHorizon:state.skyProjection==='rect'&&$('show-below-horizon').checked
+ });
+ $('sky').dataset.gridInfo=JSON.stringify(gridResult);
  const sun=sunHorizontal(state.date,state.lat,state.lon),m=moon(state.date,state.lat,state.lon);
  const place=(obj,col,name)=>{
   if(obj.alt<0&&(state.skyProjection!=='rect'||!$('show-below-horizon').checked))return;
@@ -214,6 +225,20 @@ function sky(){
   (obj.alt>=0?' · above horizon':' · below horizon');
  $('celestial-readout').textContent=coords('Sun',sun)+' | '+coords('Moon',m)+' · '+Math.round(m.distanceKm).toLocaleString('en-CA')+' km · '+Math.round(m.illuminated*100)+'% illuminated';
  place(sun,'#ffca7d','Sun');place(m,'#e1ebff','Moon');
+ const bodies=$('show-planets').checked?skyPlanets(state.date,state.lat,state.lon):[];
+ const plottedPlanets=[];
+ for(const planet of bodies){
+  if(planet.alt<0&&(state.skyProjection!=='rect'||!$('show-below-horizon').checked))continue;
+  const [x,y]=state.skyProjection==='rect'
+   ?projectRect(planet.az,planet.alt,w,h,state.skyHeading)
+   :[X+rad*(1-planet.alt/90)*Math.cos((planet.az-90-state.skyHeading)*RAD),
+     Y+rad*(1-planet.alt/90)*Math.sin((planet.az-90-state.skyHeading)*RAD)];
+  if(!Number.isFinite(x)||!Number.isFinite(y))continue;
+  dot(c,x,y,planet.radius,planet.color,5);
+  if($('show-labels').checked)label(c,planet.name,x+7,y-6,planet.color,10);
+  plottedPlanets.push({...planet,x,y});
+ }
+ $('sky').dataset.planets=JSON.stringify(plottedPlanets);
  c.restore();
 }
 /**
@@ -661,7 +686,7 @@ for(const [id,sign] of [['sky-prev-sidereal',-1],['sky-next-sidereal',1]]){
   state.live=false;setDateInputs();render();
  });
 }
-for(const id of ['show-stars','show-labels','show-sky-paths','show-below-horizon','show-ecliptic'])$(id).addEventListener('change',render);
+for(const id of ['show-stars','show-labels','show-sky-paths','show-below-horizon','show-ecliptic','show-planets','show-altaz-grid','show-radec-grid'])$(id).addEventListener('change',render);
 function reset(id,defaults){
  $(id).addEventListener('click',()=>{for(const [key,value] of Object.entries(defaults))state[key]=value;
  const controls={skyZoom:'sky-zoom',skyHeading:'sky-heading',earthZoom:'earth-zoom',orreryZoom:'orrery-zoom'};
@@ -877,6 +902,7 @@ const PREF_CHECKBOXES=['show-au-rings','show-earthshine','show-constellations',
  'show-milkyway-shade','show-milkyway-outline','show-galactic-center',
  'show-stars','show-labels','show-sky-paths','show-below-horizon',
  'show-ecliptic','use-precession','show-stellar-colors',
+ 'show-planets','show-altaz-grid','show-radec-grid',
  'earth-twilight-civil','earth-twilight-nautical',
  'earth-twilight-astronomical','earth-twilight-night'];
 const PREF_CHOICES={
@@ -1025,7 +1051,9 @@ $('prefs-file').addEventListener('change',async e=>{
    else if(!allowed.includes(value[key]))throw Error('Invalid '+key);
   if(!validNumber(value.magLimit,0,7))throw Error('Invalid magnitude limit');
   for(const key of PREF_CHECKBOXES)
-   if(typeof value.checkboxes[key]!=='boolean')throw Error('Invalid '+key);
+   if(typeof value.checkboxes[key]!=='boolean'&&
+      !(value.checkboxes[key]===undefined&&['show-planets','show-altaz-grid','show-radec-grid'].includes(key)))
+    throw Error('Invalid '+key);
   for(const key of Object.keys(defaultLayout))
    if(typeof value.layout[key]!=='boolean')throw Error('Invalid layout');
   applyPrefs(value);persistPrefs();

@@ -1,4 +1,45 @@
 import {test,expect} from '@playwright/test';
+test('Sky compass planet option and independently controlled adaptive coordinate grids',async({page})=>{
+ const errors=[];page.on('pageerror',err=>errors.push(err.message));
+ await page.goto('http://127.0.0.1:8765/');
+ for(const id of ['show-planets','show-altaz-grid'])await expect(page.locator('#'+id)).toBeChecked();
+ await expect(page.locator('#show-radec-grid')).not.toBeChecked();
+ const getPlanets=()=>page.locator('#sky').evaluate(el=>JSON.parse(el.dataset.planets));
+ const getGrid=()=>page.locator('#sky').evaluate(el=>JSON.parse(el.dataset.gridInfo));
+ await page.locator('#observe-date').fill('2026-11-10');
+ await page.locator('#observe-time').fill('18:00');
+ await page.locator('#observe-time').dispatchEvent('change');
+ for(const projection of ['polar','rect']){
+  await page.locator('[data-sky-projection="'+projection+'"]').click();
+  const planets=await getPlanets();
+  expect(planets.length).toBeGreaterThan(0);
+  for(const p of planets)expect(['Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune']).toContain(p.name);
+  await page.locator('#show-planets').uncheck();
+  expect(await getPlanets()).toEqual([]);
+  await page.locator('#show-planets').check();
+  await page.locator('#show-altaz-grid').uncheck();
+  await page.locator('#show-radec-grid').check();
+  const equatorial=await getGrid();
+  expect(equatorial.altAz).toBe(false);
+  expect(equatorial.raDec).toBe(true);
+  await page.locator('#show-altaz-grid').check();
+  const both=await getGrid();
+  expect(both.altAz&&both.raDec).toBe(true);
+  if(projection==='polar'){
+   await page.locator('#sky-zoom').fill('3');
+   await page.locator('#sky-zoom').dispatchEvent('input');
+   const finer=await getGrid();
+   expect(finer.decStep).toBeLessThan(equatorial.decStep);
+   expect(finer.raStep).toBeLessThan(equatorial.raStep);
+   await page.locator('#sky-reset').click();
+  }
+ }
+ await page.reload();
+ await expect(page.locator('#show-radec-grid')).toBeChecked();
+ await expect(page.locator('#show-planets')).toBeChecked();
+ expect(errors).toEqual([]);
+});
+
 test('dashboard controls work in Firefox',async({page})=>{
  const errors=[];
  page.on('pageerror',error=>errors.push(error.message));

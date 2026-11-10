@@ -170,3 +170,7 @@ Reset fits the complete Equal Earth or Mercator world vertically with the equato
 ### Restored flat-map vertical tilt (v37 maintenance)
 
 Equal Earth and Mercator retain north-up, equator-centered Reset geometry while allowing vertical dragging to apply an oblique spherical rotation to the map. The drag angle is measured relative to the current observer latitude, so Reset returns to 0° flat-map tilt without sacrificing the observer-centered globe. A Firefox regression test verifies both projection changes on vertical drag and correct Reset for each mode.
+
+### Sky compass planets and adaptive coordinate grids
+
+Both polar and rectangular sky views have independent persisted controls for planets, Alt/Az grid, and RA/Dec grid. Mercury through Neptune use Astronomy Engine apparent topocentric coordinates. The two grid types can be hidden or shown together, with RA/Dec meridians and parallels computed against the selected date's local sidereal time. Grid density increases as the sky zooms; equatorial paths split correctly at the rectangular azimuth seam. Existing Sun, Moon, Milky Way, horizon and stellar features remain available. Older v36/v37 JSON settings exports can still be imported; absent grid options assume declared defaults.
