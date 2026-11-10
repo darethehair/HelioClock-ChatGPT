@@ -1,4 +1,34 @@
 import {test,expect} from '@playwright/test';
+test('Mobile fullscreen prioritizes the chart and restores controls after exit',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.setViewportSize({width:390,height:844});
+ await page.goto('http://127.0.0.1:8765/');
+ const panel=page.locator('.sky-panel');
+ await page.locator('[data-fullscreen="sky-panel"]').click();
+ await expect.poll(()=>page.evaluate(()=>document.fullscreenElement?.classList.contains('sky-panel'))).toBe(true);
+ await expect(panel).toHaveClass(/mobile-plot-fullscreen/);
+ await expect(page.locator('.mobile-plot-settings:visible')).toHaveCount(1);
+ await expect(page.locator('.sky-panel .sky-options')).not.toBeVisible();
+ const rect=await page.locator('#sky').boundingBox();
+ expect(rect.height).toBeGreaterThan(550);
+ const dock=await page.locator('#time-dock').boundingBox();
+ expect(dock.height).toBeLessThan(60);
+ await page.locator('.sky-panel .mobile-plot-settings').click();
+ await expect(page.locator('.sky-panel .sky-options')).toBeVisible();
+ await page.locator('.sky-panel #show-radec-grid').check();
+ await page.locator('.sky-panel .mobile-plot-settings').click();
+ await expect(page.locator('.sky-panel .sky-options')).not.toBeVisible();
+ await page.locator('#dock-mobile-more').click();
+ await expect(page.locator('#dock-date')).toBeVisible();
+ await page.locator('#dock-mobile-more').click();
+ await page.evaluate(()=>document.exitFullscreen());
+ await expect.poll(()=>page.evaluate(()=>document.fullscreenElement)).toBeNull();
+ await expect(page.locator('.sky-panel .sky-options')).toBeVisible();
+ await expect(page.locator('#time-dock')).not.toHaveClass(/mobile-time-expanded/);
+ await expect(page.locator('.sky-panel #show-radec-grid')).toBeChecked();
+ expect(errors).toEqual([]);
+});
+
 test('Daylight polar grid labels have no solid boxes and all radial spokes share the adaptive grid',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:8765/');

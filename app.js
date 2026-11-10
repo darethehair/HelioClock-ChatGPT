@@ -903,7 +903,77 @@ for(const button of document.querySelectorAll('[data-fullscreen]')){
 const timeDock=$('time-dock');
 const dockHome=timeDock.parentNode;
 const dockNext=timeDock.nextSibling;
+// Mobile fullscreen: move the *existing* controls into an optional drawer.
+// Moving nodes retains all event listeners and checkbox state; placeholder
+// comments return them to their exact prior position on exit or resize.
+const compactFullscreenQuery=window.matchMedia('(max-width: 1050px)');
+const compactControlSelectors={
+ 'chart-panel':['.solar-chart-legend','.solar-chart-summary','.solar-time-position','.chart-footer'],
+ 'earth-panel':['.earth-tools','.earth-twilight-controls','.map-legend'],
+ 'sky-panel':['.sky-light-controls','.sky-observatory-toolbar','.sky-sidereal-toolbar','.sky-debug-tools','.sky-options','.sky-cursor-readout','.celestial-readout','.sky-legend'],
+ 'moon-panel':['.disc-view-select','.earthshine-toggle','.moon-view-tools','.moon-orientation','.solar-observation-note','.moon-bottom'],
+ 'orrery-panel':['.orrery-controls','.planet-legend']
+};
+let mobileFullscreenRestore=[],mobileFullscreenPanel=null,mobileDrawer=null;
+function restoreMobileFullscreenControls(){
+ for(const [node,marker] of mobileFullscreenRestore){
+  if(marker.parentNode)marker.parentNode.insertBefore(node,marker);
+  marker.remove();
+ }
+ mobileFullscreenRestore=[];
+ if(mobileDrawer){mobileDrawer.remove();mobileDrawer=null}
+ if(mobileFullscreenPanel){
+  mobileFullscreenPanel.classList.remove('mobile-plot-fullscreen','mobile-controls-open');
+  mobileFullscreenPanel.querySelector('.mobile-plot-settings')?.setAttribute('aria-expanded','false');
+  mobileFullscreenPanel=null;
+ }
+ timeDock.classList.remove('mobile-time-expanded');
+ $('dock-mobile-more').setAttribute('aria-expanded','false');
+}
+function syncMobileFullscreenControls(){
+ const panel=document.fullscreenElement;
+ if(!compactFullscreenQuery.matches||!panel?.classList.contains('panel')||
+    !compactControlSelectors[[...panel.classList].find(k=>compactControlSelectors[k])]){
+  if(mobileFullscreenPanel)restoreMobileFullscreenControls();
+  return;
+ }
+ if(mobileFullscreenPanel===panel)return;
+ restoreMobileFullscreenControls();
+ mobileFullscreenPanel=panel;
+ panel.classList.add('mobile-plot-fullscreen');
+ const drawer=document.createElement('div');
+ drawer.className='mobile-fullscreen-drawer';
+ drawer.setAttribute('aria-label','Plot settings');
+ drawer.hidden=true;
+ for(const selector of compactControlSelectors[[...panel.classList].find(k=>compactControlSelectors[k])]){
+  const node=panel.querySelector(selector);
+  if(!node)continue;
+  const marker=document.createComment('Mobile plot control original position');
+  node.before(marker);
+  drawer.appendChild(node);
+  mobileFullscreenRestore.push([node,marker]);
+ }
+ panel.appendChild(drawer);
+ mobileDrawer=drawer;
+}
+document.querySelectorAll('.mobile-plot-settings').forEach(button=>{
+ button.addEventListener('click',()=>{
+  const panel=button.closest('.panel'),isOpen=!panel.classList.contains('mobile-controls-open');
+  panel.classList.toggle('mobile-controls-open',isOpen);
+  if(mobileDrawer)mobileDrawer.hidden=!isOpen;
+  button.setAttribute('aria-expanded',String(isOpen));
+  button.textContent=isOpen?'✕ Close':'⚙ Controls';
+  requestAnimationFrame(render);
+ });
+});
+$('dock-mobile-more').addEventListener('click',()=>{
+ const opened=!timeDock.classList.contains('mobile-time-expanded');
+ timeDock.classList.toggle('mobile-time-expanded',opened);
+ $('dock-mobile-more').setAttribute('aria-expanded',String(opened));
+});
+
 document.addEventListener('fullscreenchange',()=>{
+ restoreMobileFullscreenControls();
  const activePanel=document.fullscreenElement;
  if(activePanel?.classList.contains('panel')){
   activePanel.appendChild(timeDock);
@@ -914,10 +984,11 @@ document.addEventListener('fullscreenchange',()=>{
   const active=activePanel===button.closest('.panel');
   button.textContent=active?'⤢ Exit':'⛶ Expand';button.setAttribute('aria-pressed',String(active));
  }
+ syncMobileFullscreenControls();
  requestAnimationFrame(render);
 });
 let resizeTimer;
-window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(render,140)});
+window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{syncMobileFullscreenControls();render()},140)});
 setInterval(()=>{if(state.live){state.date=new Date();setDateInputs();render()}},15000);
 setDateInputs();render();
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))}

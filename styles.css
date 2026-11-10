@@ -284,3 +284,89 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 .earth-twilight-controls label{display:flex;align-items:center;gap:5px;white-space:nowrap}
 .earth-twilight-controls input{accent-color:#86c6e9}
 .earth-twilight-controls small{margin-left:auto;color:#91aac7;font-size:10px}
+
+/* Mobile plot-first fullscreen, independently of portrait/landscape orientation.
+   Original desktop fullscreen is unchanged. */
+.mobile-plot-settings,#dock-mobile-more{display:none}
+@media(max-width:1050px){
+ .panel:fullscreen.mobile-plot-fullscreen{
+  display:flex;flex-direction:column;gap:0;overflow:hidden;
+  height:100vh;height:100dvh;max-height:100dvh;
+  padding:52px 5px 52px!important;
+ }
+ .panel:fullscreen.mobile-plot-fullscreen>.panel-heading{display:none}
+ .panel:fullscreen.mobile-plot-fullscreen>.panel-fullscreen{
+  position:fixed;top:7px;right:8px;padding:8px 9px;z-index:110
+ }
+ .panel:fullscreen.mobile-plot-fullscreen>.mobile-plot-settings{
+  display:block!important;position:fixed;top:7px;right:85px;z-index:111;
+  padding:8px 11px;background:#173750;color:#e9f4ff;
+  border:1px solid #6386a3;border-radius:7px;font-size:12px
+ }
+ .panel:fullscreen.mobile-plot-fullscreen>canvas{
+  display:block;flex:1 1 0;min-height:0;width:100%;
+  height:100%!important;max-height:none!important;object-fit:fill
+ }
+ .panel:fullscreen.mobile-plot-fullscreen>.earth-map-stage,
+ .panel:fullscreen.mobile-plot-fullscreen>.moon-stage{
+  flex:1 1 0;min-height:0;width:100%;height:auto!important;
+  max-height:none!important;margin:0;overflow:hidden
+ }
+ .panel:fullscreen.mobile-plot-fullscreen>.earth-map-stage canvas{
+  width:100%;height:100%!important;max-height:none!important
+ }
+ .panel:fullscreen.mobile-plot-fullscreen>.moon-stage canvas,
+ .panel:fullscreen.mobile-plot-fullscreen>.moon-stage img{
+  width:100%;height:100%!important;max-height:none!important;object-fit:contain
+ }
+ .panel:fullscreen.mobile-plot-fullscreen>.mobile-fullscreen-drawer{
+  position:fixed;z-index:108;top:48px;right:7px;left:7px;
+  max-height:calc(100dvh - 105px);overflow:auto;overscroll-behavior:contain;
+  display:flex;flex-direction:column;gap:9px;padding:14px 12px;
+  background:#0b1e34f5;border:1px solid #54738f;border-radius:10px;
+  box-shadow:0 10px 35px #000a
+ }
+ .panel:fullscreen.mobile-plot-fullscreen>.mobile-fullscreen-drawer[hidden]{display:none!important}
+ .mobile-fullscreen-drawer>div,.mobile-fullscreen-drawer>label{
+  flex-shrink:0
+ }
+ .mobile-fullscreen-drawer .sky-observatory-toolbar,
+ .mobile-fullscreen-drawer .sky-options,
+ .mobile-fullscreen-drawer .earth-tools,
+ .mobile-fullscreen-drawer .earth-twilight-controls{
+  display:flex;flex-wrap:wrap;gap:10px;margin:0
+ }
+ .panel:fullscreen.mobile-plot-fullscreen>.time-dock{
+  min-height:0!important;height:48px;max-height:48px;
+  padding:5px 6px!important;gap:5px;flex-wrap:nowrap;
+  justify-content:space-evenly;overflow:visible
+ }
+ .panel:fullscreen.mobile-plot-fullscreen>.time-dock .dock-time-summary{
+  min-width:0;flex:0 1 auto;white-space:nowrap;gap:0
+ }
+ .panel:fullscreen.mobile-plot-fullscreen>.time-dock .dock-time-summary small,
+ .panel:fullscreen.mobile-plot-fullscreen>.time-dock .dock-brand,
+ .panel:fullscreen.mobile-plot-fullscreen>.time-dock .dock-version,
+ .panel:fullscreen.mobile-plot-fullscreen>.time-dock .dock-sidereal,
+ .panel:fullscreen.mobile-plot-fullscreen>.time-dock #dock-scrubber,
+ .panel:fullscreen.mobile-plot-fullscreen>.time-dock .dock-date-fields,
+ .panel:fullscreen.mobile-plot-fullscreen>.time-dock .dock-adjust button:first-child,
+ .panel:fullscreen.mobile-plot-fullscreen>.time-dock .dock-adjust button:last-child{display:none}
+ .panel:fullscreen.mobile-plot-fullscreen>.time-dock .dock-time-summary strong{font-size:15px}
+ .panel:fullscreen.mobile-plot-fullscreen>.time-dock .dock-adjust{gap:3px}
+ .panel:fullscreen.mobile-plot-fullscreen>.time-dock .dock-adjust button{padding:6px 7px}
+ .panel:fullscreen.mobile-plot-fullscreen>.time-dock #dock-mobile-more{
+  display:block;flex-shrink:0;padding:7px 9px;background:#17334e;
+  border:1px solid #52718d;border-radius:6px;color:#f0f6ff
+ }
+ .panel:fullscreen.mobile-plot-fullscreen>.time-dock .dock-live{padding:6px}
+ .panel:fullscreen.mobile-plot-fullscreen>.time-dock.mobile-time-expanded{
+  height:auto;max-height:120px;flex-wrap:wrap;justify-content:center
+ }
+ .panel:fullscreen.mobile-plot-fullscreen>.time-dock.mobile-time-expanded .dock-date-fields,
+ .panel:fullscreen.mobile-plot-fullscreen>.time-dock.mobile-time-expanded #dock-scrubber{
+  display:flex
+ }
+ .panel:fullscreen.mobile-plot-fullscreen>.time-dock.mobile-time-expanded #dock-scrubber{max-width:95vw}
+ .panel:fullscreen.mobile-plot-fullscreen:has(.mobile-time-expanded){padding-bottom:120px!important}
+}

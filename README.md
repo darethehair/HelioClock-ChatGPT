@@ -198,3 +198,7 @@ In the zoomed rectangular projection, sky-coordinate geometry still magnifies bu
 ### Pinch-to-zoom in the other zoomable panels
 
 Two-finger pinch gestures are supported on the Earth map (all map projections), Moon image, Sun image and orrery, in addition to both sky projections. Disc pinch zooms about the touch midpoint and suspends single-finger panning; Earth and orrery pinch adjust the existing zoom controls and preserve the established Earth drag-to-rotate behavior. The daylight-year chart and nonzoomable readout panels remain unchanged. Firefox regression tests synthesize two independent touch pointers for all four visualizations.
+
+### Plot-first mobile fullscreen
+
+On viewports at most 1050 CSS pixels wide, fullscreen Earth, sky, Sun/Moon, orrery and daylight-year charts reserve most of the screen for the plot. A small Controls button opens a temporary settings drawer containing the original interactive controls; closing the drawer or leaving fullscreen restores the original elements, event listeners, and preference state. A single compact 48-pixel simulation-time dock stays visible; its ☷ button temporarily reveals date, time and scrubber inputs. This mode is responsive to phone landscape and portrait without modifying desktop fullscreen or other dashboard panels. Pinch-zoom remains separately under investigation.
