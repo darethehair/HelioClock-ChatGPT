@@ -186,3 +186,7 @@ Coordinate labels for Alt/Az and RA/Dec are now positioned on visible grid curve
 ### Rectangular sky navigation
 
 The rectangular sky now supports cursor-anchored wheel/slider zoom and two-axis dragging when magnified. At 1×, dragging still changes the heading; Shift+drag continues to rotate at higher zoom. A shared Canvas 2D viewport transform keeps the atmosphere, Milky Way, stars, planets, ecliptic, Sun/Moon and both coordinate grids in lockstep. Mouse cursor RA/Dec readouts undo that same transform. Pan and zoom are bounded; Reset returns to the original 360° × 180° world sky. Pan is saved with the optional Remember View preference. The polar projection is unaffected.
+
+### Polar daylight grid cleanup
+
+Polar Alt/Az radials and altitude rings are now drawn only by the shared adaptive grid renderer, eliminating the old mismatched dark 45° spokes. Labels use small contrast halos rather than opaque black rectangles, so daylight-blue sky remains visible beneath the coordinate text. An additional Firefox daylight-grid regression test guards the radial contrast.

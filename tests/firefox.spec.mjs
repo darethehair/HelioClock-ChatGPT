@@ -1,4 +1,37 @@
 import {test,expect} from '@playwright/test';
+test('Daylight polar grid labels have no solid boxes and all radial spokes share the adaptive grid',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('[data-sky-projection="polar"]').click();
+ await page.locator('[data-sky-light="daylight"]').click();
+ await page.locator('#show-radec-grid').uncheck();
+ await page.locator('#show-altaz-grid').check();
+ // Isolate the sky/grid so the label background and radial contrast can be
+ // measured independently of stars, planets and the Galactic mask.
+ for(const id of ['show-stars','show-planets','show-sky-paths','show-milkyway-shade','show-milkyway-outline','show-galactic-center','show-ecliptic'])
+  await page.locator('#'+id).uncheck();
+ const sample=await page.locator('#sky').evaluate(el=>{
+  const {labels,azStep}=JSON.parse(el.dataset.gridInfo);
+  const ctx=el.getContext('2d'),w=el.width,h=el.height;
+  const circle=(Math.min(w-35,h-20)/2-14);
+  const at=(x,y)=>Array.from(ctx.getImageData(Math.max(0,Math.min(w-1,Math.round(x))),Math.max(0,Math.min(h-1,Math.round(y))),1,1).data);
+  // The old secondary 45° spokes were much darker than the 30° gridlines.
+  // Every adaptive major spoke should have visible colour and no black stroke.
+  const spokes=Array.from({length:12},(_,i)=>{
+   const az=i*30,ang=(az-90)*Math.PI/180;
+   return {az,p:at(w/2+circle*.72*Math.cos(ang),h/2+circle*.72*Math.sin(ang))};
+  });
+  return {labels,azStep,spokes};
+ });
+ expect(sample.azStep).toBe(30);
+ expect(sample.labels.filter(x=>x.kind==='az').length).toBeGreaterThan(0);
+ // A daylight-blue background must remain visible beneath text labels.
+ // Black rectangles previously reduced all three channels near zero.
+ const dark=sample.spokes.filter(s=>s.p[0]<12&&s.p[1]<32&&s.p[2]<48);
+ expect(dark,JSON.stringify(dark)).toEqual([]);
+ expect(errors).toEqual([]);
+});
+
 test('Rectangular sky zoom and two-axis pan preserve planet, grid, and cursor projection',async({page})=>{
  const errors=[];page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');

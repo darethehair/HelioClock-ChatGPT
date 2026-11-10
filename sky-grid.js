@@ -15,7 +15,7 @@ const fmtRA=degrees=>{
 };
 export function drawSkyGrid(ctx,opts){
  const {width:w,height:h,date,lat,lon,mode='polar',zoom=1,heading=0,
-  showAltAz=true,showRaDec=false,showBelowHorizon=false,panX=0,panY=0}=opts;
+  showAltAz=true,showRaDec=false,showBelowHorizon=false,panX=0,panY=0,skyLight='black'}=opts;
  const step=skyGridIntervals(zoom);
  const radius=(Math.min(w-35,h-20)/2-14)*zoom;
  const rect=rectGeometry(w,h),rectSpan=rect.right-rect.left;
@@ -52,7 +52,7 @@ export function drawSkyGrid(ctx,opts){
   }
   for(let az=0;az<360;az+=step.az){
    const points=[];for(let alt=firstAlt;alt<=90;alt+=3)points.push({az,alt});
-   curve(points,'#90b9d89f',az%90===0?1.1:.85);
+   curve(points,'#a4d0ebc2',az%90===0?1.2:1);
   }
  }
  if(showRaDec){
@@ -111,9 +111,12 @@ export function drawSkyGrid(ctx,opts){
   // The actual canvas is already translated in polar mode.
   const px=mode==='polar'?sx-panX:w/2+(sx-w/2-panX)/zoom;
   const py=mode==='polar'?sy-panY:h/2+(sy-h/2-panY)/zoom;
-  ctx.save();ctx.font='10px sans-serif';
-  const tw=ctx.measureText(textValue).width;
-  ctx.fillStyle='#071422d9';ctx.fillRect(px-3,py-11,tw+7,14);
+  ctx.save();ctx.font='10px sans-serif';ctx.lineJoin='round';
+  // A fine text halo preserves contrast on daylight and dark skies without
+  // opaque rectangular patches that obscure grid lines and the star field.
+  ctx.strokeStyle=skyLight==='black'?'#081322':'#24516c';
+  ctx.lineWidth=2.5;
+  ctx.strokeText(textValue,px,py);
   ctx.fillStyle=color;ctx.fillText(textValue,px,py);ctx.restore();
  };
  // Give each coordinate family a limited number of candidate labels.

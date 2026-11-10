@@ -120,13 +120,8 @@ function sky(){
  if($('show-altaz-grid').checked)for(let a=0;a<360;a+=10){
   const p=(a-90-state.skyHeading)*RAD;line(c,X+Math.cos(p)*(rad-5),Y+Math.sin(p)*(rad-5),X+Math.cos(p)*rad,Y+Math.sin(p)*rad,'#59708e',a%30?0.6:1.3);
  }
- if($('show-altaz-grid').checked)for(let altitude=30;altitude<=90;altitude+=30){
-  c.beginPath();c.arc(X,Y,rad*(1-altitude/90),0,2*PI);
-  c.strokeStyle='#344965';c.lineWidth=1;c.stroke();
- }
- if($('show-altaz-grid').checked)for(let a=0;a<360;a+=45){
-  const p=(a-90-state.skyHeading)*RAD;line(c,X,Y,X+Math.cos(p)*rad,Y+Math.sin(p)*rad,'#2b4059');
- }
+ // All internal rings and azimuth spokes are drawn by drawSkyGrid after
+ // the Milky Way. Do not overlay the old dark 45° spokes on the new grid.
  [['N',0],['E',90],['S',180],['W',270]].forEach(([t,a])=>{
   const p=(a-90-state.skyHeading)*RAD;label(c,t,X+Math.cos(p)*(rad+11),Y+Math.sin(p)*(rad+11)+4,'#c7d7ea',11,'center');
  });
@@ -201,7 +196,7 @@ function sky(){
  const gridResult=drawSkyGrid(c,{
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
   mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
-  panX:state.skyPanX,panY:state.skyPanY,
+  panX:state.skyPanX,panY:state.skyPanY,skyLight:state.skyLight,
   showAltAz:$('show-altaz-grid').checked,showRaDec:$('show-radec-grid').checked,
   showBelowHorizon:state.skyProjection==='rect'&&$('show-below-horizon').checked
  });
