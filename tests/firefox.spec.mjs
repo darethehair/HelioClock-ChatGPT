@@ -53,7 +53,10 @@ test('Rectangular sky draws every 30-degree azimuth meridian visibly at 1x',asyn
    return {az:(i+1)*30,bright:pixel(x),off:pixel(x+8)};
   });
  });
- for(const p of check)expect(p.bright,JSON.stringify(p)).toBeGreaterThan(p.off+20);
+ // A thin antialiased 0.85px line can land between device pixels.
+ // Require a measurable contrast on each 30° meridian, rather than a
+ // fixed 20-unit channel sum at a single subpixel.
+ for(const p of check)expect(p.bright,JSON.stringify(p)).toBeGreaterThan(p.off+12);
  const grid=await page.locator('#sky').evaluate(el=>JSON.parse(el.dataset.gridInfo));
  expect(grid.azStep).toBe(30);
  await page.locator('#show-altaz-grid').uncheck();
@@ -257,6 +260,11 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.locator('#show-milkyway-shade').uncheck();
  await page.locator('#show-galactic-center').uncheck();
  await page.locator('#show-milkyway-outline').uncheck();
+ // Isolate the atmospheric background; interior grid labels are deliberately
+ // visible below the horizon when the corresponding grid is enabled.
+ await page.locator('#show-altaz-grid').uncheck();
+ await page.locator('#show-radec-grid').uncheck();
+ await page.locator('#show-planets').uncheck();
  const fullSky=await sampleSky();
  expect(fullSky.above[2]).toBeGreaterThan(75);
  expect(fullSky.below).toEqual([0,0,0]);
@@ -268,6 +276,8 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.locator('#show-sky-paths').check();
  await page.locator('#show-milkyway-shade').check();
  await page.locator('#show-galactic-center').check();
+ await page.locator('#show-altaz-grid').check();
+ await page.locator('#show-planets').check();
  await page.locator('[data-sky-projection="polar"]').click();
  await expect(page.locator('#below-horizon-setting')).toBeHidden();
  await expect(page.locator('#sidereal-time')).toContainText('LMST');

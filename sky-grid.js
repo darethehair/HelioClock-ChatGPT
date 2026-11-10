@@ -77,6 +77,10 @@ export function drawSkyGrid(ctx,opts){
  // of only at the outside axes or at dec=0. In a zoomed/panned polar view,
  // project() coordinates are translated by the parent canvas transform.
  const occupied=[],drawnLabels=[];
+ const counts={az:0,alt:0,ra:0,dec:0};
+ // Keep all four coordinate families represented when both grids are on.
+ // Prevent a dense Alt/Az grid from using every collision slot before
+ // the equatorial labels are placed.
  const view=(p)=>{
   const [x,y]=plot(p.az,p.alt);
   return [x+(mode==='polar'?panX:0),y+(mode==='polar'?panY:0)];
@@ -94,12 +98,13 @@ export function drawSkyGrid(ctx,opts){
   for(const p of points){
    if(!inside(p))continue;
    const [x,y]=view(p);
-   const penalty=occupied.some(q=>Math.abs(q[0]-x)<72&&Math.abs(q[1]-y)<19);
+   const penalty=occupied.some(q=>Math.abs(q[0]-x)<58&&Math.abs(q[1]-y)<16);
    if(penalty)continue;
    const candidate=Math.abs(x-desiredX)+Math.abs(y-desiredY);
    if(candidate<score){score=candidate;best=[x,y]}
   }
-  if(!best)return;
+  if(!best||counts[kind]>=4)return;
+  counts[kind]++;
   const [sx,sy]=best;
   occupied.push(best);drawnLabels.push({kind,text:textValue,x:sx,y:sy});
   // The actual canvas is already translated in polar mode.
@@ -109,29 +114,29 @@ export function drawSkyGrid(ctx,opts){
   ctx.fillStyle='#071422d9';ctx.fillRect(px-3,py-11,tw+7,14);
   ctx.fillStyle=color;ctx.fillText(textValue,px,py);ctx.restore();
  };
+ // Give each coordinate family a limited number of candidate labels.
+ // Equatorial labels go first, so both enabled grids remain readable.
+ if(showRaDec){
+  for(let ra=0;ra<360;ra+=step.ra){
+   const pts=[];for(let dec=-90;dec<=90;dec+=2)
+    pts.push(horizontal(ra,dec,date,lat,lon));
+   addLabel(fmtRA(ra),pts,'ra','#eac894',w*.34,h*.62);
+  }
+  for(let dec=-90;dec<=90;dec+=step.dec){
+   const pts=[];for(let ra=0;ra<360;ra+=Math.min(2,step.ra/4))
+    pts.push(horizontal(ra,dec,date,lat,lon));
+   addLabel((dec>0?'+':'')+dec+'°',pts,'dec','#eac894',w*.77,h*.36);
+  }
+ }
  if(showAltAz){
   const baseAlt=mode==='rect'&&showBelowHorizon?-90:0;
-  // Altitude labels prefer the left interior; azimuth labels prefer a
-  // horizontal strip inside the plot. Both remain visible after polar pan.
-  for(let alt=baseAlt;alt<=90;alt+=step.alt){
-   const pts=[];for(let az=0;az<360;az+=4)pts.push({az,alt});
-   addLabel((alt>0?'+':'')+alt+'°',pts,'alt','#bbd9ef',w*.22,h*.37);
-  }
   for(let az=0;az<360;az+=step.az){
    const pts=[];for(let alt=baseAlt;alt<=90;alt+=2)pts.push({az,alt});
    addLabel(az+'°',pts,'az','#b7d6ef',w*.55,h*.72);
   }
- }
- if(showRaDec){
-  for(let dec=-90;dec<=90;dec+=step.dec){
-   const pts=[];for(let ra=0;ra<360;ra+=Math.min(3,step.ra/3))
-    pts.push(horizontal(ra,dec,date,lat,lon));
-   addLabel((dec>0?'+':'')+dec+'°',pts,'dec','#eac894',w*.77,h*.36);
-  }
-  for(let ra=0;ra<360;ra+=step.ra){
-   const pts=[];for(let dec=-90;dec<=90;dec+=3)
-    pts.push(horizontal(ra,dec,date,lat,lon));
-   addLabel(fmtRA(ra),pts,'ra','#eac894',w*.34,h*.62);
+  for(let alt=baseAlt;alt<=90;alt+=step.alt){
+   const pts=[];for(let az=0;az<360;az+=3)pts.push({az,alt});
+   addLabel((alt>0?'+':'')+alt+'°',pts,'alt','#bbd9ef',w*.22,h*.37);
   }
  }
  return {altStep:step.alt,azStep:step.az,decStep:step.dec,raStep:step.ra,
