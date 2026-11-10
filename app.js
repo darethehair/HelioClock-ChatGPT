@@ -926,7 +926,6 @@ function restoreMobileFullscreenControls(){
   mobileFullscreenPanel.classList.remove('mobile-plot-fullscreen','mobile-controls-open');
   const button=mobileFullscreenPanel.querySelector('.mobile-plot-settings');
   if(button){
-   button.hidden=true;
    button.textContent='⚙ Controls';
    button.setAttribute('aria-expanded','false');
   }
@@ -946,8 +945,6 @@ function syncMobileFullscreenControls(){
  restoreMobileFullscreenControls();
  mobileFullscreenPanel=panel;
  panel.classList.add('mobile-plot-fullscreen');
- const settingsButton=panel.querySelector('.mobile-plot-settings');
- if(settingsButton)settingsButton.hidden=false;
  const drawer=document.createElement('div');
  drawer.className='mobile-fullscreen-drawer';
  drawer.setAttribute('aria-label','Plot settings');
