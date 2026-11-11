@@ -443,3 +443,21 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 @media(max-width:1050px){.hero{grid-template-columns:minmax(0,1fr) minmax(240px,.8fr);padding:24px;gap:16px}.hero-highlights{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:750px){.hero{display:grid;grid-template-columns:1fr;gap:16px}.solar-journey{width:100%;max-width:600px;margin:auto}.hero-highlights{grid-template-columns:repeat(2,minmax(0,1fr))}.hero-time strong{font-size:clamp(43px,10vw,58px)}}
 @media(max-width:400px){.hero-highlights{gap:7px}.hero-highlights>.hero-sun-readings>div,.hero-highlights>.hero-extra{padding:10px 8px}.hero-highlights strong{font-size:17px}}
+
+/* v43 — illustrated Canadian evening landscape replaces the schematic triangles.
+   Opacity and tint respond to actual solar altitude; legibility takes priority. */
+.hero{background:#0c1e36;box-shadow:0 14px 48px #0008;min-height:510px}
+.hero .hero-landscape{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 60%;opacity:1;z-index:0;transition:filter .8s ease,opacity .8s ease}
+.hero:before{z-index:1;opacity:.25;background-image:radial-gradient(#fff9de91 .7px,transparent 1px);background-size:83px 71px;mix-blend-mode:screen}
+.hero:after{display:block;position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(90deg,#061328e8 0%,#091b33cc 36%,#0c1f389e 67%,#0d203589 100%),linear-gradient(0deg,#081728af 0%,transparent 42%)}
+.hero-main,.solar-journey,.hero-highlights{position:relative;z-index:2}
+.hero[data-solar-phase="day"],.hero[data-solar-phase="golden"],.hero[data-solar-phase="civil"],.hero[data-solar-phase="nautical"],.hero[data-solar-phase="astronomical"],.hero[data-solar-phase="night"]{background:#0c1e36}
+.hero[data-solar-phase="day"] .hero-landscape{filter:saturate(.85) hue-rotate(174deg) brightness(1.42)}
+.hero[data-solar-phase="golden"] .hero-landscape,.hero[data-solar-phase="civil"] .hero-landscape{filter:saturate(1.16) brightness(1.12)}
+.hero[data-solar-phase="nautical"] .hero-landscape,.hero[data-solar-phase="astronomical"] .hero-landscape{filter:saturate(.7) hue-rotate(23deg) brightness(.65)}
+.hero[data-solar-phase="night"] .hero-landscape{filter:saturate(.57) hue-rotate(40deg) brightness(.37)}
+.hero[data-solar-phase="night"]:before{opacity:.82}
+.hero .hero-time{background:linear-gradient(110deg,#0a1b30dd,#112844bd);border-color:#96b4bf75}
+.hero .solar-journey{background:linear-gradient(180deg,#071a30dd,#092137cf);border-color:#adbac368}
+.hero .hero-highlights>.hero-sun-readings>div,.hero .hero-highlights>.hero-extra{background:#07172cdc;border-color:#8eacbd69}
+@media(max-width:750px){.hero .hero-landscape{object-position:70% center}.hero:after{background:linear-gradient(90deg,#061327db,#091a33ba 100%),linear-gradient(0deg,#061327b8,transparent 60%)}}
