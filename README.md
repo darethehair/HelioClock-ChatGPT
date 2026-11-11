@@ -206,3 +206,9 @@ On viewports at most 1050 CSS pixels wide, fullscreen Earth, sky, Sun/Moon, orre
 ### v38: Milky Way polar mask and release identity
 
 Polar shading now uses the corrected full-RA contour closure (same source as rectangular), and its inverse projection samples visible screen positions adjusted for sky pan. The bitmap is composited at the inverse pan offset so no shading ends at the previous canvas edge. All displayed release badges, build-info JSON and service-worker cache key are bumped to v38. The built Git commit remains visible in the About section for exact identification.
+
+## Automatic Cloudflare Pages deployment
+
+The GitHub Actions `Build standalone PWA ZIP` workflow first bundles the full offline distribution and runs Firefox tests. After a successful test run it publishes the `HelioClock-ChatGPT-PWA` artifact and, when configured, deploys the very same `dist/` directory to the separate Cloudflare Pages project `helioclock-chatgpt` using Wrangler.
+
+Configure the GitHub Actions repository secrets `CLOUDFLARE_API_TOKEN` (Cloudflare Pages Edit permission scoped to the account) and `CLOUDFLARE_ACCOUNT_ID` for deployment. Never commit the API token to the repository. If either secret is missing, the Pages step skips while the ZIP build remains usable. The original AI Studio HelioClock repository and its Cloudflare Pages project are not touched.
