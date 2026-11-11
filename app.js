@@ -229,6 +229,16 @@ function sky(){
  $('mw-debug-status').textContent=mwStats.status==='ready'?
   'Mask '+mwStats.mode+' · '+mwStats.filledPercent+'% equatorial pixels · '+mwStats.sourcePolygons+' polygons · '+(mwStats.seamClosures||0)+' seam closures · footprint ±'+mwStats.footprintLimitDeg+'°':
   'Mask '+mwStats.mode+': '+mwStats.status;
+ // Reserve space for constellation names before the star label pass.
+ c.__skyLabelRects=[];
+ const constellationNames=drawConstellationNames(c,{
+  date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
+  mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
+  panX:state.skyPanX,panY:state.skyPanY,precession:state.usePrecession,
+  showBelowHorizon:state.skyProjection==='rect'&&$('show-below-horizon').checked,
+  enabled:$('show-constellation-names').checked
+ });
+ $('sky').dataset.constellationNames=JSON.stringify(constellationNames);
  const plotted=drawSkyAtlas(c,{
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
   mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
@@ -241,14 +251,6 @@ function sky(){
   stellarColors:state.stellarColors,
   brightSky:state.skyLight==='daylight' && skySun.alt>=-6
  });
- const constellationNames=drawConstellationNames(c,{
-  date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
-  mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
-  panX:state.skyPanX,panY:state.skyPanY,precession:state.usePrecession,
-  showBelowHorizon:state.skyProjection==='rect'&&$('show-below-horizon').checked,
-  enabled:$('show-constellation-names').checked
- });
- $('sky').dataset.constellationNames=JSON.stringify(constellationNames);
  const dso=drawSkyDSOs(c,{
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
   mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
