@@ -919,9 +919,12 @@ $('dock-scrubber').addEventListener('input',e=>{
 });
 $('dock-play').addEventListener('click',()=>$('play-time').click());
 $('dock-live').addEventListener('click',()=>$('now').click());
+let compactFullscreenAtEntry=false;
 for(const button of document.querySelectorAll('[data-fullscreen]')){
  button.addEventListener('click',async()=>{
   const panel=button.closest('.panel');
+  // Firefox may change viewport dimensions upon entering fullscreen.
+  if(document.fullscreenElement!==panel)compactFullscreenAtEntry=window.innerWidth<=1050;
   try{
    if(document.fullscreenElement===panel)await document.exitFullscreen();
    else if(document.fullscreenElement){await document.exitFullscreen();await panel.requestFullscreen()}
@@ -968,7 +971,7 @@ function restoreMobileFullscreenControls(){
 }
 function syncMobileFullscreenControls(){
  const panel=document.fullscreenElement;
- if((!compactFullscreenQuery.matches&&!mobileFullscreenPanel)||!panel?.classList.contains('panel')||
+ if((!compactFullscreenQuery.matches&&!compactFullscreenAtEntry&&!mobileFullscreenPanel)||!panel?.classList.contains('panel')||
     !compactControlSelectors[[...panel.classList].find(k=>compactControlSelectors[k])]){
   if(mobileFullscreenPanel)restoreMobileFullscreenControls();
   return;
@@ -1021,6 +1024,7 @@ document.addEventListener('fullscreenchange',()=>{
   button.textContent=active?'⤢ Exit':'⛶ Expand';button.setAttribute('aria-pressed',String(active));
  }
  syncMobileFullscreenControls();
+ if(!activePanel)compactFullscreenAtEntry=false;
  requestAnimationFrame(render);
 });
 let resizeTimer;
