@@ -309,8 +309,8 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#sunrise')).not.toHaveText('—');
  // Release identity and provenance are visible even offline.
- await expect(page.locator('#app-version')).toHaveText('v38');
- await expect(page.locator('#dock-version')).toHaveText('v38');
+ await expect(page.locator('#app-version')).toHaveText('v39');
+ await expect(page.locator('#dock-version')).toHaveText('v39');
  await expect(page.locator('.credits-footer')).toContainText('Created by Darethehair with assistance from ChatGPT');
  await expect(page.locator('.credits-footer a')).toHaveAttribute('href','https://github.com/darethehair/HelioClock-ChatGPT');
  await expect(page.locator('#build-meta')).toContainText('commit');
@@ -656,7 +656,7 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
  const errors=[];
  page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v38');
+ await expect(page.locator('#app-version')).toHaveText('v39');
  await expect(page.locator('.almanac-panel')).toBeHidden();
  await page.locator('#layout-sky').click();
  await expect(page.locator('.sky-panel')).toBeVisible();
@@ -965,7 +965,7 @@ test('Version 36 stores, restores, imports, exports and resets preferences',asyn
 test('Version 25 Sun and Moon use the same zoomable pannable fullscreen stage',async({page})=>{
  const errors=[];page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v38');
+ await expect(page.locator('#app-version')).toHaveText('v39');
  await expect(page.locator('#moon')).toBeVisible();
  await expect(page.locator('#solar-photo')).toBeHidden();
  await page.locator('[data-disc-view="sun"]').click();
@@ -1411,5 +1411,34 @@ test('Version 34 offers comparable Milky Way masks and copyable exact debug stat
  expect(data.milkyWay.mask.status).toBe('ready');
  expect(data.milkyWay.mask.filledPixels).toBeGreaterThan(100);
  expect(data.milkyWay.mask.sourceLevels).toBe(5);
+ expect(errors).toEqual([]);
+});
+
+test('Version 39 Messier DSO toggles, independent labels and both sky projections',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('#observe-date').fill('2026-11-11');
+ await page.locator('#observe-time').fill('02:00');
+ await page.locator('#observe-time').dispatchEvent('change');
+ const read=()=>page.locator('#sky').evaluate(el=>JSON.parse(el.dataset.dsoInfo));
+ expect((await read()).count).toBe(0);
+ await page.locator('#show-dso-galaxies').check();
+ const galaxies=await read();expect(galaxies.count).toBeGreaterThan(0);
+ await page.locator('#show-dso-nebulae').check();
+ const nebulae=await read();expect(nebulae.count).toBeGreaterThan(galaxies.count);
+ await page.locator('#show-dso-clusters').check();
+ const all=await read();expect(all.count).toBeGreaterThan(nebulae.count);
+ expect(all.visible).toContain('M31');
+ await page.locator('#show-dso-labels').uncheck();
+ const without=await read();
+ expect(without.count).toBe(all.count);expect(without.labels).toBe(0);
+ await page.locator('#show-dso-labels').check();
+ for(const mode of ['polar','rect']){
+  await page.locator('[data-sky-projection="'+mode+'"]').click();
+  const info=await read();
+  expect(info.count).toBeGreaterThan(0);
+  expect(info.visible).toContain('M31');
+  expect(info.labels).toBeGreaterThan(0);
+ }
  expect(errors).toEqual([]);
 });
