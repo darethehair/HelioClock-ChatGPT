@@ -17,16 +17,21 @@ An original, independently implemented astronomical dashboard, created for compa
 - Lunar photograph zoom controls, plus schematic inner/outer orbital modes through Neptune.
 - No runtime JavaScript framework or external API required. GitHub Actions uses npm/esbuild to bundle the map libraries and local world atlas directly into the ZIP; nothing needs installing on Apache.
 
-## Download and deploy to Apache
+## Hosted application
+
+**Public site:** https://helioclock-chatgpt.pages.dev/
+
+The ChatGPT edition is hosted independently on Cloudflare Pages. This is the address to share with friends and family. Deployments are handled by GitHub Actions after the application build and Firefox tests pass, without using the author's personal Apache server.
+
+## Optional standalone PWA ZIP (self-hosting)
+
+The downloadable ZIP remains available for personal backups, offline distribution, or optional self-hosting:
 
 1. Open **Actions → Build standalone PWA ZIP** in this repository.
-2. Choose the latest successful workflow, then download the **HelioClock-ChatGPT-PWA** artifact.
-3. Extract the downloaded ZIP **once** directly into the Apache directory that will serve the app, for example `/var/www/html/helioclock-chatgpt/`.
-4. Browse to `https://darethehair.net/helioclock-chatgpt/`.
+2. Choose the latest successful workflow and download the **HelioClock-ChatGPT-PWA** artifact.
+3. Extract the ZIP **once** into any static web server's document directory, should you choose to host it yourself.
 
-The GitHub artifact is already a ZIP containing `index.html`, `app.js`, and all other deployable files at its top level; there is **no nested ZIP**.
-
-The ZIP uses relative resource paths, so it can be hosted at the domain root **or in any subdirectory**. HTTPS is required for geolocation and offline service-worker features (localhost is also allowed). On first load, the app caches its files for subsequent offline visits. The Google Fonts stylesheet is optional and falls back to system fonts when offline.
+The artifact already contains `index.html`, `app.js`, and all other deployable files at its top level; there is **no nested ZIP**. Relative resource paths permit hosting at a domain root or subdirectory. HTTPS is required for geolocation and service-worker features (localhost is also supported). The Google Fonts stylesheet is optional and falls back to system fonts when offline.
 
 ## Development
 
