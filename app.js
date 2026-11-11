@@ -5,6 +5,7 @@ import {rectGeometry,projectRect,rectHorizonY,paintRectAtmosphere} from './sky-p
 import {drawSkyAtlas,skyAtlasStatus} from './sky-atlas.js';
 import {drawSkyDSOs} from './sky-dso.js';
 import {drawConstellationNames} from './sky-constellation-labels.js';
+import {renderSolarJourney} from './solar-hero.js';
 import {renderMoon} from './moon-renderer.js';
 import {drawSolarYear} from './solar-chart.js';
 import {drawSkyGrid} from './sky-grid.js';
@@ -438,6 +439,9 @@ function render(){
  $('dayline').style.setProperty('--end',(100-end)+'%');
  $('dayline-now').style.left=((state.date.getUTCHours()+state.date.getUTCMinutes()/60)/24*100)+'%';
  $('solar-alt').textContent=s.alt.toFixed(1)+'°';
+ renderSolarJourney(state.date,state.lat,state.lon,s.alt,sunHorizontal);
+ $('hero-moon-phase').textContent=m.name+' · '+(m.illuminated*100).toFixed(0)+'%';
+ $('hero-daylight').textContent=durationText(ev.duration);
  $('azimuth').textContent=s.az.toFixed(1)+'°';
  $('eot').textContent=(s.eq>=0?'+':'')+s.eq.toFixed(2)+' min';
  $('earth-distance').textContent=s.distance.toFixed(6)+' AU';
@@ -744,7 +748,7 @@ window.addEventListener('helioclock-milkyway-ready',render);
 $('mw-copy-debug').addEventListener('click',async()=>{
  const chosen='planar';
  const debug={
-  version:41,utc:state.date.toISOString(),
+  version:42,utc:state.date.toISOString(),
   local:state.date.toLocaleString('en-CA',{timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone}),
   timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,
   observer:{lat:state.lat,lon:state.lon},

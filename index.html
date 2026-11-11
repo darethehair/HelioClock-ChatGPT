@@ -11,25 +11,45 @@
 <body>
 <div class="app">
 <header class="topbar">
-  <div class="identity"><div class="mark">☼</div><div><div class="eyebrow">PERSONAL OBSERVATORY <span class="edition">/ CHATGPT EDITION</span></div><h1>Helio<span>Clock</span> <span class="app-version" id="app-version" title="Release and build identifier">v41</span></h1></div></div>
+  <div class="identity"><div class="mark">☼</div><div><div class="eyebrow">PERSONAL OBSERVATORY <span class="edition">/ CHATGPT EDITION</span></div><h1>Helio<span>Clock</span> <span class="app-version" id="app-version" title="Release and build identifier">v42</span></h1></div></div>
   <div class="header-right"><a class="topbar-link" href="#observatory-controls">⚙ Controls</a><span id="live-indicator" class="live-pill"><i></i> LIVE SKY</span><span id="local-clock" class="utc-clock">—</span><span id="utc-clock" class="utc-clock">—</span></div>
 </header>
 <main>
 <section class="hero panel">
+ <svg class="hero-landscape" viewBox="0 0 1440 580" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><defs><linearGradient id="landscape-nightfall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#030a19" stop-opacity="0"/><stop offset="1" stop-color="#091020" stop-opacity=".75"/></linearGradient></defs><path d="M 0 475 L 95 445 165 465 284 409 398 453 516 410 647 448 748 419 854 459 965 427 1066 463 1171 402 1290 444 1440 391 V580 H0Z" fill="#20344f" opacity=".48"/><path d="M 0 521 L 97 484 225 522 333 475 459 510 577 476 697 526 809 485 926 517 1053 476 1188 514 1338 467 1440 502 V580 H0Z" fill="#0c1a2c" opacity=".85"/><g fill="#081321" opacity=".87"><path d="M 58 530 v-105 m-35 74 35-51 35 51 m-42-31 42 0 m-49 28 49 0 M 135 535 v-125 m-42 95 42-69 42 69 m-53-33 53 0 M 1243 536 v-133 m-47 101 47-76 47 76 m-55-36 55 0 M 1358 543 v-112 m-40 85 40-66 40 66 m-48-30 48 0" stroke="#081321" stroke-width="10" stroke-linejoin="round" fill="none"/></g><path d="M0 465 H1440 V580 H0Z" fill="url(#landscape-nightfall)"/></svg>
   <div class="hero-main">
     <div class="section-kicker"><span class="kicker-dot"></span> SOLAR EPHEMERIS <span class="separator">/</span> <span id="date-label">—</span></div>
     <div class="hero-heading">Your sky, <em>right now.</em></div>
     <div class="hero-subtitle" id="place-summary">49.19° N · 98.10° W</div>
 <div class="hero-time" id="hero-time" aria-label="Local date and observation time"><div class="hero-time-top"><span id="hero-time-status">● LIVE · LOCAL TIME</span><span id="hero-time-zone">—</span></div><strong id="hero-local-time">—</strong><span id="hero-local-date">—</span></div>
-    <div class="sun-readings">
+    <div class="dayline" id="dayline"><span class="dayline-now" id="dayline-now"></span></div>
+    <div class="dayline-labels"><span>00:00 UTC</span><span id="daylength">DAYLIGHT —</span><span>24:00 UTC</span></div>
+  </div>
+  <div class="solar-journey" aria-label="Live solar path above the local horizon">
+  <div class="solar-journey-title"><span>THE SUN'S JOURNEY</span><span id="solar-journey-phase">—</span></div>
+  <svg id="solar-journey-chart" viewBox="0 0 500 236" role="img" aria-label="Solar altitude through the local day">
+   <defs><linearGradient id="journey-arc-gradient" x1="0" x2="1" y1="0" y2="0"><stop offset="0%" stop-color="#e79e57"/><stop offset="50%" stop-color="#ffe4a0"/><stop offset="100%" stop-color="#e79e57"/></linearGradient><radialGradient id="journey-sun-glow"><stop offset="0%" stop-color="#fff8c2" stop-opacity=".85"/><stop offset="42%" stop-color="#ffc878" stop-opacity=".35"/><stop offset="100%" stop-color="#ffb65e" stop-opacity="0"/></radialGradient></defs>
+   <path class="journey-grid" d="M 20 74 H 480 M 20 118 H 480"/>
+   <path id="solar-journey-arc" fill="none" stroke="url(#journey-arc-gradient)" stroke-width="2.8" stroke-linejoin="round" stroke-linecap="round" d=""/>
+   <path class="journey-horizon" d="M 14 167 H 486"/>
+   <text class="journey-axis-label" x="21" y="158">HORIZON · 0°</text>
+   <text class="journey-axis-label" x="20" y="228">00:00</text><text class="journey-axis-label" text-anchor="end" x="480" y="228">24:00</text>
+   <g id="solar-journey-sun" visibility="hidden"><circle r="31" fill="url(#journey-sun-glow)"/><circle r="10" fill="#ffdc89" stroke="#fff5ce" stroke-width="2"/><circle r="4" fill="#fff9dc" opacity=".9"/></g>
+   <path class="journey-mountain-far" d="M 0 200 L 43 185 78 192 120 173 157 187 203 179 252 194 296 183 336 196 395 180 439 195 500 180 V 236 H 0Z"/>
+   <path class="journey-mountain-near" d="M 0 221 L 54 203 98 214 149 202 190 219 233 205 282 223 328 204 390 219 427 202 470 212 500 201 V 236 H 0Z"/>
+  </svg>
+  <div class="solar-journey-readout"><span class="journey-altitude"><strong id="solar-alt">—</strong><small>SOLAR ALTITUDE</small></span><span class="journey-caption">Solar path · local day</span></div>
+ </div>
+<div class="hero-highlights">
+     <div class="sun-readings hero-sun-readings">
       <div><span class="metric-label">SUNRISE <span class="metric-unit">UTC</span></span><strong id="sunrise">—</strong></div>
       <div><span class="metric-label">SOLAR NOON <span class="metric-unit">UTC</span></span><strong id="solar-noon">—</strong></div>
       <div><span class="metric-label">SUNSET <span class="metric-unit">UTC</span></span><strong id="sunset">—</strong></div>
     </div>
-    <div class="dayline" id="dayline"><span class="dayline-now" id="dayline-now"></span></div>
-    <div class="dayline-labels"><span>00:00 UTC</span><span id="daylength">DAYLIGHT —</span><span>24:00 UTC</span></div>
-  </div>
-  <div class="sun-disc-wrap"><div class="sun-rings"><div class="sun-disc"></div></div><div class="solar-readout"><span id="solar-alt">—</span><small>SOLAR ALTITUDE</small></div></div>
+
+ <div class="hero-extra"><span class="metric-label">MOON PHASE</span><strong id="hero-moon-phase">—</strong></div>
+ <div class="hero-extra"><span class="metric-label">DAYLIGHT</span><strong id="hero-daylight">—</strong></div>
+ </div>
 </section>
 <section class="stat-strip" aria-label="Astronomical readings">
  <div><span class="metric-label">SUN AZIMUTH</span><b id="azimuth">—</b></div>
@@ -145,7 +165,7 @@
  <div class="dock-adjust"><button id="dock-prev-day" title="Previous day">−1d</button><button id="dock-prev-hour" title="Previous hour">−1h</button><button id="dock-play" title="Play / pause">▶</button><button id="dock-next-hour" title="Next hour">+1h</button><button id="dock-next-day" title="Next day">+1d</button></div>
  <div class="dock-date-fields"><label for="dock-date">Date</label><input id="dock-date" type="date"><label for="dock-time">Time (device)</label><input id="dock-time" type="time" step="60"></div>
  <input id="dock-scrubber" type="range" min="0" max="1439" step="1" aria-label="Scrub through the selected day in device local time">
- <span class="dock-version" id="dock-version" title="HelioClock release">v41</span><span class="dock-sidereal" title="Local apparent sidereal time"><span>LST</span> <strong id="dock-sidereal">—</strong></span><button id="dock-live" class="dock-live" title="Return to current time">● LIVE</button>
+ <span class="dock-version" id="dock-version" title="HelioClock release">v42</span><span class="dock-sidereal" title="Local apparent sidereal time"><span>LST</span> <strong id="dock-sidereal">—</strong></span><button id="dock-live" class="dock-live" title="Return to current time">● LIVE</button>
 </section>
-<footer class="credits-footer"><div><strong>HelioClock-ChatGPT <span class="release-version">v41</span></strong><div>Created by Darethehair with assistance from ChatGPT</div><div id="build-meta" class="build-meta">Build information loading…</div></div><div><a href="https://github.com/darethehair/HelioClock-ChatGPT" target="_blank" rel="noopener">Source on GitHub ↗</a><details class="source-credits"><summary>About &amp; data credits</summary><p>Moon ephemerides: Astronomy Engine, Donald Cross (MIT). Star and constellation catalogues and Vieira Milky Way contours: D3-Celestial (BSD). Earth texture: NASA Blue Marble; lunar imagery: NASA Lunar Reconnaissance Orbiter; latest solar continuum images: NASA SDO/HMI. Approximate solar methods: NOAA / Meeus. Visualizations and integration: Darethehair with ChatGPT assistance.</p></details></div></footer>
+<footer class="credits-footer"><div><strong>HelioClock-ChatGPT <span class="release-version">v42</span></strong><div>Created by Darethehair with assistance from ChatGPT</div><div id="build-meta" class="build-meta">Build information loading…</div></div><div><a href="https://github.com/darethehair/HelioClock-ChatGPT" target="_blank" rel="noopener">Source on GitHub ↗</a><details class="source-credits"><summary>About &amp; data credits</summary><p>Moon ephemerides: Astronomy Engine, Donald Cross (MIT). Star and constellation catalogues and Vieira Milky Way contours: D3-Celestial (BSD). Earth texture: NASA Blue Marble; lunar imagery: NASA Lunar Reconnaissance Orbiter; latest solar continuum images: NASA SDO/HMI. Approximate solar methods: NOAA / Meeus. Visualizations and integration: Darethehair with ChatGPT assistance.</p></details></div></footer>
 </div></body></html>

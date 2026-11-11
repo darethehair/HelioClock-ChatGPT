@@ -400,3 +400,46 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 .advanced-observatory .preferences-panel{margin-bottom:0}
 @media(max-width:800px){.hero{padding:24px 23px;min-height:auto;gap:18px}.hero-time{padding:14px 16px;margin:13px 0}.hero-heading{letter-spacing:-1.4px}.topbar-link{padding:8px 9px;font-size:11px}.header-right{gap:8px}.advanced-observatory{padding:16px 12px}}
 @media(max-width:500px){.hero{flex-direction:column;align-items:stretch}.hero-main{max-width:none}.hero-time{max-width:none}.hero-time strong{font-size:49px}.topbar #utc-clock{display:none}.topbar .header-right{flex-wrap:wrap;justify-content:end}.topbar{height:auto;min-height:78px;padding:8px 0;gap:8px}}
+
+/* v42 warm, nature-inspired observatory entry */
+.hero{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(275px,.82fr);column-gap:26px;row-gap:20px;align-items:center;min-height:520px;padding:28px 38px 26px;isolation:isolate;overflow:hidden;
+ background:linear-gradient(90deg,#091426f7 0%,#101f37dc 42%,#101b34ba 100%),radial-gradient(ellipse at 78% 80%,var(--solar-warm,#d7784d) 0%,transparent 53%),linear-gradient(180deg,#081d40,#1d2b4b 65%,#372a43);
+ transition:background-color 650ms ease;border-color:#6a6e8399}
+.hero[data-solar-phase="day"]{--solar-warm:#cda35b;background:linear-gradient(90deg,#0b1b32f7 0%,#102a4ed9 43%,#123b64bb 100%),radial-gradient(ellipse at 80% 85%,#e8ac67 0%,transparent 52%),linear-gradient(180deg,#052b59,#246395 65%,#b97f5c)}
+.hero[data-solar-phase="golden"],.hero[data-solar-phase="civil"]{background:linear-gradient(90deg,#091426f4 0%,#14233bd3 43%,#1c2649ac 100%),radial-gradient(ellipse at 78% 85%,#f3ab65 0%,transparent 60%),linear-gradient(180deg,#0d1d3a,#4c3c62 58%,#cd704b)}
+.hero[data-solar-phase="nautical"],.hero[data-solar-phase="astronomical"]{background:linear-gradient(90deg,#081426f9 0%,#111c39dc 45%,#16254aae 100%),radial-gradient(ellipse at 78% 85%,#ae6e76 0%,transparent 59%),linear-gradient(180deg,#080d2c,#222b58 62%,#513955)}
+.hero[data-solar-phase="night"]{background:linear-gradient(90deg,#050e1df8 0%,#0b1730e6 44%,#152448c0 100%),radial-gradient(ellipse at 78% 85%,#33457d 0%,transparent 60%),linear-gradient(180deg,#020817,#0a1831 65%,#1c2445)}
+.hero:before{content:'';position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(#ebf5ff8a .8px,transparent 1px),radial-gradient(#fff5d8a8 1px,transparent 1.4px);background-size:51px 47px,101px 97px;background-position:4px 7px,38px 25px;opacity:.2;z-index:0}
+.hero[data-solar-phase="night"]:before{opacity:.8}
+.hero[data-solar-phase="astronomical"]:before,.hero[data-solar-phase="nautical"]:before{opacity:.55}
+.hero:after{display:none}
+.hero-landscape{position:absolute;z-index:0;left:0;bottom:0;width:100%;height:100%;pointer-events:none;opacity:.89}
+.hero-main,.solar-journey,.hero-highlights{position:relative;z-index:1}
+.hero-main{max-width:none;min-width:0}
+.hero-heading{margin:10px 0 4px;font-size:clamp(35px,4vw,61px);text-shadow:0 3px 15px #030915c7}
+.hero-time{margin:12px 0 11px;background:linear-gradient(110deg,#0d1d37de,#162f4abb);border-color:#87a5bc44;backdrop-filter:blur(7px)}
+.dayline{margin-top:14px;width:100%}
+.dayline-labels{width:100%}
+.solar-journey{border:1px solid #83a6c44a;border-radius:17px;padding:17px 17px 11px;box-shadow:inset 0 1px #fff3,0 12px 28px #0005;background:linear-gradient(180deg,#09162bc9,#142743a6);backdrop-filter:blur(3px);min-width:0}
+.solar-journey-title{display:flex;justify-content:space-between;gap:12px;font-size:10px;font-weight:800;letter-spacing:1.15px;color:#ffd08e}
+#solar-journey-phase{font-weight:500;letter-spacing:.3px;color:#bdcfe3}
+#solar-journey-chart{width:100%;height:auto;max-height:235px;overflow:visible}
+.journey-grid{stroke:#bdd2e12b;stroke-dasharray:3 8;stroke-width:1}
+.journey-horizon{stroke:#f4cd92;stroke-opacity:.65;stroke-width:2}
+.journey-axis-label{font-size:11px;fill:#acbdd1;letter-spacing:.35px}
+.journey-mountain-far{fill:#172b43;opacity:.64}
+.journey-mountain-near{fill:#091728;opacity:.9}
+.solar-journey-readout{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:-4px}
+.journey-altitude{display:flex;flex-direction:column;gap:3px}
+.journey-altitude strong{font-size:29px;color:#ffe2a1;font-variant-numeric:tabular-nums;font-family:'Space Grotesk',sans-serif}
+.journey-altitude small,.journey-caption{font-size:9px;letter-spacing:1px;color:#aac0d7}
+.hero-highlights{grid-column:1/-1;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.hero-sun-readings{display:contents}
+.hero-highlights>.hero-sun-readings>div,.hero-highlights>.hero-extra{min-width:0;padding:12px 14px 14px;border:1px solid #7e9cbd4d;border-radius:12px;background:#081a30d8;box-shadow:0 3px 13px #0004;backdrop-filter:blur(5px)}
+.hero-highlights .metric-label{margin-bottom:7px;color:#b4c5dd}
+.hero-highlights strong{display:block;font-size:clamp(15px,1.6vw,22px);font-family:'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;font-weight:600;color:#ffe1a4}
+.hero-highlights #hero-moon-phase{font-size:clamp(11px,1.05vw,15px);color:#d1def1}
+.hero-highlights #hero-daylight{color:#a5ead8}
+@media(max-width:1050px){.hero{grid-template-columns:minmax(0,1fr) minmax(240px,.8fr);padding:24px;gap:16px}.hero-highlights{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:750px){.hero{display:grid;grid-template-columns:1fr;gap:16px}.solar-journey{width:100%;max-width:600px;margin:auto}.hero-highlights{grid-template-columns:repeat(2,minmax(0,1fr))}.hero-time strong{font-size:clamp(43px,10vw,58px)}}
+@media(max-width:400px){.hero-highlights{gap:7px}.hero-highlights>.hero-sun-readings>div,.hero-highlights>.hero-extra{padding:10px 8px}.hero-highlights strong{font-size:17px}}
