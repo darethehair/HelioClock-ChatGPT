@@ -461,3 +461,28 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 .hero .solar-journey{background:linear-gradient(180deg,#071a30dd,#092137cf);border-color:#adbac368}
 .hero .hero-highlights>.hero-sun-readings>div,.hero .hero-highlights>.hero-extra{background:#07172cdc;border-color:#8eacbd69}
 @media(max-width:750px){.hero .hero-landscape{object-position:70% center}.hero:after{background:linear-gradient(90deg,#061327db,#091a33ba 100%),linear-gradient(0deg,#061327b8,transparent 60%)}}
+
+/* v44: actual illustrated lake panorama, not generated geometry.
+   The photograph-like artwork is bundled locally and works offline. */
+.hero{min-height:585px;row-gap:34px;overflow:hidden;background:#10213a!important}
+.hero .hero-landscape{
+  object-fit:cover;object-position:center 47%;opacity:1!important;
+  filter:none;transition:filter .8s ease;
+}
+.hero:after{
+  background:linear-gradient(90deg,rgba(5,17,36,.85) 0%,rgba(6,20,43,.68) 28%,rgba(8,19,38,.33) 55%,rgba(7,16,35,.36) 100%),
+  linear-gradient(0deg,rgba(6,14,28,.49) 0%,transparent 31%);
+}
+.hero[data-solar-phase="day"] .hero-landscape{filter:saturate(.77) hue-rotate(175deg) brightness(1.28)}
+.hero[data-solar-phase="golden"] .hero-landscape,
+.hero[data-solar-phase="civil"] .hero-landscape{filter:saturate(1.08) brightness(1.03)}
+.hero[data-solar-phase="nautical"] .hero-landscape,
+.hero[data-solar-phase="astronomical"] .hero-landscape{filter:saturate(.76) hue-rotate(19deg) brightness(.58)}
+.hero[data-solar-phase="night"] .hero-landscape{filter:saturate(.55) hue-rotate(34deg) brightness(.29)}
+.hero .hero-time{background:linear-gradient(110deg,rgba(6,19,37,.76),rgba(10,28,54,.66));border-color:#bad5df78}
+.hero .solar-journey{background:linear-gradient(180deg,rgba(6,20,39,.84),rgba(9,27,49,.72));border-color:#bdd0e16e}
+.hero .hero-highlights>.hero-sun-readings>div,
+.hero .hero-highlights>.hero-extra{background:rgba(5,19,36,.77);border-color:#adbed078}
+.hero .hero-heading{filter:drop-shadow(0 3px 8px #0009)}
+@media(max-width:1050px){.hero{min-height:550px}}
+@media(max-width:750px){.hero{min-height:auto;row-gap:24px}.hero .hero-landscape{object-position:center bottom}.hero:after{background:linear-gradient(90deg,rgba(5,17,36,.8),rgba(6,19,39,.55)),linear-gradient(0deg,#06132980,transparent 54%)}}

@@ -309,8 +309,8 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#sunrise')).not.toHaveText('—');
  // Release identity and provenance are visible even offline.
- await expect(page.locator('#app-version')).toHaveText('v43');
- await expect(page.locator('#dock-version')).toHaveText('v43');
+ await expect(page.locator('#app-version')).toHaveText('v44');
+ await expect(page.locator('#dock-version')).toHaveText('v44');
  await expect(page.locator('.credits-footer')).toContainText('Created by Darethehair with assistance from ChatGPT');
  await expect(page.locator('.credits-footer a')).toHaveAttribute('href','https://github.com/darethehair/HelioClock-ChatGPT');
  await expect(page.locator('#build-meta')).toContainText('commit');
@@ -656,7 +656,7 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
  const errors=[];
  page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v43');
+ await expect(page.locator('#app-version')).toHaveText('v44');
  await expect(page.locator('.almanac-panel')).toBeHidden();
  await page.locator('#layout-sky').click();
  await expect(page.locator('.sky-panel')).toBeVisible();
@@ -965,7 +965,7 @@ test('Version 36 stores, restores, imports, exports and resets preferences',asyn
 test('Version 25 Sun and Moon use the same zoomable pannable fullscreen stage',async({page})=>{
  const errors=[];page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v43');
+ await expect(page.locator('#app-version')).toHaveText('v44');
  await expect(page.locator('#moon')).toBeVisible();
  await expect(page.locator('#solar-photo')).toBeHidden();
  await page.locator('[data-disc-view="sun"]').click();
@@ -1402,7 +1402,7 @@ test('Version 34 offers comparable Milky Way masks and copyable exact debug stat
  });
  await page.locator('#mw-copy-debug').click();
  const data=await page.evaluate(()=>JSON.parse(window.__debugCopy));
- expect(data.version).toBe(43);
+ expect(data.version).toBe(44);
  expect(data.utc).toBe('2026-11-09T12:44:00.000Z');
  expect(data.observer).toEqual({lat:49.19,lon:-98.10});
  expect(data.sky.projection).toBe('rect');
@@ -1478,7 +1478,7 @@ test('Public landing starts with astronomy and a prominent local clock',async({p
  await expect(page).toHaveURL(/#observatory-controls$/);
 });
 
-test('v43 solar journey responds to daylight and night without changing astronomy controls',async({page})=>{
+test('v44 solar journey responds to daylight and night without changing astronomy controls',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#solar-journey-arc')).toHaveAttribute('d',/M /);
@@ -1495,12 +1495,12 @@ test('v43 solar journey responds to daylight and night without changing astronom
  expect(errors).toEqual([]);
 });
 
-test('v43 nature banner is present offline and the Sun responds to local time',async({page})=>{
+test('v44 photographic nature banner is present offline and the Sun responds to local time',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('.hero-landscape')).toBeVisible();
  const artwork=await page.locator('.hero-landscape').evaluate(el=>({loaded:el.complete&&el.naturalWidth>0,url:el.currentSrc}));
  expect(artwork.loaded).toBe(true);
- expect(artwork.url).toContain('hero-landscape.svg');
+ expect(artwork.url).toContain('hero-landscape-natural.webp');
  await expect(page.locator('#solar-journey-arc')).toHaveAttribute('d',/M /);
  await page.locator('#observe-date').fill('2026-11-11');
  await page.locator('#observe-time').fill('18:00');
@@ -1509,4 +1509,15 @@ test('v43 nature banner is present offline and the Sun responds to local time',a
  await page.locator('#observe-time').fill('05:00');
  await page.locator('#observe-time').dispatchEvent('change');
  await expect(page.locator('.hero')).toHaveAttribute('data-solar-phase',/night|astronomical|nautical/);
+});
+
+test('v44 packaged sunset panorama is locally served and remains readable',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ const img=page.locator('.hero-landscape');
+ await expect(img).toHaveAttribute('src','./hero-landscape-natural.webp');
+ await expect.poll(()=>img.evaluate(el=>el.complete&&el.naturalWidth>0)).toBe(true);
+ await expect(page.locator('#hero-local-time')).not.toHaveText('—');
+ await expect(page.locator('#solar-alt')).not.toHaveText('—');
+ const bg=await img.evaluate(el=>getComputedStyle(el).objectFit);
+ expect(bg).toBe('cover');
 });
