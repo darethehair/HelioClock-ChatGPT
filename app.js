@@ -308,9 +308,8 @@ function updateSkyCursor(x,y){
   panX:state.skyPanX,panY:state.skyPanY
  });
  if(!coords){out.textContent='Cursor: outside plotted sky';return}
- const mode='planar';
- const actualMode=state.skyProjection==='polar'&&mode==='planar'?'planar-legacy':mode;
- const sample=milkyWaySample(coords.ra,coords.dec,state.date,state.usePrecession,actualMode);
+ // Cursor diagnostics must sample the same corrected mask as the renderer.
+ const sample=milkyWaySample(coords.ra,coords.dec,state.date,state.usePrecession,'planar');
  const diagnostic=sample.ready?
   ' · Galactic lat '+(sample.galacticLatitude>=0?'+':'')+sample.galacticLatitude.toFixed(2)+'°'+
   ' · MW mask '+sample.intensity+'/255 ('+sample.alphaPercent.toFixed(1)+'%)'+
