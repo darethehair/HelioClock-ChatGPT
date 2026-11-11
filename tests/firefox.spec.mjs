@@ -309,8 +309,8 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#sunrise')).not.toHaveText('—');
  // Release identity and provenance are visible even offline.
- await expect(page.locator('#app-version')).toHaveText('v40');
- await expect(page.locator('#dock-version')).toHaveText('v40');
+ await expect(page.locator('#app-version')).toHaveText('v41');
+ await expect(page.locator('#dock-version')).toHaveText('v41');
  await expect(page.locator('.credits-footer')).toContainText('Created by Darethehair with assistance from ChatGPT');
  await expect(page.locator('.credits-footer a')).toHaveAttribute('href','https://github.com/darethehair/HelioClock-ChatGPT');
  await expect(page.locator('#build-meta')).toContainText('commit');
@@ -656,7 +656,7 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
  const errors=[];
  page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v40');
+ await expect(page.locator('#app-version')).toHaveText('v41');
  await expect(page.locator('.almanac-panel')).toBeHidden();
  await page.locator('#layout-sky').click();
  await expect(page.locator('.sky-panel')).toBeVisible();
@@ -965,7 +965,7 @@ test('Version 36 stores, restores, imports, exports and resets preferences',asyn
 test('Version 25 Sun and Moon use the same zoomable pannable fullscreen stage',async({page})=>{
  const errors=[];page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v40');
+ await expect(page.locator('#app-version')).toHaveText('v41');
  await expect(page.locator('#moon')).toBeVisible();
  await expect(page.locator('#solar-photo')).toBeHidden();
  await page.locator('[data-disc-view="sun"]').click();
@@ -1402,7 +1402,7 @@ test('Version 34 offers comparable Milky Way masks and copyable exact debug stat
  });
  await page.locator('#mw-copy-debug').click();
  const data=await page.evaluate(()=>JSON.parse(window.__debugCopy));
- expect(data.version).toBe(40);
+ expect(data.version).toBe(41);
  expect(data.utc).toBe('2026-11-09T12:44:00.000Z');
  expect(data.observer).toEqual({lat:49.19,lon:-98.10});
  expect(data.sky.projection).toBe('rect');
@@ -1460,4 +1460,20 @@ test('Version 40 constellation names stay independent from lines and DSOs',async
  await page.locator('#show-constellation-names').uncheck();
  expect(await count()).toBe(0);
  expect(errors).toEqual([]);
+});
+
+test('Public landing starts with astronomy and a prominent local clock',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ const hero=await page.locator('.hero').boundingBox();
+ expect(hero.y).toBeLessThan(180);
+ await expect(page.locator('#hero-local-time')).not.toHaveText('—');
+ await expect(page.locator('#hero-local-date')).not.toHaveText('—');
+ await expect(page.locator('#hero-time-status')).toContainText('LIVE');
+ await page.locator('#dock-next-hour').click();
+ await expect(page.locator('#hero-time-status')).toContainText('SIMULATED');
+ await page.locator('#dock-live').click();
+ await expect(page.locator('#hero-time-status')).toContainText('LIVE');
+ expect(await page.locator('.toolbar').evaluate(el=>Boolean(el.compareDocumentPosition(document.querySelector('.hero')) & Node.DOCUMENT_POSITION_PRECEDING))).toBe(true);
+ await page.locator('.topbar-link').click();
+ await expect(page).toHaveURL(/#observatory-controls$/);
 });

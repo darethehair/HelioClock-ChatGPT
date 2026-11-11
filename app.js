@@ -483,6 +483,11 @@ function localLabel(date){
 function updateLocalDisplay(){
  const v=localLabel(state.date),p=localParts(state.date);
  $('local-clock').textContent=v.time+' '+v.tz;
+ $('hero-local-time').textContent=v.time;
+ $('hero-local-date').textContent=state.date.toLocaleDateString('en-CA',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+ $('hero-time-zone').textContent=v.zone+' · '+v.offsetStr;
+ $('hero-time-status').textContent=state.live?'● LIVE · LOCAL TIME':'◷ SIMULATED · LOCAL TIME';
+ $('hero-time').classList.toggle('is-simulated',!state.live);
  $('dock-local-time').textContent=v.time;
  $('dock-time-zone').textContent=v.zone+' · '+v.offsetStr;
  $('dock-date').value=p.date;$('dock-time').value=p.time;

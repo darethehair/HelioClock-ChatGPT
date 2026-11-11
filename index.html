@@ -11,50 +11,16 @@
 <body>
 <div class="app">
 <header class="topbar">
-  <div class="identity"><div class="mark">☼</div><div><div class="eyebrow">PERSONAL OBSERVATORY <span class="edition">/ CHATGPT EDITION</span></div><h1>Helio<span>Clock</span> <span class="app-version" id="app-version" title="Release and build identifier">v40</span></h1></div></div>
-  <div class="header-right"><span id="live-indicator" class="live-pill"><i></i> LIVE SKY</span><span id="local-clock" class="utc-clock">—</span><span id="utc-clock" class="utc-clock">—</span></div>
+  <div class="identity"><div class="mark">☼</div><div><div class="eyebrow">PERSONAL OBSERVATORY <span class="edition">/ CHATGPT EDITION</span></div><h1>Helio<span>Clock</span> <span class="app-version" id="app-version" title="Release and build identifier">v41</span></h1></div></div>
+  <div class="header-right"><a class="topbar-link" href="#observatory-controls">⚙ Controls</a><span id="live-indicator" class="live-pill"><i></i> LIVE SKY</span><span id="local-clock" class="utc-clock">—</span><span id="utc-clock" class="utc-clock">—</span></div>
 </header>
-<section class="toolbar" aria-label="Observation controls">
-  <div class="control"><label for="latitude">LATITUDE</label><input id="latitude" type="number" min="-90" max="90" step=".0001" value="49.19"></div>
-  <div class="control"><label for="longitude">LONGITUDE</label><input id="longitude" type="number" min="-180" max="180" step=".0001" value="-98.10"></div>
-  <button id="locate" class="action-button" title="Use browser geolocation">⌖ <span>Locate me</span></button>
-  <div class="control date-control"><label for="observe-date">OBSERVATION DATE</label><input id="observe-date" type="date"></div>
-  <div class="control time-control"><label for="observe-time">UTC TIME</label><input id="observe-time" type="time" step="60"></div>
-  <button id="now" class="action-button accent">↻ <span>Return to live</span></button>
-</section>
-<section class="mission-control panel" aria-label="Time and view controls">
- <div class="mission-head"><div><span class="section-kicker">OBSERVATION CONSOLE</span><h2>Travel through time &amp; space</h2><p>Choose a date above, scrub UTC time here, or animate the sky. Drag or scroll views to explore.</p></div><div class="transport"><button id="step-back-day" title="Previous day">−1 day</button><button id="step-back-hour" title="Previous hour">−1 hr</button><button id="play-time" class="transport-play" title="Play time forward">▶ Play</button><button id="step-forward-hour" title="Next hour">+1 hr</button><button id="step-forward-day" title="Next day">+1 day</button></div></div>
- <div class="time-scrub"><span>00:00</span><input id="time-scrubber" type="range" min="0" max="1439" step="1" value="720" aria-label="Scrub UTC time across selected date"><span>23:59</span><output id="scrub-readout">12:00 UTC</output></div>
- <div class="view-controls"><label>SKY <button id="sky-reset">Reset view</button></label><label for="sky-zoom">Zoom <button type="button" id="sky-zoom-out" aria-label="Zoom sky out">−</button> <input id="sky-zoom" type="range" min="1" max="3" value="1" step=".01"> <button type="button" id="sky-zoom-in" aria-label="Zoom sky in">+</button></label><label for="sky-heading">Rotation <input id="sky-heading" type="range" min="-180" max="180" value="0" step="5"></label><label>EARTH <button id="earth-reset">Reset view</button></label><label for="earth-zoom">Zoom <input id="earth-zoom" type="range" min="1" max="4" value="1" step=".1"></label><label>SUN / MOON <button id="moon-reset">Reset Moon zoom</button></label><label for="moon-zoom">Zoom <input id="moon-zoom" type="range" min="0.7" max="2.8" value="1" step=".1"></label><label>ORRERY <button id="orrery-reset">Reset view</button></label><label for="orrery-zoom">Zoom <input id="orrery-zoom" type="range" min=".7" max="3" value="1" step=".1"></label></div>
-</section>
-<div id="message" class="notice" role="status" hidden></div>
-<section class="layout-manager" aria-label="Customize dashboard">
- <div class="layout-head"><div><span class="section-kicker">YOUR OBSERVATORY</span><h2>Customize dashboard</h2><p>Choose what appears on your screen; your selection is remembered on this device.</p></div>
- <div class="layout-actions"><button id="layout-all" type="button">Show all</button><button id="layout-default" type="button">Default layout</button><button id="layout-sky" type="button">Sky Only</button><button id="layout-text" type="button">Text Only</button></div></div>
- <div class="layout-toggles">
-  <label><input type="checkbox" data-panel-visibility="hero" checked> Solar summary</label>
-  <label><input type="checkbox" data-panel-visibility="chart" checked> Daylight year</label>
-  <label><input type="checkbox" data-panel-visibility="earth" checked> Earth map</label>
-  <label><input type="checkbox" data-panel-visibility="sky" checked> Sky compass</label>
-  <label><input type="checkbox" data-panel-visibility="moon" checked> Sun / Moon</label>
-  <label><input type="checkbox" data-panel-visibility="orrery" checked> Orrery</label>
-  <label><input type="checkbox" data-panel-visibility="details" checked> Observation notes</label>
-  <label><input type="checkbox" data-panel-visibility="almanac"> ☀ ☾ Astronomical information</label>
- </div>
-</section>
-<section class="preferences-panel" aria-label="Local preferences">
- <div><strong>Preferences</strong><p>Saved automatically in this browser. Simulation time starts live; no cookies or account required.</p></div>
- <label class="pref-view"><input type="checkbox" id="prefs-remember-view"> Remember zoom and map positions</label>
- <div class="preferences-actions"><button type="button" id="prefs-export">Export settings</button><button type="button" id="prefs-import">Import settings</button><button type="button" id="prefs-reset">Reset preferences</button></div>
- <input type="file" id="prefs-file" accept=".json,application/json" hidden>
- <span id="prefs-status" role="status" aria-live="polite"></span>
-</section>
 <main>
 <section class="hero panel">
   <div class="hero-main">
     <div class="section-kicker"><span class="kicker-dot"></span> SOLAR EPHEMERIS <span class="separator">/</span> <span id="date-label">—</span></div>
-    <div class="hero-heading">A day on <em>Earth.</em></div>
+    <div class="hero-heading">Your sky, <em>right now.</em></div>
     <div class="hero-subtitle" id="place-summary">49.19° N · 98.10° W</div>
+<div class="hero-time" id="hero-time" aria-label="Local date and observation time"><div class="hero-time-top"><span id="hero-time-status">● LIVE · LOCAL TIME</span><span id="hero-time-zone">—</span></div><strong id="hero-local-time">—</strong><span id="hero-local-date">—</span></div>
     <div class="sun-readings">
       <div><span class="metric-label">SUNRISE <span class="metric-unit">UTC</span></span><strong id="sunrise">—</strong></div>
       <div><span class="metric-label">SOLAR NOON <span class="metric-unit">UTC</span></span><strong id="solar-noon">—</strong></div>
@@ -136,12 +102,50 @@
  </div><div class="fineprint">Solar calculations use NOAA-style approximate equations. Lunar positions use Astronomy Engine; planetary positions use simplified models, not precision ephemerides. Times are shown in UTC to avoid ambiguous local clock offsets; no network location or astronomy service is required.</div></section>
 </div>
 </main>
+<div class="advanced-observatory" id="observatory-controls"><div class="advanced-intro"><span class="section-kicker">YOUR OBSERVATORY</span><h2>Observation controls</h2><p>Change your location, travel through time, and customize your views.</p></div>
+<section class="toolbar" aria-label="Observation controls">
+  <div class="control"><label for="latitude">LATITUDE</label><input id="latitude" type="number" min="-90" max="90" step=".0001" value="49.19"></div>
+  <div class="control"><label for="longitude">LONGITUDE</label><input id="longitude" type="number" min="-180" max="180" step=".0001" value="-98.10"></div>
+  <button id="locate" class="action-button" title="Use browser geolocation">⌖ <span>Locate me</span></button>
+  <div class="control date-control"><label for="observe-date">OBSERVATION DATE</label><input id="observe-date" type="date"></div>
+  <div class="control time-control"><label for="observe-time">UTC TIME</label><input id="observe-time" type="time" step="60"></div>
+  <button id="now" class="action-button accent">↻ <span>Return to live</span></button>
+</section>
+<section class="mission-control panel" aria-label="Time and view controls">
+ <div class="mission-head"><div><span class="section-kicker">OBSERVATION CONSOLE</span><h2>Travel through time &amp; space</h2><p>Choose a date above, scrub UTC time here, or animate the sky. Drag or scroll views to explore.</p></div><div class="transport"><button id="step-back-day" title="Previous day">−1 day</button><button id="step-back-hour" title="Previous hour">−1 hr</button><button id="play-time" class="transport-play" title="Play time forward">▶ Play</button><button id="step-forward-hour" title="Next hour">+1 hr</button><button id="step-forward-day" title="Next day">+1 day</button></div></div>
+ <div class="time-scrub"><span>00:00</span><input id="time-scrubber" type="range" min="0" max="1439" step="1" value="720" aria-label="Scrub UTC time across selected date"><span>23:59</span><output id="scrub-readout">12:00 UTC</output></div>
+ <div class="view-controls"><label>SKY <button id="sky-reset">Reset view</button></label><label for="sky-zoom">Zoom <button type="button" id="sky-zoom-out" aria-label="Zoom sky out">−</button> <input id="sky-zoom" type="range" min="1" max="3" value="1" step=".01"> <button type="button" id="sky-zoom-in" aria-label="Zoom sky in">+</button></label><label for="sky-heading">Rotation <input id="sky-heading" type="range" min="-180" max="180" value="0" step="5"></label><label>EARTH <button id="earth-reset">Reset view</button></label><label for="earth-zoom">Zoom <input id="earth-zoom" type="range" min="1" max="4" value="1" step=".1"></label><label>SUN / MOON <button id="moon-reset">Reset Moon zoom</button></label><label for="moon-zoom">Zoom <input id="moon-zoom" type="range" min="0.7" max="2.8" value="1" step=".1"></label><label>ORRERY <button id="orrery-reset">Reset view</button></label><label for="orrery-zoom">Zoom <input id="orrery-zoom" type="range" min=".7" max="3" value="1" step=".1"></label></div>
+</section>
+<div id="message" class="notice" role="status" hidden></div>
+<section class="layout-manager" aria-label="Customize dashboard">
+ <div class="layout-head"><div><span class="section-kicker">YOUR OBSERVATORY</span><h2>Customize dashboard</h2><p>Choose what appears on your screen; your selection is remembered on this device.</p></div>
+ <div class="layout-actions"><button id="layout-all" type="button">Show all</button><button id="layout-default" type="button">Default layout</button><button id="layout-sky" type="button">Sky Only</button><button id="layout-text" type="button">Text Only</button></div></div>
+ <div class="layout-toggles">
+  <label><input type="checkbox" data-panel-visibility="hero" checked> Solar summary</label>
+  <label><input type="checkbox" data-panel-visibility="chart" checked> Daylight year</label>
+  <label><input type="checkbox" data-panel-visibility="earth" checked> Earth map</label>
+  <label><input type="checkbox" data-panel-visibility="sky" checked> Sky compass</label>
+  <label><input type="checkbox" data-panel-visibility="moon" checked> Sun / Moon</label>
+  <label><input type="checkbox" data-panel-visibility="orrery" checked> Orrery</label>
+  <label><input type="checkbox" data-panel-visibility="details" checked> Observation notes</label>
+  <label><input type="checkbox" data-panel-visibility="almanac"> ☀ ☾ Astronomical information</label>
+ </div>
+</section>
+<section class="preferences-panel" aria-label="Local preferences">
+ <div><strong>Preferences</strong><p>Saved automatically in this browser. Simulation time starts live; no cookies or account required.</p></div>
+ <label class="pref-view"><input type="checkbox" id="prefs-remember-view"> Remember zoom and map positions</label>
+ <div class="preferences-actions"><button type="button" id="prefs-export">Export settings</button><button type="button" id="prefs-import">Import settings</button><button type="button" id="prefs-reset">Reset preferences</button></div>
+ <input type="file" id="prefs-file" accept=".json,application/json" hidden>
+ <span id="prefs-status" role="status" aria-live="polite"></span>
+</section>
+</div>
+
 <section id="time-dock" class="time-dock" aria-label="Persistent simulation date and time controls">
  <button type="button" id="dock-mobile-more" aria-label="Show date and time controls" aria-expanded="false">☷</button><div class="dock-time-summary"><span class="dock-brand">◷ OBSERVATION</span><strong id="dock-local-time">—</strong><small id="dock-time-zone">—</small></div>
  <div class="dock-adjust"><button id="dock-prev-day" title="Previous day">−1d</button><button id="dock-prev-hour" title="Previous hour">−1h</button><button id="dock-play" title="Play / pause">▶</button><button id="dock-next-hour" title="Next hour">+1h</button><button id="dock-next-day" title="Next day">+1d</button></div>
  <div class="dock-date-fields"><label for="dock-date">Date</label><input id="dock-date" type="date"><label for="dock-time">Time (device)</label><input id="dock-time" type="time" step="60"></div>
  <input id="dock-scrubber" type="range" min="0" max="1439" step="1" aria-label="Scrub through the selected day in device local time">
- <span class="dock-version" id="dock-version" title="HelioClock release">v40</span><span class="dock-sidereal" title="Local apparent sidereal time"><span>LST</span> <strong id="dock-sidereal">—</strong></span><button id="dock-live" class="dock-live" title="Return to current time">● LIVE</button>
+ <span class="dock-version" id="dock-version" title="HelioClock release">v41</span><span class="dock-sidereal" title="Local apparent sidereal time"><span>LST</span> <strong id="dock-sidereal">—</strong></span><button id="dock-live" class="dock-live" title="Return to current time">● LIVE</button>
 </section>
-<footer class="credits-footer"><div><strong>HelioClock-ChatGPT <span class="release-version">v40</span></strong><div>Created by Darethehair with assistance from ChatGPT</div><div id="build-meta" class="build-meta">Build information loading…</div></div><div><a href="https://github.com/darethehair/HelioClock-ChatGPT" target="_blank" rel="noopener">Source on GitHub ↗</a><details class="source-credits"><summary>About &amp; data credits</summary><p>Moon ephemerides: Astronomy Engine, Donald Cross (MIT). Star and constellation catalogues and Vieira Milky Way contours: D3-Celestial (BSD). Earth texture: NASA Blue Marble; lunar imagery: NASA Lunar Reconnaissance Orbiter; latest solar continuum images: NASA SDO/HMI. Approximate solar methods: NOAA / Meeus. Visualizations and integration: Darethehair with ChatGPT assistance.</p></details></div></footer>
+<footer class="credits-footer"><div><strong>HelioClock-ChatGPT <span class="release-version">v41</span></strong><div>Created by Darethehair with assistance from ChatGPT</div><div id="build-meta" class="build-meta">Build information loading…</div></div><div><a href="https://github.com/darethehair/HelioClock-ChatGPT" target="_blank" rel="noopener">Source on GitHub ↗</a><details class="source-credits"><summary>About &amp; data credits</summary><p>Moon ephemerides: Astronomy Engine, Donald Cross (MIT). Star and constellation catalogues and Vieira Milky Way contours: D3-Celestial (BSD). Earth texture: NASA Blue Marble; lunar imagery: NASA Lunar Reconnaissance Orbiter; latest solar continuum images: NASA SDO/HMI. Approximate solar methods: NOAA / Meeus. Visualizations and integration: Darethehair with ChatGPT assistance.</p></details></div></footer>
 </div></body></html>
