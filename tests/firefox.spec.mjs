@@ -1,3 +1,37 @@
+test('Version 38 polar Milky Way bitmap covers the panned viewport',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('[data-sky-projection="polar"]').click();
+ await page.locator('[data-sky-light="black"]').click();
+ await page.locator('#show-milkyway-shade').check();
+ await page.waitForFunction(()=>document.querySelector('#milkyway-status').textContent.includes('loaded'));
+ await page.locator('#sky').evaluate(el=>{
+  window.__polarMaskDraws=[];
+  const ctx=el.getContext('2d'),old=ctx.drawImage.bind(ctx);
+  ctx.drawImage=function(image,...args){
+   if(image instanceof HTMLCanvasElement && args.length===4 &&
+      image.width<el.clientWidth && image.height<el.clientHeight)
+    window.__polarMaskDraws.push({destX:args[0],destY:args[1],width:args[2],height:args[3]});
+   return old(image,...args);
+  };
+ });
+ await page.locator('#sky-zoom').evaluate(el=>{el.value='3';el.dispatchEvent(new Event('input',{bubbles:true}))});
+ const canvas=page.locator('#sky');
+ await canvas.scrollIntoViewIfNeeded();
+ const box=await canvas.boundingBox();
+ const x=box.x+box.width/2,y=box.y+box.height/2;
+ await page.mouse.move(x,y);await page.mouse.down();
+ await page.mouse.move(x+75,y+50,{steps:4});await page.mouse.up();
+ const trace=await page.evaluate(()=>({draws:window.__polarMaskDraws,pan:window.__helioclockZoomTrace}));
+ const draws=trace.draws;
+ expect(draws.length).toBeGreaterThan(0);
+ const last=draws.at(-1);
+ expect(last.width).toBeGreaterThan(100);
+ expect(last.destX).toBeLessThan(-40);
+ expect(last.destY).toBeLessThan(-25);
+ expect(errors).toEqual([]);
+});
+
 import {test,expect} from '@playwright/test';
 test('Mobile fullscreen prioritizes the chart and restores controls after exit',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
