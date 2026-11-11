@@ -1442,3 +1442,22 @@ test('Version 39 Messier DSO toggles, independent labels and both sky projection
  }
  expect(errors).toEqual([]);
 });
+
+test('Version 40 constellation names stay independent from lines and DSOs',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8765/');
+ const count=()=>page.locator('#sky').evaluate(el=>JSON.parse(el.dataset.constellationNames).count);
+ await expect(page.locator('#show-constellation-names')).not.toBeChecked();
+ expect(await count()).toBe(0);
+ await page.locator('#show-constellation-names').check();
+ expect(await count()).toBeGreaterThan(0);
+ await expect(page.locator('#show-constellations')).not.toBeChecked();
+ await expect(page.locator('#show-dso-galaxies')).not.toBeChecked();
+ await page.locator('#show-stars').uncheck();
+ expect(await count()).toBeGreaterThan(0);
+ await page.locator('[data-sky-projection="rect"]').click();
+ expect(await count()).toBeGreaterThan(0);
+ await page.locator('#show-constellation-names').uncheck();
+ expect(await count()).toBe(0);
+ expect(errors).toEqual([]);
+});
