@@ -1060,13 +1060,13 @@ test('Milky Way cursor reports independently computable galactic latitude and ma
  const r=ra*Math.PI/180,d=dec*Math.PI/180;
  const b=Math.asin(Math.sin(d)*Math.sin(poleDec)+Math.cos(d)*Math.cos(poleDec)*Math.cos(r-poleRA))*180/Math.PI;
  expect(Number(match[4])).toBeCloseTo(b,1);
- // The working polar renderer deliberately continues sampling its legacy
- // mask, which the diagnostic must identify accurately.
+ // Polar shading and cursor diagnostics must use the same corrected
+ // planar mask; the old planar-legacy readout was misleading.
  await page.locator('[data-sky-projection="polar"]').click();
  await sky.scrollIntoViewIfNeeded();
  const polar=await sky.boundingBox();
  await page.mouse.move(polar.x+polar.width/2,polar.y+polar.height/2);
- await expect(page.locator('#sky-cursor-readout')).toContainText('planar-legacy');
+ await expect(page.locator('#sky-cursor-readout')).toContainText(/MW mask \d+\/255 \(\d+\.\d%\) · planar$/);
  expect(errors).toEqual([]);
 });
 
