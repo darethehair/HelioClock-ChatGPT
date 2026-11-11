@@ -182,11 +182,35 @@ function fixedEquatorialMask(mode='planar'){
     const path=new Path2D();let outerCentre=null;
     for(const ring of polygon){
      if(ring.length<3)continue;
-     const points=[];let previous=null;
+     let points=[];let previous=null;
      for(const [ra,dec] of ring){
       let x=wrap(ra,360);
       if(previous!==null)x+=360*Math.round((previous-x)/360);
       points.push([x,(90-dec)*MASK_HEIGHT/180]);previous=x;
+     }
+     // Full-RA winding rings must close at the SAME meridian. The outer
+     // silhouette and its inner hole begin at different catalogue vertices;
+     // closing each from its own start to the pole leaves a false triangular
+     // patch between those meridians (visible near Capella). Re-index each
+     // winding ring at the shared RA=0 seam, interpolating the crossing.
+     if(mode!=='planar-legacy'&&points.length>3){
+      const winding=Math.round((points.at(-1)[0]-points[0][0])/360);
+      if(Math.abs(winding)===1){
+       const seam=winding<0?360*Math.floor(points[0][0]/360):
+        360*Math.ceil(points[0][0]/360);
+       const index=points.findIndex((p,i)=>i<points.length-1&&
+        (winding<0?(p[0]>=seam&&points[i+1][0]<=seam):
+         (p[0]<=seam&&points[i+1][0]>=seam))&&
+        points[i+1][0]!==p[0]);
+       if(index>=0){
+        const p=points[index],q=points[index+1];
+        const t=(seam-p[0])/(q[0]-p[0]);
+        const y=p[1]+t*(q[1]-p[1]);
+        points=[[seam,y],...points.slice(index+1,-1),
+         ...points.slice(0,index+1).map(([x,yy])=>[x+winding*360,yy]),
+         [seam+winding*360,y]];
+       }
+      }
      }
      const count=points.length>1&&
       Math.abs(points[0][0]-points.at(-1)[0])<1e-6&&
