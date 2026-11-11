@@ -66,6 +66,11 @@ test('Mobile fullscreen prioritizes the chart and restores controls after exit',
 test('Daylight polar grid labels have no solid boxes and all radial spokes share the adaptive grid',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:8765/');
+ // Pin a sunny Manitoba afternoon: the daylight-style option still renders
+ // a black sky at night, making pixel-contrast assertions time-dependent.
+ await page.locator('#observe-date').fill('2026-06-21');
+ await page.locator('#observe-time').fill('18:00');
+ await page.locator('#observe-time').dispatchEvent('change');
  await page.locator('[data-sky-projection="polar"]').click();
  await page.locator('[data-sky-light="daylight"]').click();
  await page.locator('#show-radec-grid').uncheck();
