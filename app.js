@@ -203,6 +203,7 @@ function sky(){
  drawMilkyWay(c,{
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
   mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
+  panX:state.skyPanX,panY:state.skyPanY,
   precession:state.usePrecession,skyLight:state.skyLight,sunAltitude:skySun.alt,
   showBelowHorizon:state.skyProjection==='rect'&&$('show-below-horizon').checked,
   showShade:$('show-milkyway-shade').checked,
@@ -716,7 +717,7 @@ window.addEventListener('helioclock-milkyway-ready',render);
 $('mw-copy-debug').addEventListener('click',async()=>{
  const chosen='planar';
  const debug={
-  version:37,utc:state.date.toISOString(),
+  version:38,utc:state.date.toISOString(),
   local:state.date.toLocaleString('en-CA',{timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone}),
   timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,
   observer:{lat:state.lat,lon:state.lon},

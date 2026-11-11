@@ -202,3 +202,7 @@ Two-finger pinch gestures are supported on the Earth map (all map projections), 
 ### Plot-first mobile fullscreen
 
 On viewports at most 1050 CSS pixels wide, fullscreen Earth, sky, Sun/Moon, orrery and daylight-year charts reserve most of the screen for the plot. A small Controls button opens a temporary settings drawer containing the original interactive controls; closing the drawer or leaving fullscreen restores the original elements, event listeners, and preference state. A single compact 48-pixel simulation-time dock stays visible; its ☷ button temporarily reveals date, time and scrubber inputs. This mode is responsive to phone landscape and portrait without modifying desktop fullscreen or other dashboard panels. Pinch-zoom remains separately under investigation.
+
+### v38: Milky Way polar mask and release identity
+
+Polar shading now uses the corrected full-RA contour closure (same source as rectangular), and its inverse projection samples visible screen positions adjusted for sky pan. The bitmap is composited at the inverse pan offset so no shading ends at the previous canvas edge. All displayed release badges, build-info JSON and service-worker cache key are bumped to v38. The built Git commit remains visible in the About section for exact identification.

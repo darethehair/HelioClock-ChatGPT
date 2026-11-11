@@ -394,10 +394,9 @@ function paintRectContours(c,levels,opts,visibility,shade,outline){
  * Only inverse-projection sampling changes with zoom; no projected polygon
  * can reverse its inside/outside meaning when the view is magnified.
  */
-function paintPolarMask(c,{date,lat,lon,width,height,zoom,heading,precession,debugMaskMode='planar'},visibility){
- // Preserve the visually confirmed polar mask while repairing planar RA
- // closure geometry for the rectangular projection only.
- const mask=fixedEquatorialMask(debugMaskMode==='planar'?'planar-legacy':debugMaskMode);
+function paintPolarMask(c,{date,lat,lon,width,height,zoom,heading,precession,debugMaskMode='planar',panX=0,panY=0},visibility){
+ // Corrected pole-aware closure, shared with rectangular shading.
+ const mask=fixedEquatorialMask(debugMaskMode);
  const R=(Math.min(width-35,height-20)/2-14)*zoom;
  const cols=Math.ceil(width/2),rows=Math.ceil(height/2);
  const cv=makeCanvas(cols,rows),ctx=cv.getContext('2d');
@@ -405,9 +404,9 @@ function paintPolarMask(c,{date,lat,lon,width,height,zoom,heading,precession,deb
  const lst=sidereal(date,lon),phi=lat*RAD,sp=Math.sin(phi),cp=Math.cos(phi);
  const inv=precession?precessionInverse(date):null;
  for(let y=0;y<rows;y++){
-  const yy=(y+.5)*height/rows-height/2;
+  const yy=(y+.5)*height/rows-height/2-panY;
   for(let x=0;x<cols;x++){
-   const xx=(x+.5)*width/cols-width/2;
+   const xx=(x+.5)*width/cols-width/2-panX;
    const dist=Math.hypot(xx,yy);
    if(dist>R)continue;
    const alt=(90*(1-dist/R))*RAD;
@@ -430,7 +429,9 @@ function paintPolarMask(c,{date,lat,lon,width,height,zoom,heading,precession,deb
    dst[i+3]=Math.round(mask[v*MASK_WIDTH+u]*visibility);
   }
  }
- ctx.putImageData(out,0,0);c.drawImage(cv,0,0,width,height);
+ ctx.putImageData(out,0,0);
+ // Cancel the existing sky translation so the image covers the viewport.
+ c.drawImage(cv,-panX,-panY,width,height);
 }
 function paintPolarContours(c,levels,opts,visibility,shade,outline){
  if(shade)paintPolarMask(c,opts,visibility);
@@ -454,7 +455,7 @@ function paintPolarContours(c,levels,opts,visibility,shade,outline){
 export function drawMilkyWay(c,opts){
  const {date,lat,lon,width,height,mode='polar',zoom=1,heading=0,
   precession=true,showBelowHorizon=true,showShade=false,showOutline=false,
-  debugMaskMode='planar',
+  debugMaskMode='planar',panX=0,panY=0,
   showCenter=false,skyLight='black',sunAltitude=-20,forceDaylight=false}=opts;
  if(!showShade&&!showOutline&&!showCenter)return;
  const position=projection({mode,width,height,zoom,heading,showBelowHorizon});
@@ -485,7 +486,7 @@ export function drawMilkyWay(c,opts){
    paintRectContours(c,levels,{date,lat,lon,width,height,heading,precession,debugMaskMode},
     visibility,showShade,showOutline);
   }else{
-   paintPolarContours(c,levels,{date,lat,lon,width,height,zoom,heading,precession,debugMaskMode},
+   paintPolarContours(c,levels,{date,lat,lon,width,height,zoom,heading,precession,debugMaskMode,panX,panY},
     visibility,showShade,showOutline);
   }
  }
