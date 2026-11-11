@@ -345,7 +345,6 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
  }
  .panel:fullscreen.mobile-plot-fullscreen>.time-dock .dock-time-summary small,
  .panel:fullscreen.mobile-plot-fullscreen>.time-dock .dock-brand,
- .panel:fullscreen.mobile-plot-fullscreen>.time-dock .dock-version,
  .panel:fullscreen.mobile-plot-fullscreen>.time-dock .dock-sidereal,
  .panel:fullscreen.mobile-plot-fullscreen>.time-dock #dock-scrubber,
  .panel:fullscreen.mobile-plot-fullscreen>.time-dock .dock-date-fields,
@@ -369,3 +368,10 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
  .panel:fullscreen.mobile-plot-fullscreen>.time-dock.mobile-time-expanded #dock-scrubber{max-width:95vw}
  .panel:fullscreen.mobile-plot-fullscreen:has(.mobile-time-expanded){padding-bottom:120px!important}
 
+
+/* Keep the release number visible in mobile fullscreen: the user can verify
+   that the installed PWA actually updated even when its header is hidden. */
+.panel:fullscreen.mobile-plot-fullscreen>.time-dock .dock-version{
+ display:inline-block!important;flex:0 0 auto;min-width:0;
+ padding:3px 5px;font-size:10px;letter-spacing:0;
+}
