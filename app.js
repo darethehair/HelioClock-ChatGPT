@@ -4,6 +4,7 @@ import {drawMilkyWay,milkyWayStatus,milkyWayDebugStatus,milkyWaySample} from './
 import {rectGeometry,projectRect,rectHorizonY,paintRectAtmosphere} from './sky-projection.js';
 import {drawSkyAtlas,skyAtlasStatus} from './sky-atlas.js';
 import {drawSkyDSOs} from './sky-dso.js';
+import {drawConstellationNames} from './sky-constellation-labels.js';
 import {renderMoon} from './moon-renderer.js';
 import {drawSolarYear} from './solar-chart.js';
 import {drawSkyGrid} from './sky-grid.js';
@@ -240,6 +241,14 @@ function sky(){
   stellarColors:state.stellarColors,
   brightSky:state.skyLight==='daylight' && skySun.alt>=-6
  });
+ const constellationNames=drawConstellationNames(c,{
+  date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
+  mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
+  panX:state.skyPanX,panY:state.skyPanY,precession:state.usePrecession,
+  showBelowHorizon:state.skyProjection==='rect'&&$('show-below-horizon').checked,
+  enabled:$('show-constellation-names').checked
+ });
+ $('sky').dataset.constellationNames=JSON.stringify(constellationNames);
  const dso=drawSkyDSOs(c,{
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
   mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
@@ -728,7 +737,7 @@ window.addEventListener('helioclock-milkyway-ready',render);
 $('mw-copy-debug').addEventListener('click',async()=>{
  const chosen='planar';
  const debug={
-  version:39,utc:state.date.toISOString(),
+  version:40,utc:state.date.toISOString(),
   local:state.date.toLocaleString('en-CA',{timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone}),
   timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,
   observer:{lat:state.lat,lon:state.lon},
@@ -760,7 +769,7 @@ for(const [id,sign] of [['sky-prev-sidereal',-1],['sky-next-sidereal',1]]){
   state.live=false;setDateInputs();render();
  });
 }
-for(const id of ['show-stars','show-labels','show-sky-paths','show-below-horizon','show-ecliptic','show-planets','show-altaz-grid','show-radec-grid','show-dso-galaxies','show-dso-nebulae','show-dso-clusters','show-dso-labels'])$(id).addEventListener('change',render);
+for(const id of ['show-stars','show-labels','show-sky-paths','show-below-horizon','show-ecliptic','show-planets','show-altaz-grid','show-radec-grid','show-dso-galaxies','show-dso-nebulae','show-dso-clusters','show-dso-labels','show-constellation-names'])$(id).addEventListener('change',render);
 function reset(id,defaults){
  $(id).addEventListener('click',()=>{for(const [key,value] of Object.entries(defaults))state[key]=value;
  const controls={skyZoom:'sky-zoom',skyHeading:'sky-heading',earthZoom:'earth-zoom',orreryZoom:'orrery-zoom'};
@@ -1091,7 +1100,7 @@ const PREF_KEY='helioclock-preferences-v1',LEGACY_LAYOUT_KEY='helioclock-layout-
 const PREF_CHECKBOXES=['show-au-rings','show-earthshine','show-constellations',
  'show-milkyway-shade','show-milkyway-outline','show-galactic-center',
  'show-stars','show-labels','show-sky-paths','show-below-horizon',
- 'show-dso-galaxies','show-dso-nebulae','show-dso-clusters','show-dso-labels',
+ 'show-dso-galaxies','show-dso-nebulae','show-dso-clusters','show-dso-labels','show-constellation-names',
  'show-ecliptic','use-precession','show-stellar-colors',
  'show-planets','show-altaz-grid','show-radec-grid',
  'earth-twilight-civil','earth-twilight-nautical',
