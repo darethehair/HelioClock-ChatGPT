@@ -217,3 +217,9 @@ Polar shading now uses the corrected full-RA contour closure (same source as rec
 The GitHub Actions `Build standalone PWA ZIP` workflow first bundles the full offline distribution and runs Firefox tests. After a successful test run it publishes the `HelioClock-ChatGPT-PWA` artifact and, when configured, deploys the very same `dist/` directory to the separate Cloudflare Pages project `helioclock-chatgpt` using Wrangler.
 
 Configure the GitHub Actions repository secrets `CLOUDFLARE_API_TOKEN` (Cloudflare Pages Edit permission scoped to the account) and `CLOUDFLARE_ACCOUNT_ID` for deployment. Never commit the API token to the repository. If either secret is missing, the Pages step skips while the ZIP build remains usable. The original AI Studio HelioClock repository and its Cloudflare Pages project are not touched.
+
+## Version 39 — Messier deep-sky objects
+
+The sky includes independent **Galaxies**, **Nebulae**, **Star clusters**, and **DSO labels** controls. All three object classes use subtle nonstellar glyphs: small oval glows for galaxies, diffuse patches and planetary rings for nebulae, and open or compact globular cluster marks. Familiar Messier designations are labelled first; more appear as the user zooms, with collision checks against star labels.
+
+The offline catalogue includes 107 Messier galaxies, nebulae and clusters, sourced from [D3-Celestial's Messier data](https://github.com/ofrohn/d3-celestial) (BSD licence). The three remaining entries are star fields or asterisms, not classified as DSOs for these controls. Both sky projections, J2000 precession, panning, below-horizon visibility and preference export/import are supported. The new object classes are **off by default**, keeping existing sky views unchanged until a user enables them.
