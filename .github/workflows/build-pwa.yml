@@ -6,6 +6,10 @@ on:
 permissions:
   contents: read
   actions: read
+# Only the newest source revision should build or deploy.
+concurrency:
+  group: helioclock-chatgpt-release-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   quick-check:
     runs-on: ubuntu-24.04
@@ -254,6 +258,16 @@ jobs:
           set -euo pipefail
           if [ -z "${CLOUDFLARE_API_TOKEN}" ] || [ -z "${CLOUDFLARE_ACCOUNT_ID}" ]; then
             echo "::notice::Cloudflare Pages deployment skipped: configure CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID repository secrets."
+            exit 0
+          fi
+          # Never let a slower, obsolete workflow replace the newest live release.
+          latest_sha="$(git ls-remote origin refs/heads/main | cut -f1)"
+          if [ -z "$latest_sha" ]; then
+            echo "::error::Could not verify current main branch revision; deployment blocked."
+            exit 1
+          fi
+          if [ "$latest_sha" != "$GITHUB_SHA" ]; then
+            echo "::notice::Skipping stale deployment: a newer revision exists on main."
             exit 0
           fi
           npx --yes wrangler@4 pages deploy dist --project-name=helioclock-chatgpt --branch=main
