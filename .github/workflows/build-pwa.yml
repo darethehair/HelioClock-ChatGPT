@@ -8,7 +8,7 @@ permissions:
   actions: read
 jobs:
   quick-check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -30,7 +30,7 @@ jobs:
         run: npm run build
   package:
     needs: quick-check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -223,9 +223,12 @@ jobs:
           cp /tmp/helioclock-atlas/{stars.8.json,constellations.lines.json,starnames.json,mw.json} /tmp/helioclock-cache/
       - name: Stage static files for browser test
         run: cp index.html styles.css astronomy.js manifest.webmanifest sw.js icon.svg dist/ && printf '{"version":39,"test":true,"commit":"%s","built_utc":"%s"}\n' "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > dist/build-info.json
+      # Pin a stable runner and download only the Playwright browser binary.
+      # Avoid apt-based --with-deps: the Ubuntu archive DNS endpoint can
+      # intermittently fail and strand the job for 20+ minutes.
       - name: Install Firefox for browser checks
-        timeout-minutes: 8
-        run: npx playwright install --with-deps firefox
+        timeout-minutes: 5
+        run: npx playwright install firefox
       - name: Exercise browser controls in Firefox
         run: npm run test:browser
       - name: Assemble standalone distribution
