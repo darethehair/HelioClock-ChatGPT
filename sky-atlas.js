@@ -50,6 +50,7 @@ export function drawSkyAtlas(c,{
  date,lat,lon,width,height,mode='polar',zoom=1,heading=0,panX=0,panY=0,magLimit=3.5,
  showLabels=true,showStars=true,showConstellations=false,precession=true,brightSky=false,showBelowHorizon=true,stellarColors=true
 }){
+ c.__skyLabelRects=[];
  const X=width/2,Y=height/2,radius=(Math.min(width-35,height-20)/2-14)*zoom;
  const project=(az,alt)=>{
   if(alt<0&&(mode!=='rect'||!showBelowHorizon))return null;
@@ -75,6 +76,7 @@ export function drawSkyAtlas(c,{
  if(!showStars)return;
  const source=ready?faint:BRIGHT_STARS;
  let total=0;
+ const occupiedRects=[];
  c.save();
  for(const star of source){
   if(star.mag>magLimit)continue;
@@ -118,7 +120,7 @@ export function drawSkyAtlas(c,{
    }
   }
   candidates.sort((a,b)=>a.priority-b.priority||a.mag-b.mag);
-  const occupied=[];
+  const occupied=occupiedRects;
   // Limit labels with a real on-screen rectangle collision test. Greater
   // magnification buys space; labels are checked against previously placed
   // labels, so no two text boxes are allowed to overlap.
@@ -148,6 +150,7 @@ export function drawSkyAtlas(c,{
    }
   }
  }
+ c.__skyLabelRects=occupiedRects;
  c.restore();
  return total;
 }
