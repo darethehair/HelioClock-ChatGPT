@@ -309,8 +309,8 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#sunrise')).not.toHaveText('—');
  // Release identity and provenance are visible even offline.
- await expect(page.locator('#app-version')).toHaveText('v46');
- await expect(page.locator('#dock-version')).toHaveText('v46');
+ await expect(page.locator('#app-version')).toHaveText('v47');
+ await expect(page.locator('#dock-version')).toHaveText('v47');
  await expect(page.locator('.credits-footer')).toContainText('Created by Darethehair with assistance from ChatGPT');
  await expect(page.locator('.credits-footer a')).toHaveAttribute('href','https://github.com/darethehair/HelioClock-ChatGPT');
  await expect(page.locator('#build-meta')).toContainText('commit');
@@ -656,7 +656,7 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
  const errors=[];
  page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v46');
+ await expect(page.locator('#app-version')).toHaveText('v47');
  await expect(page.locator('.almanac-panel')).toBeVisible();
  await page.locator('#layout-sky').click();
  await expect(page.locator('.sky-panel')).toBeVisible();
@@ -965,7 +965,7 @@ test('Version 36 stores, restores, imports, exports and resets preferences',asyn
 test('Version 25 Sun and Moon use the same zoomable pannable fullscreen stage',async({page})=>{
  const errors=[];page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v46');
+ await expect(page.locator('#app-version')).toHaveText('v47');
  await expect(page.locator('#moon')).toBeVisible();
  await expect(page.locator('#solar-photo')).toBeHidden();
  await page.locator('[data-disc-view="sun"]').click();
@@ -1402,7 +1402,7 @@ test('Version 34 offers comparable Milky Way masks and copyable exact debug stat
  });
  await page.locator('#mw-copy-debug').click();
  const data=await page.evaluate(()=>JSON.parse(window.__debugCopy));
- expect(data.version).toBe(46);
+ expect(data.version).toBe(47);
  expect(data.utc).toBe('2026-11-09T12:44:00.000Z');
  expect(data.observer).toEqual({lat:49.19,lon:-98.10});
  expect(data.sky.projection).toBe('rect');
@@ -1587,4 +1587,32 @@ test('v46 desktop Sky Compass toggle labels wrap inside the dashboard card',asyn
  }
  const tops=await page.locator('.sky-panel .sky-options label').evaluateAll(items=>[...new Set(items.map(el=>Math.round(el.getBoundingClientRect().top)))]);
  expect(tops.length).toBeGreaterThan(1);
+});
+
+test('v47 night lights, Kp and NOAA aurora work in all Earth projections',async({page})=>{
+ const timestamp=new Date().toISOString().slice(0,19);
+ await page.route('https://services.swpc.noaa.gov/json/ovation_aurora_latest.json',route=>route.fulfill({
+  status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},
+  body:JSON.stringify({'Observation Time':timestamp,'Forecast Time':timestamp,
+   coordinates:Array.from({length:360},(_,i)=>[i,65,65])})
+ }));
+ await page.route('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json',route=>route.fulfill({
+  status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},
+  body:JSON.stringify([['time_tag','Kp'],[timestamp.replace('T',' '),'5.33']])
+ }));
+ await page.goto('http://127.0.0.1:8765/');
+ await expect(page.locator('#kp-badge')).toContainText('5.3');
+ await expect(page.locator('#earth-space-weather-status')).toContainText('NOAA OVATION');
+ await page.locator('#earth-city-lights').check();
+ await page.locator('#earth-aurora').check();
+ for(const projection of ['equal','globe','mercator']){
+  await page.locator('[data-projection="'+projection+'"]').click();
+  await expect(page.locator('#earth-city-lights')).toBeChecked();
+  await expect(page.locator('#earth-aurora')).toBeChecked();
+  const pixels=await page.locator('#earth-map').evaluate(el=>el.getContext('2d').getImageData(0,0,el.width,el.height).data.length);
+  expect(pixels).toBeGreaterThan(10000);
+ }
+ await page.reload();
+ await expect(page.locator('#earth-city-lights')).toBeChecked();
+ await expect(page.locator('#earth-aurora')).toBeChecked();
 });
