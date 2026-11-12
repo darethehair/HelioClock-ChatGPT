@@ -33,6 +33,19 @@ export function createEarthProjection(width,height,state){
 const normLon=(v)=>wrap(v+180,360)-180;
 const earthImages={};
 const earthLoadState={standard:'idle',high:'idle'};
+let nightImage=null,nightStatus='idle';
+function loadNightLights(){
+ if(nightImage||nightStatus==='loading'||nightStatus==='failed')return;
+ nightStatus='loading';const img=new Image();
+ img.onload=()=>{try{
+  const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;
+  const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0);
+  nightImage=ctx.getImageData(0,0,c.width,c.height);nightStatus='ready';
+ }catch{nightStatus='failed'}window.dispatchEvent(new Event('helioclock-earth-texture-ready'))};
+ img.onerror=()=>{nightStatus='failed';window.dispatchEvent(new Event('helioclock-earth-texture-ready'))};
+ img.src='./earth-black-marble-2016.jpg';
+}
+export const nightLightsStatus=()=>nightStatus;
 function loadEarthTexture(quality){
  const key=quality==='4k'?'high':'standard';
  if(earthImages[key]||earthLoadState[key]==='loading')return;
@@ -75,12 +88,21 @@ function sampleEarth(lon,lat,quality='2k'){
 }
 
 
+function nightLightStrength(lon,lat){
+ if(!nightImage)return 0;
+ const {width,height,data}=nightImage;
+ const x=Math.floor(wrap(lon+180,360)/360*width)%width;
+ const y=Math.min(height-1,Math.floor(clamp((90-lat)/180,0,.999999)*height));
+ const i=(y*width+x)*4;
+ return clamp((Math.max(data[i],data[i+1],data[i+2])-22)/145,0,1);
+}
 /** Draw an Earth projection with per-pixel physically computed twilight and mapped land boundaries.
  * No third-party map services or remote tile downloads are required.
  */
 export function renderEarth(context,width,height,date,state){
  const {earthProjection='equal',earthZoom=1,earthLon=0,earthLat=0,lat,lon,
-  earthTextureQuality='2k',earthTwilight={}}=state;
+  earthTextureQuality='2k',earthTwilight={},cityLights=false,showAurora=false,auroraGrid=null}=state;
+ if(cityLights)loadNightLights();
  if(earthTextureQuality==='4k')loadEarthTexture('4k');
  // The same projection factory is used by regression tests.
  const map=createEarthProjection(width,height,state);
@@ -140,6 +162,26 @@ export function renderEarth(context,width,height,date,state){
    else if(altitude<=-12&&altitude>-18&&earthTwilight.astronomical)multiplier=.48;
    else if(altitude<=-18&&earthTwilight.night)multiplier=.78;
    r*=multiplier;g*=multiplier;b*=multiplier;
+   if(cityLights&&nightImage){
+    const darkness=clamp((-altitude-2)/12,0,1);
+    if(darkness>0){
+     const light=nightLightStrength(p[0],p[1])*darkness;
+     r+=light*235;g+=light*165;b+=light*93;
+    }
+   }
+   if(showAurora&&auroraGrid){
+    const ix=((Math.round(p[0])%360)+360)%360;
+    const iy=Math.max(0,Math.min(180,Math.round(p[1])+90));
+    const intensity=auroraGrid[iy*360+ix]||0;
+    const strength=Math.pow(intensity/100,.7)*.75;
+    if(strength>.015){
+     const dark=clamp((-altitude+2)/14,0,1);
+     const alpha=strength*(.22+.78*dark);
+     r=r*(1-alpha)+42*alpha;
+     g=g*(1-alpha)+228*alpha;
+     b=b*(1-alpha)+120*alpha;
+    }
+   }
    image.data[i]=r;image.data[i+1]=g;image.data[i+2]=b;image.data[i+3]=255;
   }
  }
