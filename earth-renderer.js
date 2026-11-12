@@ -43,7 +43,7 @@ function loadNightLights(){
   nightImage=ctx.getImageData(0,0,c.width,c.height);nightStatus='ready';
  }catch{nightStatus='failed'}window.dispatchEvent(new Event('helioclock-earth-texture-ready'))};
  img.onerror=()=>{nightStatus='failed';window.dispatchEvent(new Event('helioclock-earth-texture-ready'))};
- img.src='./earth-black-marble-2016.jpg';
+ img.src='./earth-black-marble-lights-2016.jpg';
 }
 export const nightLightsStatus=()=>nightStatus;
 function loadEarthTexture(quality){
@@ -94,7 +94,10 @@ function nightLightStrength(lon,lat){
  const x=Math.floor(wrap(lon+180,360)/360*width)%width;
  const y=Math.min(height-1,Math.floor(clamp((90-lat)/180,0,.999999)*height));
  const i=(y*width+x)*4;
- return clamp((Math.max(data[i],data[i+1],data[i+2])-22)/145,0,1);
+ const r=data[i],g=data[i+1],b=data[i+2];
+ // Grayscale light emissions, not the colour terrain map.
+ if(Math.max(r,g,b)-Math.min(r,g,b)>16)return 0;
+ return clamp((Math.min(r,g,b)-5)/110,0,1);
 }
 /** Draw an Earth projection with per-pixel physically computed twilight and mapped land boundaries.
  * No third-party map services or remote tile downloads are required.
@@ -166,7 +169,7 @@ export function renderEarth(context,width,height,date,state){
     const darkness=clamp((-altitude-2)/12,0,1);
     if(darkness>0){
      const light=nightLightStrength(p[0],p[1])*darkness;
-     r+=light*235;g+=light*165;b+=light*93;
+     r+=light*210;g+=light*195;b+=light*160;
     }
    }
    if(showAurora&&auroraGrid){
