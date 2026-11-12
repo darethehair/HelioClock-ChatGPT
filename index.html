@@ -11,7 +11,7 @@
 <body>
 <div class="app">
 <header class="topbar">
-  <div class="identity"><div class="mark">☼</div><div><div class="eyebrow">PERSONAL OBSERVATORY <span class="edition">/ CHATGPT EDITION</span></div><h1>Helio<span>Clock</span> <span class="app-version" id="app-version" title="Release and build identifier">v44</span></h1></div></div>
+  <div class="identity"><div class="mark">☼</div><div><div class="eyebrow">PERSONAL OBSERVATORY <span class="edition">/ CHATGPT EDITION</span></div><h1>Helio<span>Clock</span> <span class="app-version" id="app-version" title="Release and build identifier">v45</span></h1></div></div>
   <div class="header-right"><a class="topbar-link" href="#observatory-controls">⚙ Controls</a><span id="live-indicator" class="live-pill"><i></i> LIVE SKY</span><span id="local-clock" class="utc-clock">—</span><span id="utc-clock" class="utc-clock">—</span></div>
 </header>
 <main>
@@ -37,6 +37,10 @@
    <g id="solar-journey-sun" visibility="hidden"><circle r="31" fill="url(#journey-sun-glow)"/><circle r="10" fill="#ffdc89" stroke="#fff5ce" stroke-width="2"/><circle r="4" fill="#fff9dc" opacity=".9"/></g>
    <path class="journey-mountain-far" d="M 0 200 L 43 185 78 192 120 173 157 187 203 179 252 194 296 183 336 196 395 180 439 195 500 180 V 236 H 0Z"/>
    <path class="journey-mountain-near" d="M 0 221 L 54 203 98 214 149 202 190 219 233 205 282 223 328 204 390 219 427 202 470 212 500 201 V 236 H 0Z"/>
+   <g id="solar-journey-sun-below" visibility="hidden" aria-label="Sun below the horizon">
+    <circle r="10" fill="#facb7b" fill-opacity=".07" stroke="#ffdb9e" stroke-width="2.5" stroke-dasharray="1.1 4" stroke-linecap="round"/>
+    <circle r="2.5" fill="#ffe8b3" fill-opacity=".68"/>
+   </g>
   </svg>
   <div class="solar-journey-readout"><span class="journey-altitude"><strong id="solar-alt">—</strong><small>SOLAR ALTITUDE</small></span><span class="journey-caption">Solar path · local day</span></div>
  </div>
@@ -165,7 +169,7 @@
  <div class="dock-adjust"><button id="dock-prev-day" title="Previous day">−1d</button><button id="dock-prev-hour" title="Previous hour">−1h</button><button id="dock-play" title="Play / pause">▶</button><button id="dock-next-hour" title="Next hour">+1h</button><button id="dock-next-day" title="Next day">+1d</button></div>
  <div class="dock-date-fields"><label for="dock-date">Date</label><input id="dock-date" type="date"><label for="dock-time">Time (device)</label><input id="dock-time" type="time" step="60"></div>
  <input id="dock-scrubber" type="range" min="0" max="1439" step="1" aria-label="Scrub through the selected day in device local time">
- <span class="dock-version" id="dock-version" title="HelioClock release">v44</span><span class="dock-sidereal" title="Local apparent sidereal time"><span>LST</span> <strong id="dock-sidereal">—</strong></span><button id="dock-live" class="dock-live" title="Return to current time">● LIVE</button>
+ <span class="dock-version" id="dock-version" title="HelioClock release">v45</span><span class="dock-sidereal" title="Local apparent sidereal time"><span>LST</span> <strong id="dock-sidereal">—</strong></span><button id="dock-live" class="dock-live" title="Return to current time">● LIVE</button>
 </section>
-<footer class="credits-footer"><div><strong>HelioClock-ChatGPT <span class="release-version">v44</span></strong><div>Created by Darethehair with assistance from ChatGPT</div><div id="build-meta" class="build-meta">Build information loading…</div></div><div><a href="https://github.com/darethehair/HelioClock-ChatGPT" target="_blank" rel="noopener">Source on GitHub ↗</a><details class="source-credits"><summary>About &amp; data credits</summary><p>Moon ephemerides: Astronomy Engine, Donald Cross (MIT). Star and constellation catalogues and Vieira Milky Way contours: D3-Celestial (BSD). Earth texture: NASA Blue Marble; lunar imagery: NASA Lunar Reconnaissance Orbiter; latest solar continuum images: NASA SDO/HMI. Approximate solar methods: NOAA / Meeus. Visualizations and integration: Darethehair with ChatGPT assistance.</p></details></div></footer>
+<footer class="credits-footer"><div><strong>HelioClock-ChatGPT <span class="release-version">v45</span></strong><div>Created by Darethehair with assistance from ChatGPT</div><div id="build-meta" class="build-meta">Build information loading…</div></div><div><a href="https://github.com/darethehair/HelioClock-ChatGPT" target="_blank" rel="noopener">Source on GitHub ↗</a><details class="source-credits"><summary>About &amp; data credits</summary><p>Moon ephemerides: Astronomy Engine, Donald Cross (MIT). Star and constellation catalogues and Vieira Milky Way contours: D3-Celestial (BSD). Earth texture: NASA Blue Marble; lunar imagery: NASA Lunar Reconnaissance Orbiter; latest solar continuum images: NASA SDO/HMI. Approximate solar methods: NOAA / Meeus. Visualizations and integration: Darethehair with ChatGPT assistance.</p></details></div></footer>
 </div></body></html>

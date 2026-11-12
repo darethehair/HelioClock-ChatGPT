@@ -10,7 +10,8 @@ export function renderSolarJourney(date,lat,lon,alt,sunHorizontal){
  const wrap=document.querySelector('.hero');
  const arc=document.getElementById('solar-journey-arc');
  const marker=document.getElementById('solar-journey-sun');
- if(!wrap||!arc||!marker)return;
+ const below=document.getElementById('solar-journey-sun-below');
+ if(!wrap||!arc||!marker||!below)return;
  const dayStart=new Date(date.getFullYear(),date.getMonth(),date.getDate());
  const dayEnd=new Date(date.getFullYear(),date.getMonth(),date.getDate()+1);
  const ms=dayEnd.getTime()-dayStart.getTime();
@@ -25,8 +26,11 @@ export function renderSolarJourney(date,lat,lon,alt,sunHorizontal){
  }
  arc.setAttribute('d',path);
  const fraction=hourFraction(date,dayStart,dayEnd);
- marker.setAttribute('transform','translate('+xAt(fraction).toFixed(2)+' '+yAt(alt).toFixed(2)+')');
+ const position='translate('+xAt(fraction).toFixed(2)+' '+yAt(alt).toFixed(2)+')';
+ marker.setAttribute('transform',position);
+ below.setAttribute('transform',position);
  marker.setAttribute('visibility',alt>=0?'visible':'hidden');
+ below.setAttribute('visibility',alt<0?'visible':'hidden');
  const phase=alt>=6?'day':alt>=0?'golden':alt>=-6?'civil':alt>=-12?'nautical':alt>=-18?'astronomical':'night';
  if(phase!==lastPhase){wrap.dataset.solarPhase=phase;lastPhase=phase}
  const label=phase==='day'?'Daylight':phase==='golden'?'Golden hour':phase==='civil'?'Civil twilight':phase==='nautical'?'Nautical twilight':phase==='astronomical'?'Astronomical twilight':'Night';

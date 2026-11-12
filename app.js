@@ -748,7 +748,7 @@ window.addEventListener('helioclock-milkyway-ready',render);
 $('mw-copy-debug').addEventListener('click',async()=>{
  const chosen='planar';
  const debug={
-  version:44,utc:state.date.toISOString(),
+  version:45,utc:state.date.toISOString(),
   local:state.date.toLocaleString('en-CA',{timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone}),
   timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,
   observer:{lat:state.lat,lon:state.lon},
@@ -1056,11 +1056,19 @@ const panelVisibility={
  hero:'.hero,.stat-strip',chart:'.chart-panel',earth:'.earth-panel',sky:'.sky-panel',
  moon:'.moon-panel',orrery:'.orrery-panel',details:'.details-panel',almanac:'.almanac-panel'
 };
-const defaultLayout={hero:true,chart:true,earth:true,sky:true,moon:true,orrery:true,details:true,almanac:false};
+const defaultLayout={hero:true,chart:true,earth:true,sky:true,moon:true,orrery:true,details:true,almanac:true};
 let activeLayout={...defaultLayout};
 try{
- const saved=JSON.parse(localStorage.getItem('helioclock-layout-v21')||'null');
- if(saved&&typeof saved==='object')for(const k of Object.keys(defaultLayout))if(typeof saved[k]==='boolean')activeLayout[k]=saved[k];
+ const modern=localStorage.getItem('helioclock-layout-v45');
+ const saved=JSON.parse(modern||(localStorage.getItem('helioclock-layout-v21')||'null'));
+ if(saved&&typeof saved==='object'){
+  for(const k of Object.keys(defaultLayout)){
+   if(typeof saved[k]==='boolean' && (modern||k!=='almanac'))activeLayout[k]=saved[k];
+  }
+ }
+ // Previous releases hid the almanac by default. On first upgrade, reveal it
+ // once, while retaining every other saved panel choice. Later explicit
+ // almanac choices (stored in v45) remain fully respected.
 }catch{}
 function applyLayout(next){
  activeLayout={...defaultLayout,...next};
@@ -1071,7 +1079,7 @@ function applyLayout(next){
  }
  document.querySelector('.dashboard').classList.toggle('single-panel',
    [...document.querySelectorAll('.dashboard > .panel')].filter(el=>!el.hidden).length===1);
- try{localStorage.setItem('helioclock-layout-v21',JSON.stringify(activeLayout))}catch{}
+ try{localStorage.setItem('helioclock-layout-v45',JSON.stringify(activeLayout))}catch{}
  requestAnimationFrame(render);
 }
 for(const input of document.querySelectorAll('[data-panel-visibility]')){

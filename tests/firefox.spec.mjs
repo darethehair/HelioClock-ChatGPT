@@ -309,8 +309,8 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#sunrise')).not.toHaveText('—');
  // Release identity and provenance are visible even offline.
- await expect(page.locator('#app-version')).toHaveText('v44');
- await expect(page.locator('#dock-version')).toHaveText('v44');
+ await expect(page.locator('#app-version')).toHaveText('v45');
+ await expect(page.locator('#dock-version')).toHaveText('v45');
  await expect(page.locator('.credits-footer')).toContainText('Created by Darethehair with assistance from ChatGPT');
  await expect(page.locator('.credits-footer a')).toHaveAttribute('href','https://github.com/darethehair/HelioClock-ChatGPT');
  await expect(page.locator('#build-meta')).toContainText('commit');
@@ -656,8 +656,8 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
  const errors=[];
  page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v44');
- await expect(page.locator('.almanac-panel')).toBeHidden();
+ await expect(page.locator('#app-version')).toHaveText('v45');
+ await expect(page.locator('.almanac-panel')).toBeVisible();
  await page.locator('#layout-sky').click();
  await expect(page.locator('.sky-panel')).toBeVisible();
  await expect(page.locator('.almanac-panel')).toBeHidden();
@@ -693,7 +693,7 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
  expect(await page.locator('#sky').evaluate(c=>c.toDataURL())).toEqual(colored);
  await page.locator('#layout-default').click();
  await expect(page.locator('.sky-panel')).toBeVisible();
- await expect(page.locator('.almanac-panel')).toBeHidden();
+ await expect(page.locator('.almanac-panel')).toBeVisible();
  expect(errors).toEqual([]);
 });
 
@@ -965,7 +965,7 @@ test('Version 36 stores, restores, imports, exports and resets preferences',asyn
 test('Version 25 Sun and Moon use the same zoomable pannable fullscreen stage',async({page})=>{
  const errors=[];page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v44');
+ await expect(page.locator('#app-version')).toHaveText('v45');
  await expect(page.locator('#moon')).toBeVisible();
  await expect(page.locator('#solar-photo')).toBeHidden();
  await page.locator('[data-disc-view="sun"]').click();
@@ -1478,7 +1478,7 @@ test('Public landing starts with astronomy and a prominent local clock',async({p
  await expect(page).toHaveURL(/#observatory-controls$/);
 });
 
-test('v44 solar journey responds to daylight and night without changing astronomy controls',async({page})=>{
+test('v45 solar journey responds to daylight and night without changing astronomy controls',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#solar-journey-arc')).toHaveAttribute('d',/M /);
@@ -1492,10 +1492,12 @@ test('v44 solar journey responds to daylight and night without changing astronom
  await page.locator('#observe-time').fill('04:00');
  await page.locator('#observe-time').dispatchEvent('change');
  await expect(page.locator('#solar-journey-sun')).toHaveAttribute('visibility','hidden');
+ await expect(page.locator('#solar-journey-sun-below')).toHaveAttribute('visibility','visible');
+ await expect(page.locator('#solar-journey-sun-below circle').first()).toHaveAttribute('stroke-dasharray',/\d/);
  expect(errors).toEqual([]);
 });
 
-test('v44 photographic nature banner is present offline and the Sun responds to local time',async({page})=>{
+test('v45 photographic nature banner is present offline and the Sun responds to local time',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('.hero-landscape')).toBeVisible();
  const artwork=await page.locator('.hero-landscape').evaluate(el=>({loaded:el.complete&&el.naturalWidth>0,url:el.currentSrc}));
@@ -1511,7 +1513,7 @@ test('v44 photographic nature banner is present offline and the Sun responds to 
  await expect(page.locator('.hero')).toHaveAttribute('data-solar-phase',/night|astronomical|nautical/);
 });
 
-test('v44 packaged sunset panorama is locally served and remains readable',async({page})=>{
+test('v45 packaged sunset panorama is locally served and remains readable',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  const img=page.locator('.hero-landscape');
  await expect(img).toHaveAttribute('src','./hero-landscape-natural.webp');
@@ -1520,4 +1522,41 @@ test('v44 packaged sunset panorama is locally served and remains readable',async
  await expect(page.locator('#solar-alt')).not.toHaveText('—');
  const bg=await img.evaluate(el=>getComputedStyle(el).objectFit);
  expect(bg).toBe('cover');
+});
+
+test('v45 almanac appears on first startup, migrated saved defaults, and remains user-toggleable',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await expect(page.locator('.almanac-panel')).toBeVisible();
+ await expect(page.locator('[data-panel-visibility="almanac"]')).toBeChecked();
+ await page.locator('[data-panel-visibility="almanac"]').uncheck();
+ await expect(page.locator('.almanac-panel')).toBeHidden();
+ await page.reload();
+ await expect(page.locator('.almanac-panel')).toBeHidden();
+ await page.evaluate(()=>{
+  localStorage.removeItem('helioclock-layout-v45');
+  localStorage.setItem('helioclock-layout-v21',JSON.stringify({hero:true,chart:true,earth:true,sky:true,moon:true,orrery:true,details:true,almanac:false}));
+ });
+ await page.reload();
+ await expect(page.locator('.almanac-panel')).toBeVisible();
+ await page.locator('#layout-default').click();
+ await expect(page.locator('.almanac-panel')).toBeVisible();
+});
+
+test('v45 below-horizon Sun stays marked on its time and altitude axes',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('#observe-date').fill('2026-11-11');
+ await page.locator('#observe-time').fill('04:00');
+ await page.locator('#observe-time').dispatchEvent('change');
+ const ghost=page.locator('#solar-journey-sun-below');
+ await expect(ghost).toHaveAttribute('visibility','visible');
+ await expect(page.locator('#solar-journey-sun')).toHaveAttribute('visibility','hidden');
+ const before=await ghost.getAttribute('transform');
+ expect(before).toMatch(/translate\([\d.]+ [\d.]+\)/);
+ await page.locator('#observe-time').fill('06:00');
+ await page.locator('#observe-time').dispatchEvent('change');
+ expect(await ghost.getAttribute('transform')).not.toBe(before);
+ await page.locator('#observe-time').fill('18:00');
+ await page.locator('#observe-time').dispatchEvent('change');
+ await expect(ghost).toHaveAttribute('visibility','hidden');
+ await expect(page.locator('#solar-journey-sun')).toHaveAttribute('visibility','visible');
 });
