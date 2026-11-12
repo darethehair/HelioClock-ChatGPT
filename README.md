@@ -12,7 +12,7 @@ This is the **independent ChatGPT edition**, created by **Darethehair with assis
 
 - **Live observatory banner:** prominent local date and time, current solar altitude, a time-versus-altitude plot of the Sun's journey, sunrise/noon/sunset, daylight duration, Moon phase, and an illustrated landscape. The Sun is shown as a dotted marker below the horizon.
 - **Annual daylight chart:** a year of sunrise, sunset, civil/nautical/astronomical twilight and darkness, plotted in local mean solar time, with interactive date selection.
-- **Illuminated Earth:** optional NASA VIIRS/Suomi-NPP daily true-colour satellite clouds (qualitative white-pixel extraction, not a cloud-cover percentage or forecast, network required; up to several days stale), strength slider, and NASA Black Marble 2016 city lights and current NOAA OVATION auroral forecast (network required, no historical rewind); a planetary Kp indicator in the header; NASA Blue Marble cloud-free imagery; mathematical day/night terminator and selectable twilight bands; solar zenith/nadir markers; Equal Earth, Mercator and interactive globe projections; panning and zooming.
+- **Illuminated Earth:** optional NASA NOAA-20/NOAA-21 VIIRS daily true-colour satellite clouds (qualitative white-pixel extraction, not a cloud-cover percentage or forecast, network required; up to several days stale), strength slider, and NASA Black Marble 2016 city lights and current NOAA OVATION auroral forecast (network required, no historical rewind); a planetary Kp indicator in the header; NASA Blue Marble cloud-free imagery; mathematical day/night terminator and selectable twilight bands; solar zenith/nadir markers; Equal Earth, Mercator and interactive globe projections; panning and zooming.
 - **Sky Compass:** north-polar and full rectangular horizon projections, with stars, solar/lunar paths, planets, constellation lines and names, the ecliptic, celestial grids, and an interactive RA/Dec/Az/Alt pointer readout.
 - **Milky Way and deep sky:** shaded irregular Milky Way contour regions and outlines, galactic-centre marker, Messier galaxies, nebulae and clusters, with independently controlled labels and zoom-aware decluttering.
 - **Sun and Moon:** simulated lunar phase and orientation displayed on a NASA LRO surface mosaic; optional recent NASA SDO/HMI solar imagery, including an offline fallback. Each image supports zoom and pan.
@@ -100,6 +100,7 @@ Upstream scientific datasets and libraries retain their own license and attribut
 
 | Release | Highlights |
 | --- | --- |
+| **v52** | Restore cloud imagery after Suomi-NPP's November 2026 retirement, using active NOAA-20 VIIRS with NOAA-21 fallback and explicit satellite identification. |
 | **v51** | Replace MODIS daily imagery with wider-swath VIIRS/Suomi-NPP imagery to avoid orbital-scan gaps in the cloud overlay. |\n| **v50** | Optional NASA VIIRS satellite cloud approximation on all Earth map projections; strength control, imagery date, refresh and unavailable status. Daily observed imagery is independent of the simulation clock; not a forecast or measured cloud fraction. |
 | **v49** | Fix planetary Kp parsing for NOAA's March 2026 JSON format change while preserving legacy responses. |
 | **v48** | Use grayscale NASA city-light emissions instead of the coloured terrain composite to preserve Earth's natural dark-side appearance. |
@@ -124,4 +125,4 @@ This repository and its Cloudflare Pages site are **separate from** [the origina
 
 ---
 
-*Created by Darethehair with assistance from ChatGPT · README refreshed for HelioClock v51 (November 2026).*
+*Created by Darethehair with assistance from ChatGPT · README refreshed for HelioClock v52 (November 2026).*

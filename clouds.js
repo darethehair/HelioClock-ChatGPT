@@ -1,10 +1,12 @@
-// NASA GIBS daily VIIRS true-colour satellite mosaic.
+// NASA GIBS daily NOAA-20/21 VIIRS true-colour satellite mosaics.
 // Produces a qualitative photographic cloud overlay, NOT a measured cloud fraction.
 // Retrieved independently from HelioClock's simulated date; no credentials required.
 const URL='https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi';
 const DAYS_BACK=[1,2,3,4];
-const LAYER='VIIRS_SNPP_CorrectedReflectance_TrueColor';
-let snapshot={status:'idle',image:null,day:null,error:null,requested:null};
+// Suomi-NPP stopped delivering new observations in November 2026.
+// Request active successor satellites and fall back if one has no imagery.
+const LAYERS=[['NOAA-20','VIIRS_NOAA20_CorrectedReflectance_TrueColor'],['NOAA-21','VIIRS_NOAA21_CorrectedReflectance_TrueColor']];
+let snapshot={status:'idle',image:null,day:null,satellite:null,error:null,requested:null};
 let loading=false;
 export const cloudStatus=()=>snapshot;
 const notice=()=>window.dispatchEvent(new Event('helioclock-cloud-ready'));
@@ -12,13 +14,13 @@ function utcDayBack(n){
  const d=new Date();d.setUTCHours(12,0,0,0);d.setUTCDate(d.getUTCDate()-n);
  return d.toISOString().slice(0,10);
 }
-export function cloudWmsUrl(date){
+export function cloudWmsUrl(date,layer=LAYERS[0][1]){
  const args=new URLSearchParams({SERVICE:'WMS',VERSION:'1.1.1',REQUEST:'GetMap',
-  LAYERS:LAYER,STYLES:'',FORMAT:'image/jpeg',SRS:'EPSG:4326',
+  LAYERS:layer,STYLES:'',FORMAT:'image/jpeg',SRS:'EPSG:4326',
   BBOX:'-180,-90,180,90',WIDTH:'1024',HEIGHT:'512',TIME:date});
  return URL+'?'+args;
 }
-function loadImage(day){
+function loadImage(day,layer){
  return new Promise((resolve,reject)=>{
   const img=new Image();img.crossOrigin='anonymous';
   img.onload=()=>{
@@ -37,7 +39,7 @@ function loadImage(day){
    }catch(error){reject(error)}
   };
   img.onerror=()=>reject(Error('Satellite image missing or blocked'));
-  img.src=cloudWmsUrl(day);
+  img.src=cloudWmsUrl(day,layer);
  });
 }
 export async function refreshClouds(force=false){
@@ -48,13 +50,15 @@ export async function refreshClouds(force=false){
   let lastError=null;
   for(const offset of DAYS_BACK){
    const day=utcDayBack(offset);
-   try{
-    const image=await loadImage(day);
-    snapshot={status:'ready',image,day,error:null,requested:Date.now()};
-    notice();return;
-   }catch(e){lastError=e}
+   for(const [satellite,layer] of LAYERS){
+    try{
+     const image=await loadImage(day,layer);
+     snapshot={status:'ready',image,day,satellite,error:null,requested:Date.now()};
+     notice();return;
+    }catch(e){lastError=e}
+   }
   }
-  snapshot={status:'unavailable',image:null,day:null,error:lastError?.message||'No satellite image',requested:Date.now()};
+  snapshot={status:'unavailable',image:null,day:null,satellite:null,error:lastError?.message||'No satellite image',requested:Date.now()};
   notice();
  }finally{loading=false}
 }
