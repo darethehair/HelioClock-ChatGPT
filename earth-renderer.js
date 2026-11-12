@@ -2,6 +2,7 @@ import {geoEqualEarth,geoOrthographic,geoMercator,geoPath,geoGraticule10,geoDist
 import {feature,mesh} from 'topojson-client';
 import atlas from 'world-atlas/countries-110m.json';
 import {RAD,wrap,solar,clamp} from './astronomy.js';
+import {cloudOpacityAt} from './clouds.js';
 
 const land=feature(atlas,atlas.objects.land);
 const borders=mesh(atlas,atlas.objects.countries,(a,b)=>a!==b);
@@ -104,7 +105,7 @@ function nightLightStrength(lon,lat){
  */
 export function renderEarth(context,width,height,date,state){
  const {earthProjection='equal',earthZoom=1,earthLon=0,earthLat=0,lat,lon,
-  earthTextureQuality='2k',earthTwilight={},cityLights=false,showAurora=false,auroraGrid=null}=state;
+  earthTextureQuality='2k',earthTwilight={},cityLights=false,showAurora=false,auroraGrid=null,showClouds=false,cloudOpacity=.65}=state;
  if(cityLights)loadNightLights();
  if(earthTextureQuality==='4k')loadEarthTexture('4k');
  // The same projection factory is used by regression tests.
@@ -170,6 +171,18 @@ export function renderEarth(context,width,height,date,state){
     if(darkness>0){
      const light=nightLightStrength(p[0],p[1])*darkness;
      r+=light*210;g+=light*195;b+=light*160;
+    }
+   }
+   // Satellite cloud tops are composited after lights but before the
+   // translucent aurora, preserving the underlying day/night illumination.
+   if(showClouds){
+    const alpha=cloudOpacityAt(p[0],p[1],photo,cloudOpacity);
+    if(alpha>.006){
+     const shade=.20+.80*clamp((altitude+13)/22,0,1);
+     const cloud=231*shade;
+     r=r*(1-alpha)+cloud*alpha;
+     g=g*(1-alpha)+cloud*alpha;
+     b=b*(1-alpha)+cloud*alpha;
     }
    }
    if(showAurora&&auroraGrid){
