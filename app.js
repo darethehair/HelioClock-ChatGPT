@@ -11,6 +11,7 @@ import {drawSolarYear} from './solar-chart.js';
 import {drawSkyGrid} from './sky-grid.js';
 import {skyPlanets} from './sky-planets.js';
 import {renderEarth,earthTextureStatus} from './earth-renderer.js';
+import {cloudStatus,refreshClouds} from './clouds.js';
 import {spaceWeather,auroraFresh,startSpaceWeather,refreshSpaceWeather} from './space-weather.js';
 import {starsAbove} from './sky-catalog.js';
 import {RAD,PI,wrap,clamp,solar,sunHorizontal,sunEvents,moon,orbitPositions,sidereal,equatorialFromHorizontal,utcTime,durationText} from './astronomy.js';
@@ -71,7 +72,17 @@ function worldMap(){
  const weather=spaceWeather();
  const result=renderEarth(o.c,o.w,o.h,state.date,{...state,earthTwilight:twilight,
   cityLights:$('earth-city-lights').checked,showAurora:$('earth-aurora').checked&&auroraFresh(),
-  auroraGrid:weather.grid});
+  auroraGrid:weather.grid,
+  showClouds:$('earth-clouds').checked&&cloudStatus().status==='ready',
+  cloudOpacity:Number($('earth-cloud-opacity').value)/100});
+ const cloud=cloudStatus(),cloudEnabled=$('earth-clouds').checked;
+ $('earth-cloud-status').textContent=!cloudEnabled
+  ?'Clouds off · NASA daily true-colour imagery (approximate)'
+  :cloud.status==='ready'
+   ?'NASA Terra/MODIS daily mosaic '+cloud.day+' UTC · approximate clouds (not measured cloud fraction) · independent of simulated date'
+   :cloud.status==='loading'?'Loading NASA satellite imagery…'
+   :cloud.status==='unavailable'?'Cloud imagery unavailable · check connection / NASA GIBS'
+   :'Clouds awaiting imagery';
  const loaded=weather.grid&&auroraFresh();
  const stamp=weather.forecast?new Date(weather.forecast).toLocaleString():'—';
  $('earth-space-weather-status').textContent=
@@ -728,6 +739,16 @@ $('earth-texture-quality').addEventListener('change',e=>{
 for(const id of ['earth-twilight-civil','earth-twilight-nautical','earth-twilight-astronomical','earth-twilight-night'])
  $(id).addEventListener('change',render);
 for(const id of ['earth-city-lights','earth-aurora'])$(id).addEventListener('change',render);
+$('earth-clouds').addEventListener('change',()=>{
+ if($('earth-clouds').checked)refreshClouds().catch(()=>{});
+ render();
+});
+$('earth-cloud-opacity').addEventListener('input',()=>{
+ $('earth-cloud-opacity-value').textContent=$('earth-cloud-opacity').value+'%';
+ render();
+});
+$('earth-cloud-refresh').addEventListener('click',()=>refreshClouds(true).catch(()=>{}));
+window.addEventListener('helioclock-cloud-ready',render);
 $('earth-space-weather-refresh').addEventListener('click',()=>refreshSpaceWeather().catch(()=>{}));
 window.addEventListener('helioclock-space-weather',render);
 window.addEventListener('helioclock-earth-texture-ready',render);
@@ -766,7 +787,7 @@ window.addEventListener('helioclock-milkyway-ready',render);
 $('mw-copy-debug').addEventListener('click',async()=>{
  const chosen='planar';
  const debug={
-  version:49,utc:state.date.toISOString(),
+  version:50,utc:state.date.toISOString(),
   local:state.date.toLocaleString('en-CA',{timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone}),
   timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,
   observer:{lat:state.lat,lon:state.lon},
@@ -1147,7 +1168,7 @@ const PREF_CHECKBOXES=['show-au-rings','show-earthshine','show-constellations',
  'show-ecliptic','use-precession','show-stellar-colors',
  'show-planets','show-altaz-grid','show-radec-grid',
  'earth-twilight-civil','earth-twilight-nautical',
- 'earth-twilight-astronomical','earth-twilight-night','earth-city-lights','earth-aurora'];
+ 'earth-twilight-astronomical','earth-twilight-night','earth-city-lights','earth-aurora','earth-clouds'];
 const PREF_CHOICES={
  earthProjection:['equal','globe','mercator'],
  earthTextureQuality:['2k','4k'],
@@ -1295,7 +1316,7 @@ $('prefs-file').addEventListener('change',async e=>{
   if(!validNumber(value.magLimit,0,7))throw Error('Invalid magnitude limit');
   for(const key of PREF_CHECKBOXES)
    if(typeof value.checkboxes[key]!=='boolean'&&
-      !(value.checkboxes[key]===undefined&&['show-planets','show-altaz-grid','show-radec-grid','earth-city-lights','earth-aurora'].includes(key)))
+      !(value.checkboxes[key]===undefined&&['show-planets','show-altaz-grid','show-radec-grid','earth-city-lights','earth-aurora','earth-clouds'].includes(key)))
     throw Error('Invalid '+key);
   for(const key of Object.keys(defaultLayout))
    if(typeof value.layout[key]!=='boolean')throw Error('Invalid layout');
