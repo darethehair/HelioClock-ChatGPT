@@ -502,3 +502,17 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
  max-width:100%;
  white-space:normal;
 }
+
+/* v47 NOAA OVATION and NASA Black Marble overlays */
+.earth-overlay-tools{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;padding:8px 0 12px;color:#c5d9ec;font-size:10px;border-top:1px solid #44617a5c}
+.earth-overlay-tools>span{font-weight:800;color:#efca8f;letter-spacing:.8px}
+.earth-overlay-tools label{display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+.earth-overlay-tools input{accent-color:#91deae}
+.earth-overlay-tools button{background:#162f47;border:1px solid #486987;border-radius:5px;padding:5px 9px;color:#c8e4fc;font-size:10px}
+.earth-overlay-tools small{width:100%;color:#9eb9d0;font-size:10px;line-height:1.5}
+.kp-badge{display:inline-block;border:1px solid #62758a;border-radius:16px;color:#b7cee3;padding:6px 9px;white-space:nowrap;font:700 11px 'Space Grotesk',sans-serif;background:#142238}
+.kp-badge[data-tier="quiet"]{color:#98ebc2;border-color:#387d65}
+.kp-badge[data-tier="active"]{color:#f4d67f;border-color:#a18b42}
+.kp-badge[data-tier="storm"]{color:#ffb18a;border-color:#9d623c}
+.kp-badge[data-tier="severe"]{color:#ff9696;border-color:#ac4557}
+@media(max-width:750px){.earth-overlay-tools small{width:100%}.kp-badge{font-size:10px;padding:5px 7px}}
