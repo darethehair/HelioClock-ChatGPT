@@ -309,8 +309,8 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#sunrise')).not.toHaveText('—');
  // Release identity and provenance are visible even offline.
- await expect(page.locator('#app-version')).toHaveText('v48');
- await expect(page.locator('#dock-version')).toHaveText('v48');
+ await expect(page.locator('#app-version')).toHaveText('v49');
+ await expect(page.locator('#dock-version')).toHaveText('v49');
  await expect(page.locator('.credits-footer')).toContainText('Created by Darethehair with assistance from ChatGPT');
  await expect(page.locator('.credits-footer a')).toHaveAttribute('href','https://github.com/darethehair/HelioClock-ChatGPT');
  await expect(page.locator('#build-meta')).toContainText('commit');
@@ -656,7 +656,7 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
  const errors=[];
  page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v48');
+ await expect(page.locator('#app-version')).toHaveText('v49');
  await expect(page.locator('.almanac-panel')).toBeVisible();
  await page.locator('#layout-sky').click();
  await expect(page.locator('.sky-panel')).toBeVisible();
@@ -965,7 +965,7 @@ test('Version 36 stores, restores, imports, exports and resets preferences',asyn
 test('Version 25 Sun and Moon use the same zoomable pannable fullscreen stage',async({page})=>{
  const errors=[];page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v48');
+ await expect(page.locator('#app-version')).toHaveText('v49');
  await expect(page.locator('#moon')).toBeVisible();
  await expect(page.locator('#solar-photo')).toBeHidden();
  await page.locator('[data-disc-view="sun"]').click();
@@ -1402,7 +1402,7 @@ test('Version 34 offers comparable Milky Way masks and copyable exact debug stat
  });
  await page.locator('#mw-copy-debug').click();
  const data=await page.evaluate(()=>JSON.parse(window.__debugCopy));
- expect(data.version).toBe(48);
+ expect(data.version).toBe(49);
  expect(data.utc).toBe('2026-11-09T12:44:00.000Z');
  expect(data.observer).toEqual({lat:49.19,lon:-98.10});
  expect(data.sky.projection).toBe('rect');
@@ -1598,7 +1598,7 @@ test('v47 night lights, Kp and NOAA aurora work in all Earth projections',async(
  }));
  await page.route('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json',route=>route.fulfill({
   status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},
-  body:JSON.stringify([['time_tag','Kp'],[timestamp.replace('T',' '),'5.33']])
+  body:JSON.stringify([{time_tag:timestamp,Kp:5.33,a_running:56,station_count:8}])
  }));
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#kp-badge')).toContainText('5.3');
@@ -1630,4 +1630,25 @@ test('v48 grayscale Black Marble texture loads and does not tint the night side'
  await expect(page.locator('#earth-city-lights')).toBeChecked();
  await page.locator('#earth-city-lights').uncheck();
  await expect(page.locator('#earth-city-lights')).not.toBeChecked();
+});
+
+test('v49 NOAA Kp parser accepts the March 2026 object records and rejects malformed readings',async({page})=>{
+ await page.route('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json',route=>route.fulfill({
+  status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},
+  body:JSON.stringify([
+   {time_tag:'2026-11-12T15:00:00',Kp:0.33,a_running:2,station_count:8},
+   {time_tag:'2026-11-12T18:00:00',Kp:1.33,a_running:5,station_count:8},
+   {time_tag:'not a date',Kp:99},
+   {time_tag:'2026-11-12T21:00:00',Kp:null}
+  ])
+ }));
+ await page.route('https://services.swpc.noaa.gov/json/ovation_aurora_latest.json',route=>route.fulfill({
+  status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},
+  body:JSON.stringify({'Observation Time':new Date().toISOString(),'Forecast Time':new Date().toISOString(),
+   coordinates:Array.from({length:360},(_,i)=>[i,65,30])})
+ }));
+ await page.goto('http://127.0.0.1:8765/');
+ await expect(page.locator('#kp-badge')).toHaveText('Kp 1.3');
+ await expect(page.locator('#earth-space-weather-status')).toContainText('Kp 1.3');
+ await expect(page.locator('#kp-badge')).toHaveAttribute('data-tier','quiet');
 });

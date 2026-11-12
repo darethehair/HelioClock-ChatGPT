@@ -26,15 +26,33 @@ export function parseAurora(data){
  return {grid,forecast:forecast.toISOString(),observed:observed.toISOString()};
 }
 export function parseKp(data){
- if(!Array.isArray(data)||data.length<2)throw Error('Invalid NOAA Kp feed');
- const header=Array.isArray(data[0])?data[0].map(x=>String(x).toLowerCase()):[];
- const kpCol=Math.max(1,header.findIndex(x=>x==='kp'||x.includes('kp')));
- const timeCol=Math.max(0,header.findIndex(x=>x.includes('time')));
- for(let i=data.length-1;i>=1;i--){
-  const row=data[i];if(!Array.isArray(row))continue;
-  const kp=Number(row[kpCol]),date=readTime(row[timeCol]);
-  if(date&&Number.isFinite(kp)&&kp>=0&&kp<=9)return {kp,kpTime:date.toISOString()};
+ if(!Array.isArray(data)||!data.length)throw Error('Invalid NOAA Kp feed');
+ // NOAA changed to object records in March 2026; retain support for old
+ // header-and-rows responses as well, for backward compatibility.
+ const legacy=Array.isArray(data[0]);
+ const header=legacy?data[0].map(x=>String(x).trim().toLowerCase()):[];
+ const kpCol=header.findIndex(x=>x==='kp');
+ const timeCol=header.findIndex(x=>x==='time_tag'||x.includes('time'));
+ let latest=null;
+ for(let i=legacy?1:0;i<data.length;i++){
+  const row=data[i];
+  let rawKp,rawTime;
+  if(legacy){
+   if(!Array.isArray(row))continue;
+   rawKp=row[kpCol>=0?kpCol:1];
+   rawTime=row[timeCol>=0?timeCol:0];
+  }else{
+   if(!row||typeof row!=='object'||Array.isArray(row))continue;
+   rawKp=row.Kp??row.kp??row.KP;
+   rawTime=row.time_tag??row.timeTag??row.time;
+  }
+  if(rawKp===null||rawKp===undefined||String(rawKp).trim()==='')continue;
+  const kp=Number(rawKp),date=readTime(rawTime);
+  if(!date||!Number.isFinite(kp)||kp<0||kp>9)continue;
+  if(!latest||date.getTime()>Date.parse(latest.kpTime))
+   latest={kp,kpTime:date.toISOString()};
  }
+ if(latest)return latest;
  throw Error('No valid Kp observation');
 }
 export const spaceWeather=()=>snapshot;

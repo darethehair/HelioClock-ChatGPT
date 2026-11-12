@@ -100,6 +100,7 @@ Upstream scientific datasets and libraries retain their own license and attribut
 
 | Release | Highlights |
 | --- | --- |
+| **v49** | Fix planetary Kp parsing for NOAA's March 2026 JSON format change while preserving legacy responses. |
 | **v48** | Use grayscale NASA city-light emissions instead of the coloured terrain composite to preserve Earth's natural dark-side appearance. |
 | **v47** | NOAA OVATION near-real-time auroral forecast overlay and planetary Kp, with night-side NASA Black Marble 2016 city lights. All three Earth projections; timestamps and offline messaging. |
 | **v46** | Sky Compass checkbox rows wrap within the standard two-column dashboard. |
@@ -122,4 +123,4 @@ This repository and its Cloudflare Pages site are **separate from** [the origina
 
 ---
 
-*Created by Darethehair with assistance from ChatGPT · README refreshed for HelioClock v48 (November 2026).*
+*Created by Darethehair with assistance from ChatGPT · README refreshed for HelioClock v49 (November 2026).*
