@@ -239,7 +239,7 @@ jobs:
           print('Bundled NASA Black Marble:',p.stat().st_size)
           PY
       - name: Stage static files for browser test
-        run: cp index.html styles.css astronomy.js manifest.webmanifest sw.js icon.svg hero-landscape-natural.webp dist/ && printf '{"version":49,"test":true,"commit":"%s","built_utc":"%s"}\n' "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > dist/build-info.json
+        run: cp index.html styles.css astronomy.js manifest.webmanifest sw.js icon.svg hero-landscape-natural.webp dist/ && printf '{"version":50,"test":true,"commit":"%s","built_utc":"%s"}\n' "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > dist/build-info.json
       # Pin a stable runner and download only the Playwright browser binary.
       # Avoid apt-based --with-deps: the Ubuntu archive DNS endpoint can
       # intermittently fail and strand the job for 20+ minutes.
@@ -254,7 +254,7 @@ jobs:
           set -euo pipefail
           mkdir -p dist
           cp index.html styles.css astronomy.js manifest.webmanifest sw.js icon.svg hero-landscape-natural.webp dist/
-          printf '{"version":49,"commit":"%s","built_utc":"%s","repository":"%s"}\n' "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$GITHUB_REPOSITORY" > dist/build-info.json
+          printf '{"version":50,"commit":"%s","built_utc":"%s","repository":"%s"}\n' "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$GITHUB_REPOSITORY" > dist/build-info.json
       - name: Upload PWA ZIP
         uses: actions/upload-artifact@v4
         with:
