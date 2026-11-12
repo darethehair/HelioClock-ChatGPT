@@ -11,6 +11,7 @@ import {drawSolarYear} from './solar-chart.js';
 import {drawSkyGrid} from './sky-grid.js';
 import {skyPlanets} from './sky-planets.js';
 import {renderEarth,earthTextureStatus} from './earth-renderer.js';
+import {spaceWeather,auroraFresh,startSpaceWeather,refreshSpaceWeather} from './space-weather.js';
 import {starsAbove} from './sky-catalog.js';
 import {RAD,PI,wrap,clamp,solar,sunHorizontal,sunEvents,moon,orbitPositions,sidereal,equatorialFromHorizontal,utcTime,durationText} from './astronomy.js';
 const $=id=>document.getElementById(id);
@@ -67,7 +68,20 @@ function worldMap(){
   astronomical:$('earth-twilight-astronomical').checked,
   night:$('earth-twilight-night').checked
  };
- const result=renderEarth(o.c,o.w,o.h,state.date,{...state,earthTwilight:twilight});
+ const weather=spaceWeather();
+ const result=renderEarth(o.c,o.w,o.h,state.date,{...state,earthTwilight:twilight,
+  cityLights:$('earth-city-lights').checked,showAurora:$('earth-aurora').checked&&auroraFresh(),
+  auroraGrid:weather.grid});
+ const loaded=weather.grid&&auroraFresh();
+ const stamp=weather.forecast?new Date(weather.forecast).toLocaleString():'—';
+ $('earth-space-weather-status').textContent=
+  (loaded?'NOAA OVATION forecast '+stamp:'Aurora forecast unavailable or stale')+
+  ' · '+(weather.kp===null?'Kp unavailable':'Kp '+weather.kp.toFixed(1))+
+  ' · Live data, independent of simulated date';
+ const badge=$('kp-badge');
+ badge.textContent=weather.kp===null?'Kp —':'Kp '+weather.kp.toFixed(1);
+ badge.dataset.tier=weather.kp===null?'unknown':weather.kp>=7?'severe':weather.kp>=5?'storm':weather.kp>=4?'active':'quiet';
+ badge.title=weather.kpTime?'NOAA planetary Kp · observed '+weather.kpTime+' · independent of simulation date':'NOAA Kp unavailable';
  const highStatus=earthTextureStatus(state.earthTextureQuality);
  $('earth-texture-status').textContent=state.earthTextureQuality==='4k'
   ?highStatus.status==='ready'?'4K image · 4096 × 2048 · offline':
@@ -713,7 +727,11 @@ $('earth-texture-quality').addEventListener('change',e=>{
 });
 for(const id of ['earth-twilight-civil','earth-twilight-nautical','earth-twilight-astronomical','earth-twilight-night'])
  $(id).addEventListener('change',render);
+for(const id of ['earth-city-lights','earth-aurora'])$(id).addEventListener('change',render);
+$('earth-space-weather-refresh').addEventListener('click',()=>refreshSpaceWeather().catch(()=>{}));
+window.addEventListener('helioclock-space-weather',render);
 window.addEventListener('helioclock-earth-texture-ready',render);
+startSpaceWeather();
 $('show-earthshine').addEventListener('change',render);
 window.addEventListener('helioclock-moon-texture-ready',render);
 
@@ -748,7 +766,7 @@ window.addEventListener('helioclock-milkyway-ready',render);
 $('mw-copy-debug').addEventListener('click',async()=>{
  const chosen='planar';
  const debug={
-  version:46,utc:state.date.toISOString(),
+  version:47,utc:state.date.toISOString(),
   local:state.date.toLocaleString('en-CA',{timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone}),
   timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,
   observer:{lat:state.lat,lon:state.lon},
@@ -944,7 +962,7 @@ const dockNext=timeDock.nextSibling;
 const compactFullscreenQuery=window.matchMedia('(max-width: 1050px)');
 const compactControlSelectors={
  'chart-panel':['.solar-chart-legend','.solar-chart-summary','.solar-time-position','.chart-footer'],
- 'earth-panel':['.earth-tools','.earth-twilight-controls','.map-legend'],
+ 'earth-panel':['.earth-tools','.earth-twilight-controls','.earth-overlay-tools','.map-legend'],
  'sky-panel':['.sky-light-controls','.sky-observatory-toolbar','.sky-sidereal-toolbar','.sky-debug-tools','.sky-options','.sky-cursor-readout','.celestial-readout','.sky-legend'],
  'moon-panel':['.disc-view-select','.earthshine-toggle','.moon-view-tools','.moon-orientation','.solar-observation-note','.moon-bottom'],
  'orrery-panel':['.orrery-controls','.planet-legend']
@@ -1129,7 +1147,7 @@ const PREF_CHECKBOXES=['show-au-rings','show-earthshine','show-constellations',
  'show-ecliptic','use-precession','show-stellar-colors',
  'show-planets','show-altaz-grid','show-radec-grid',
  'earth-twilight-civil','earth-twilight-nautical',
- 'earth-twilight-astronomical','earth-twilight-night'];
+ 'earth-twilight-astronomical','earth-twilight-night','earth-city-lights','earth-aurora'];
 const PREF_CHOICES={
  earthProjection:['equal','globe','mercator'],
  earthTextureQuality:['2k','4k'],
@@ -1277,7 +1295,7 @@ $('prefs-file').addEventListener('change',async e=>{
   if(!validNumber(value.magLimit,0,7))throw Error('Invalid magnitude limit');
   for(const key of PREF_CHECKBOXES)
    if(typeof value.checkboxes[key]!=='boolean'&&
-      !(value.checkboxes[key]===undefined&&['show-planets','show-altaz-grid','show-radec-grid'].includes(key)))
+      !(value.checkboxes[key]===undefined&&['show-planets','show-altaz-grid','show-radec-grid','earth-city-lights','earth-aurora'].includes(key)))
     throw Error('Invalid '+key);
   for(const key of Object.keys(defaultLayout))
    if(typeof value.layout[key]!=='boolean')throw Error('Invalid layout');
