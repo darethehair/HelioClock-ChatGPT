@@ -225,8 +225,21 @@ jobs:
           mkdir -p /tmp/helioclock-cache
           cp dist/earth-blue-marble.png dist/moon-nearside-lro.jpg /tmp/helioclock-cache/
           cp /tmp/helioclock-atlas/{stars.8.json,constellations.lines.json,starnames.json,mw.json} /tmp/helioclock-cache/
+      - name: Bundle NASA Black Marble 2016 night lights
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 4 --max-time 120 --silent --show-error \
+            https://assets.science.nasa.gov/content/dam/science/esd/eo/images/imagerecords/144000/144898/BlackMarble_2016_01deg.jpg \
+            --output dist/earth-black-marble-2016.jpg
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('dist/earth-black-marble-2016.jpg')
+          assert p.stat().st_size>50000 and p.read_bytes()[:2]==bytes.fromhex('ffd8'), 'Black Marble JPEG missing'
+          print('Bundled NASA Black Marble:',p.stat().st_size)
+          PY
       - name: Stage static files for browser test
-        run: cp index.html styles.css astronomy.js manifest.webmanifest sw.js icon.svg hero-landscape-natural.webp dist/ && printf '{"version":46,"test":true,"commit":"%s","built_utc":"%s"}\n' "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > dist/build-info.json
+        run: cp index.html styles.css astronomy.js manifest.webmanifest sw.js icon.svg hero-landscape-natural.webp dist/ && printf '{"version":47,"test":true,"commit":"%s","built_utc":"%s"}\n' "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > dist/build-info.json
       # Pin a stable runner and download only the Playwright browser binary.
       # Avoid apt-based --with-deps: the Ubuntu archive DNS endpoint can
       # intermittently fail and strand the job for 20+ minutes.
@@ -241,7 +254,7 @@ jobs:
           set -euo pipefail
           mkdir -p dist
           cp index.html styles.css astronomy.js manifest.webmanifest sw.js icon.svg hero-landscape-natural.webp dist/
-          printf '{"version":46,"commit":"%s","built_utc":"%s","repository":"%s"}\n' "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$GITHUB_REPOSITORY" > dist/build-info.json
+          printf '{"version":47,"commit":"%s","built_utc":"%s","repository":"%s"}\n' "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$GITHUB_REPOSITORY" > dist/build-info.json
       - name: Upload PWA ZIP
         uses: actions/upload-artifact@v4
         with:
