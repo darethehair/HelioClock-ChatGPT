@@ -12,7 +12,7 @@ This is the **independent ChatGPT edition**, created by **Darethehair with assis
 
 - **Live observatory banner:** prominent local date and time, current solar altitude, a time-versus-altitude plot of the Sun's journey, sunrise/noon/sunset, daylight duration, Moon phase, and an illustrated landscape. The Sun is shown as a dotted marker below the horizon.
 - **Annual daylight chart:** a year of sunrise, sunset, civil/nautical/astronomical twilight and darkness, plotted in local mean solar time, with interactive date selection.
-- **Illuminated Earth:** NASA Blue Marble cloud-free imagery; mathematical day/night terminator and selectable twilight bands; solar zenith/nadir markers; Equal Earth, Mercator and interactive globe projections; panning and zooming.
+- **Illuminated Earth:** optional NASA Black Marble 2016 city lights and current NOAA OVATION auroral forecast (network required, no historical rewind); a planetary Kp indicator in the header; NASA Blue Marble cloud-free imagery; mathematical day/night terminator and selectable twilight bands; solar zenith/nadir markers; Equal Earth, Mercator and interactive globe projections; panning and zooming.
 - **Sky Compass:** north-polar and full rectangular horizon projections, with stars, solar/lunar paths, planets, constellation lines and names, the ecliptic, celestial grids, and an interactive RA/Dec/Az/Alt pointer readout.
 - **Milky Way and deep sky:** shaded irregular Milky Way contour regions and outlines, galactic-centre marker, Messier galaxies, nebulae and clusters, with independently controlled labels and zoom-aware decluttering.
 - **Sun and Moon:** simulated lunar phase and orientation displayed on a NASA LRO surface mosaic; optional recent NASA SDO/HMI solar imagery, including an offline fallback. Each image supports zoom and pan.
@@ -47,7 +47,7 @@ Every successful main-branch build publishes the **HelioClock-ChatGPT-PWA** GitH
 
 The artifact contains the deployable files directly, **not another ZIP nested inside**. No Node.js runtime, database or server-side API is needed after building. Relative asset paths support deployment beneath a subdirectory.
 
-A browser's service worker and geolocation require a secure context (**HTTPS** or `localhost`). The cached PWA includes its bundled astronomical catalogues and core imagery, though loading a fresh NASA solar photograph requires network access; the offline solar fallback is explicitly identified as such. External Google Fonts are optional.
+A browser's service worker and geolocation require a secure context (**HTTPS** or `localhost`). The cached PWA includes NASA's static Black Marble 2016 composite, bundled astronomical catalogues and core imagery, though live NOAA aurora and Kp require internet access and are independent of the simulation date; loading a fresh NASA solar photograph also requires network access; the offline solar fallback is explicitly identified as such. External Google Fonts are optional.
 
 ## Build and test from source
 
@@ -100,7 +100,7 @@ Upstream scientific datasets and libraries retain their own license and attribut
 
 | Release | Highlights |
 | --- | --- |
-| **v46** | Sky Compass checkbox rows wrap within the standard two-column dashboard. |
+| **v47** | NOAA OVATION near-real-time auroral forecast overlay and planetary Kp, with night-side NASA Black Marble 2016 city lights. All three Earth projections; timestamps and offline messaging. |\n| **v46** | Sky Compass checkbox rows wrap within the standard two-column dashboard. |
 | **v45** | Astronomical Information visible by default; dotted Sun when below the hero chart's horizon. |
 | **v44** | Generated lakeside twilight panorama integrated into the local/offline PWA. |
 | **v41–v43** | Observatory-first landing page, large local clock, live solar altitude journey and responsive landscape experiments. |
@@ -120,4 +120,4 @@ This repository and its Cloudflare Pages site are **separate from** [the origina
 
 ---
 
-*Created by Darethehair with assistance from ChatGPT · README refreshed for HelioClock v46 (November 2026).*
+*Created by Darethehair with assistance from ChatGPT · README refreshed for HelioClock v47 (November 2026).*
