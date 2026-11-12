@@ -1,229 +1,123 @@
 # HelioClock — ChatGPT Independent Edition
 
-An original, independently implemented astronomical dashboard, created for comparison with the Google AI Studio HelioClock project. **This repository must never write to or modify `darethehair/HelioClock`.**
+**A personal astronomical observatory for the Sun, Moon, Earth, stars, and planets — in your browser.**
 
-## What it does
+[**Launch HelioClock**](https://helioclock-chatgpt.pages.dev/) · [**Download the standalone PWA**](https://github.com/darethehair/HelioClock-ChatGPT/actions/workflows/build-pwa.yml) · [**Source repository**](https://github.com/darethehair/HelioClock-ChatGPT)
 
-- Solar altitude and azimuth; sunrise, sunset, solar noon, daylight duration and equation of time.
-- Interactive 24-hour annual solar ephemeris with sky-blue daylight, civil/nautical/astronomical twilight bands, sunrise/sunset contours, selected-date readout and date scrubbing. The vertical chart uses **local mean solar time**, not a guessed civil timezone.
-- Interactive **NASA Blue Marble satellite-textured** Earth map with calculated daylight/twilight shading, Equal Earth / orthographic globe / Mercator projection tabs directly above the map, observer/subsolar markers, drag-pan, zoom buttons and wheel zoom.
-- Two sky projections (polar and rectangular horizon) with Sun/Moon tracks, an offline J2000 star catalogue down to magnitude 7, optional constellation stick figures, configurable magnitude cutoff and bright-star names suppressed in faint-star mode. Both modes share sky illumination settings, magnification and rotation.
-- Local mean sidereal time (LMST) in the sky panel and persistent time dock. Dedicated ±1 sidereal day controls advance 86,164.0905 seconds, keeping the stars nearly fixed while Sun/Moon positions progress. Ordinary ±1 day controls remain exactly 86,400 seconds.
-- Moon phase and approximate synodic age, rendered as one centered antialiased disc (including correct high-DPI scaling).
-- Schematic inner-planet orrery.
-- Offline PWA with local files and no required backend.
-- Browser-local clock and IANA time-zone identifier (with current UTC offset) shown beside UTC time, using the device's time-zone database.
-- Fixed bottom simulation bar for changing dates and times while observing any panel; each graphics panel supports browser fullscreen.
-- Lunar photograph zoom controls, plus schematic inner/outer orbital modes through Neptune.
-- No runtime JavaScript framework or external API required. GitHub Actions uses npm/esbuild to bundle the map libraries and local world atlas directly into the ZIP; nothing needs installing on Apache.
+HelioClock combines live astronomical information with interactive, time-traveling views of the sky and solar system. Explore the current sky, move to another date, change your observing location, and examine how sunlight, the Moon, planets, and stars change.
 
-## Hosted application
+This is the **independent ChatGPT edition**, created by **Darethehair with assistance from ChatGPT**. It is a separate implementation inspired by the original Google AI Studio HelioClock project. **The original [`darethehair/HelioClock`](https://github.com/darethehair/HelioClock) repository and its deployment are never modified by this project's workflow.**
 
-**Public site:** https://helioclock-chatgpt.pages.dev/
+## At a glance
 
-The ChatGPT edition is hosted independently on Cloudflare Pages. This is the address to share with friends and family. Deployments are handled by GitHub Actions after the application build and Firefox tests pass, without using the author's personal Apache server.
+- **Live observatory banner:** prominent local date and time, current solar altitude, a time-versus-altitude plot of the Sun's journey, sunrise/noon/sunset, daylight duration, Moon phase, and an illustrated landscape. The Sun is shown as a dotted marker below the horizon.
+- **Annual daylight chart:** a year of sunrise, sunset, civil/nautical/astronomical twilight and darkness, plotted in local mean solar time, with interactive date selection.
+- **Illuminated Earth:** NASA Blue Marble cloud-free imagery; mathematical day/night terminator and selectable twilight bands; solar zenith/nadir markers; Equal Earth, Mercator and interactive globe projections; panning and zooming.
+- **Sky Compass:** north-polar and full rectangular horizon projections, with stars, solar/lunar paths, planets, constellation lines and names, the ecliptic, celestial grids, and an interactive RA/Dec/Az/Alt pointer readout.
+- **Milky Way and deep sky:** shaded irregular Milky Way contour regions and outlines, galactic-centre marker, Messier galaxies, nebulae and clusters, with independently controlled labels and zoom-aware decluttering.
+- **Sun and Moon:** simulated lunar phase and orientation displayed on a NASA LRO surface mosaic; optional recent NASA SDO/HMI solar imagery, including an offline fallback. Each image supports zoom and pan.
+- **Solar system orrery:** approximate top-down heliocentric positions of Mercury through Neptune, inner/outer viewing modes, AU rings and zoom.
+- **Astronomical Information:** a detailed text almanac with Julian dates, sidereal time, Sun/Moon coordinates, rise/set and twilight events, major lunar phases, and upcoming events. Visible in the default dashboard, or usable as a stand-alone text-only view.
 
-## Optional standalone PWA ZIP (self-hosting)
+### Explore time and space
 
-The downloadable ZIP remains available for personal backups, offline distribution, or optional self-hosting:
+The **fixed bottom time dock** remains visible while using the graphical displays, including fullscreen views. It provides local date/time controls, a time scrubber, ±hour and ±day steps, a live-clock return, and local sidereal time. The Sky Compass also offers ±**sidereal day** steps (approximately 23h 56m 4.091s). You can choose observing latitude and longitude independently of the device's timezone.
 
-1. Open **Actions → Build standalone PWA ZIP** in this repository.
-2. Choose the latest successful workflow and download the **HelioClock-ChatGPT-PWA** artifact.
-3. Extract the ZIP **once** into any static web server's document directory, should you choose to host it yourself.
+The dashboard has independently switchable sections and **Show all**, **Default layout**, **Sky Only**, and **Text Only** presets. Settings are stored locally, can be exported/imported as JSON, and may optionally include zoom and view positions. There is no user account or required application backend.
 
-The artifact already contains `index.html`, `app.js`, and all other deployable files at its top level; there is **no nested ZIP**. Relative resource paths permit hosting at a domain root or subdirectory. HTTPS is required for geolocation and service-worker features (localhost is also supported). The Google Fonts stylesheet is optional and falls back to system fonts when offline.
+### Mobile and fullscreen
 
-## Development
+HelioClock works in ordinary desktop browsers and as an installable progressive web app (PWA). Zoomable views support mouse-wheel/drag interaction and **two-finger pinch-to-zoom** on touch devices (Earth, both sky projections, Sun/Moon and orrery). On compact screens, fullscreen visualization prioritizes the plot, with controls available in a drawer and a reduced-height time dock.
 
-Run `npm install && npm run build` to bundle the app, then copy `index.html`, `styles.css`, `astronomy.js`, `manifest.webmanifest`, `sw.js` and `icon.svg` to `dist/`. Run `python3 -m http.server --directory dist 8080` to test. GitHub Actions runs these steps automatically. The browser requires HTTP(S) rather than `file://` for service-worker and module features.
+## Try it
 
-## Accuracy and limitations
+**Public application:** https://helioclock-chatgpt.pages.dev/
 
-Solar outputs use standard approximate NOAA/Meeus-style formulae and are suitable for general visualization, not navigation or eclipse prediction. Sunrise/sunset use a nominal -0.833° altitude and simple iteration. Polar day/night is supported. Moon position is a low-precision orbital approximation; lunar phase and planetary orrery are approximate. Sunrise/noon/sunset continue to be displayed in **UTC**; the app also displays the device's local clock, IANA zone and UTC offset for the selected instant. The bottom dock accepts device-local dates/times and handles its DST transitions through the browser. The observer's geographic coordinates do **not** automatically imply a legal time zone, so there is no guess based on longitude. A future release can add explicit IANA zone selection with tested timezone data. Star catalogue positions are J2000 approximations without precession or nutation, and are not navigation grade.
+Open the site on a desktop or phone. On supported Chromium-based Android browsers, use the browser's **Install app** or **Add to Home screen** option to install the PWA. Installation support varies by browser; the site also works without installing.
 
-The Earth map embeds the **NASA/Goddard Space Flight Center Scientific Visualization Studio Blue Marble** 2048×1024 image (https://svs.gsfc.nasa.gov/2915/), available as a NASA public scientific visualization. The build downloads and packages the imagery, so the deployed PWA does not need the NASA website at runtime. Credits: NASA/GSFC SVS; Blue Marble data courtesy of Reto Stöckli (NASA/GSFC) and NASA Earth Observatory. The World Atlas geographic outlines and mathematically computed Sun/twilight shading are overlaid locally. The orrery uses simplified, roughly circular orbits and is **not suitable for precision conjunctions**.
+HelioClock uses your browser's local timezone for displayed civil time and the selected latitude/longitude for astronomical observations. For a geographically different observing location, the device timezone **does not automatically switch** to the location's legal timezone.
 
-## Safety boundary
+## Download and self-host
 
-All work and GitHub Actions run solely in this separate repository. No workflow has write permissions to GitHub contents. The original Google AI Studio repo is read-only reference material.
+Every successful main-branch build publishes the **HelioClock-ChatGPT-PWA** GitHub Actions artifact:
 
-## License
+1. Open [**Build standalone PWA ZIP — Actions**](https://github.com/darethehair/HelioClock-ChatGPT/actions/workflows/build-pwa.yml).
+2. Select a successful run and download the `HelioClock-ChatGPT-PWA` artifact.
+3. Extract the downloaded ZIP **once** to a static HTTP(S) server's document root or subdirectory.
 
-Project-specific experimental prototype; no license granted by default.
+The artifact contains the deployable files directly, **not another ZIP nested inside**. No Node.js runtime, database or server-side API is needed after building. Relative asset paths support deployment beneath a subdirectory.
 
-## Star atlas provenance
+A browser's service worker and geolocation require a secure context (**HTTPS** or `localhost`). The cached PWA includes its bundled astronomical catalogues and core imagery, though loading a fresh NASA solar photograph requires network access; the offline solar fallback is explicitly identified as such. External Google Fonts are optional.
 
-Star positions, brightness and constellation-line shapes are converted at build time from [D3-Celestial](https://github.com/ofrohn/d3-celestial) datasets, originally based on Hipparcos and curated constellation representations. The PWA includes local JSON data and functions entirely offline once installed; no sky-atlas service is called at runtime. Coordinates are J2000 approximations and currently omit precession, proper motion, nutation, atmospheric refraction, and extinction. A sidereal-day demonstration is consequently educational rather than an observatory-grade forecast.
+## Build and test from source
 
-## SChronos-inspired full celestial horizon (Version 17)
+**Requirements:** Node.js/npm, Python 3 (for optional local static serving), and Playwright Firefox if running browser tests.
 
-The rectangular sky projection covers **altitudes +90° through −90°** with the astronomical horizon at 0° halfway down; white magnitude-scaled catalogue stars and solar/lunar trajectories can be shown below the horizon using the new checkbox. The lower half of the plot is black. Above the horizon, daylight mode uses a Sun-azimuth-dependent radial atmosphere glow (with wrap at the north/south azimuth seam) that fades toward black through twilight. Black-sky mode removes atmospheric colour; neither mode changes the simulated positions. The polar projection remains an above-horizon compass.
+```bash
+npm install
+npm run build
+npm test
+npm run test:browser
+```
 
-The gradient approach is adapted from the author's Python/PyCairo SChronos project (2011–2024), using simplified illustrative rather than radiometrically calibrated atmospheric colours. The original Python application's GNU GPL notice remains applicable to its source; this JavaScript implementation is a newly authored rendering approach rather than a source translation.
+`npm run build` bundles the browser application into `dist/app.js` using esbuild. **That command alone does not assemble a complete standalone distribution**: the GitHub Actions workflow also stages HTML/CSS, the service worker and manifest, imagery, star/constellation/Milky Way catalogues, and build metadata.
 
-## Version 18: Milky Way and Earth reference markers
+For a packaged download or a deployment-ready `dist/`, **use the successful GitHub Actions artifact** rather than copying only the JavaScript bundle. The same tested `dist/` files are used for the Cloudflare Pages deployment.
 
-The sky has independent checkboxes for **Milky Way glow**, **MW outlines** and the **galactic-centre marker**, projected into both polar and full-sphere rectangular views with optional J2000→date precession and below-horizon handling. The illustrative soft glow follows the actual J2000 galactic equator, with a central enhancement; it is **not a calibrated surface-brightness map**. Published five-level brightness outlines are sourced from Jose R. Vieira's Milky Way Outline Catalog via [D3-Celestial](https://github.com/ofrohn/d3-celestial), released under its [BSD license](https://github.com/ofrohn/d3-celestial/blob/master/LICENSE). The outline data is downloaded, reduced in size and bundled for offline use during the GitHub Actions build. Black-sky mode displays it at full strength; atmospheric daylight attenuates it.
+The workflow runs a separate quick-check job, compiles the app, prepares the imagery/catalogues, exercises a Firefox browser regression suite, and uploads the artifact. With the required repository secrets configured, the final step deploys to the separate `helioclock-chatgpt` Cloudflare Pages project. The deployment step checks that the run still represents the latest `main` commit before publishing.
 
-The Earth panels now show a golden ring for the **solar zenith** and violet diamond at the antipodal **solar nadir**. The globe projection omits any markers on its back side. The annual daylight-duration graph now uses a dark navy line with a light under-stroke for improved contrast.
+**Cloudflare secrets** (repository administrators only): `CLOUDFLARE_API_TOKEN` with suitable Pages permissions, and `CLOUDFLARE_ACCOUNT_ID`. Do not commit either value to source.
 
-## Version 19: Milky Way contour shading
+> A README-only change also triggers the normal GitHub Actions workflow. A spinning GitHub page can occasionally remain stale after the run has already completed; refreshing the Actions page retrieves the current recorded status.
 
-The earlier artificial, uniform galactic-plane glow has been removed. The **Milky Way shading** checkbox now fills the irregular five-level Vieira catalogue contours using nested, low-opacity neutral grey polygons (including catalogue holes). The independent **MW outlines** and **Galactic centre** toggles remain. Shading responds to precession, azimuth rotation, both sky projections, below-horizon clipping and daylight attenuation. This aims for the restrained, irregular SidClock-style star-chart treatment rather than an airbrushed glow. The shaded contour tiers are illustrative, not photometrically calibrated.
+## Astronomical methods and important limitations
 
-## Version 20: release identification and more useful sky measurements
+HelioClock is an **educational and exploratory** application, **not** a navigation, eclipse-prediction, telescope-control or observatory-grade ephemeris system.
 
-The header and persistent time dock display the release version. The footer credits **Created by Darethehair with assistance from ChatGPT**, links to this repository and acknowledges astronomical data and NASA imagery. GitHub Actions embeds the version, exact commit and UTC build date in `build-info.json`; these are available offline after installing the PWA.
+| Area | Implementation and caveat |
+| --- | --- |
+| Sun/daylight | Approximate NOAA/Meeus-style solar calculations; sunrise/sunset use a nominal −0.833° horizon convention. Atmospheric colours and the hero landscape are illustrative, not weather or physical sky simulations. |
+| Moon and planetary sky positions | Selected computations use [Astronomy Engine](https://github.com/cosinekitty/astronomy) by Donald Cross (MIT license). The lunar photograph is a textured, horizon-aligned simulated phase view; the latest NASA Sun image is a **real observation**, not a historical image selected by simulation time. |
+| Stars and constellations | Offline J2000-based catalogue derived from [D3-Celestial](https://github.com/ofrohn/d3-celestial); optional precession to the selected date, star colours and magnitude limits. Positions do not model every high-precision apparent-place correction. |
+| Sky overlays | Coordinate grids, ecliptic, named constellations, 107 classified Messier deep-sky objects, and Vieira Milky Way contour fills. Contour shading is an illustrative area treatment, not calibrated surface brightness. |
+| Earth | NASA Blue Marble texture and mathematically calculated solar illumination; no real-time clouds, satellite weather data or exact atmospheric radiative transfer. |
+| Orrery | Approximate schematic heliocentric orbits and positions; not-to-scale planet sizes and no precision conjunction predictions. |
+| Timezones | Civil time and DST follow the browser/device's IANA timezone rules. The observer coordinates alone do not establish the corresponding legal timezone. The annual daylight chart uses local **mean solar** time; sunrise/solar noon/sunset in the hero summary are labelled **UTC**. |
 
-Sky controls now include an optional **ecliptic of date**, computed using the solar obliquity of the selected date, with horizon clipping in polar sky and optional below-horizon visibility in rectangular sky. A coordinate readout shows Sun/Moon altitude, azimuth, RA (hours), declination (degrees) and lunar distance/illumination. The stars and Milky Way remain unchanged.
+## Data, imagery and acknowledgements
 
-The Moon's topocentric RA/declination, position, geocentric lunar coordinates and phase illumination now use Donald Cross's MIT-licensed **Astronomy Engine** instead of the application's original few-term lunar orbit and mean synodic phase. A visual lunar image still uses the existing approximate disc/orientation renderer. Sun and planetary orrery calculations remain approximate; the application is an educational tool rather than an observing-grade ephemeris.
+- **NASA Blue Marble:** [NASA/GSFC Scientific Visualization Studio](https://svs.gsfc.nasa.gov/2915/) / NASA Earth Observatory (Reto Stöckli and collaborators).
+- **Moon imagery:** NASA Lunar Reconnaissance Orbiter near-side mosaic.
+- **Sun imagery:** NASA Solar Dynamics Observatory, HMI continuum imagery. A saved fallback image is bundled when a current observation is unavailable.
+- **Sky catalogues, constellation geometry and Messier objects:** [D3-Celestial](https://github.com/ofrohn/d3-celestial), distributed under its BSD licensing terms; original upstream data provenance also applies.
+- **Milky Way irregular contours:** Jose R. Vieira's Milky Way Outline Catalog as distributed in D3-Celestial.
+- **Astronomy Engine:** Donald Cross, MIT-licensed computational astronomy library.
+- **Astronomical information design:** inspired by Darren Enns's MChronos; earlier astronomical graph ideas also draw on the author's SChronos project. This JavaScript app is not a source-code translation of those historical programs.
 
-## Version 21 — Customizable observatory and astronomical almanac
+Upstream scientific datasets and libraries retain their own license and attribution requirements.
 
-- **Layout controls:** independently show/hide solar summary, daylight chart, Earth map, sky compass, Moon, orrery, observation notes and the new Astronomical Information panel. **Show all**, **Default layout** and **Text Only** shortcuts are available; visibility is saved locally across reloads.
-- **Stars:** brighter stars display larger solid discs and subtle halos, and approximate B−V colours from the bundled D3-Celestial catalogue. **Stellar colours** toggles white-only display. Missing B−V values remain white, rather than being assigned a fabricated colour. The original Milky Way contour shading is preserved.
-- **Astronomical Information:** an optional, responsive MChronos-inspired text almanac. Groups can be collapsed individually. Includes local and UTC clocks, Julian/MJD, local mean sidereal time, observer coordinates, solar/lunar altitude, azimuth, equatorial positions, rise/set and transit events, solar daylight, twilight boundaries (civil/nautical/astronomical), season and four equinoxes/solstices, lunar phase/distance/illuminated percentage and major upcoming phases. Events in the list move the dashboard to that moment. **Copy Almanac** exports plain text.
-- **Accuracy and timezone notes:** event searches use Astronomy Engine and are scoped to the **device's local civil date** and timezone, including local DST handling. This is *not automatically the timezone at the observer's entered coordinates*. For days without a specified sunrise, sunset or twilight event, the panel shows a dash rather than substituting a different astronomical event. No weather or cloud-cover claims are made; observing conditions are derived from celestial geometry only. Planetary ephemerides remain a future improvement.
-- **Source credit:** the layout and output fields are inspired by Darren Enns's MChronos v0.37 (2008–2009). This is a newly written implementation and does not embed the original GPL program.
+## Selected development milestones
 
+| Release | Highlights |
+| --- | --- |
+| **v46** | Sky Compass checkbox rows wrap within the standard two-column dashboard. |
+| **v45** | Astronomical Information visible by default; dotted Sun when below the hero chart's horizon. |
+| **v44** | Generated lakeside twilight panorama integrated into the local/offline PWA. |
+| **v41–v43** | Observatory-first landing page, large local clock, live solar altitude journey and responsive landscape experiments. |
+| **v40** | Independent, zoom-aware names for all 88 IAU constellations. |
+| **v39** | Messier galaxies, nebulae, clusters and optional labels. |
+| **v36–v38** | Earth projection refinements, coordinate grids, planets in the sky, mobile fullscreen improvements and polar Milky Way fixes. |
+| **v25–v35** | Sun/Moon imaging and zoom, two sky projections, Milky Way contour accuracy, precession/labels, cursor coordinates, and astronomy-focused regression tests. |
+| **v17–v24** | Below-horizon celestial chart, almanac, flexible dashboards and early constellation/Milky Way features. |
 
-## Version 22 — Equal-status dashboard presets
+The Git history and [Actions runs](https://github.com/darethehair/HelioClock-ChatGPT/actions) document individual changes, tests and release commits. The currently running application displays its release number in the page header and time dock, with build commit/date information in its footer.
 
-Added **Sky Only** beside the existing **Text Only** button. Both presets work by selecting the visibility of one ordinary panel using the same dashboard layout code. Astronomical Information has no special priority or rendering status: it can be independently shown, hidden, full-screened, and combined with any other panel. A sole visible panel occupies the full grid width. Previous saved checkbox layouts remain compatible, and the new offline PWA cache is labelled v22.
+## Project boundaries and license
 
-## Version 23 — Rectangular sky and wide Earth geometry corrections
+This repository and its Cloudflare Pages site are **separate from** [the original AI Studio HelioClock](https://github.com/darethehair/HelioClock). The automated deployment does not write to the original repository, Cloudflare project or personal Apache server.
 
-- **Milky Way:** preserved the original Vieira MultiPolygon groups and hole rings in the offline source conversion. In rectangular altitude/azimuth mode the contour renderer now uses D3's spherical antimeridian clipping, instead of joining an unwrapped planar ring across the azimuth seam. The established polar-view and greyscale Milky Way style are retained.
-- **Earth-only layout:** satellite imagery is clipped to the *actual projected globe/world outline*, matching the vector coastline layer. This prevents repeated phantom continents and wide horizontal raster wraps when the map is displayed as a single full-width panel.
-- **Regression tests:** Firefox verifies wide-map raster boundaries, Milky Way even-odd fills, and long unwanted polygon segments; the service worker cache and release/build numbers are v23.
+**Project source license:** no general reuse license has been granted for this experimental application unless one is added explicitly. This does not supersede the licenses of bundled third-party packages, code, scientific datasets or imagery.
 
-## Version 25 — Solar observations alongside the Moon
+---
 
-- **Sun / Moon selector** in the existing lunar photographic panel; both use its ordinary fullscreen capability and share pan/zoom/reset tools. The Moon remains the simulated phase/orientation view based on the bundled NASA LRO mosaic.
-- **High-resolution Sun** from the NASA Solar Dynamics Observatory (SDO), HMI colour intensitygram, currently requested as `https://sdo.gsfc.nasa.gov/assets/img/latest/latest_2048_HMIIC.jpg`. A **Refresh Sun** button requests a fresh URL with a cache-busting query parameter; the timestamp printed in the image belongs to the NASA observation, not to the simulation clock or browser request.
-- **Offline fallback:** the PWA ZIP bundles a 1024-pixel NASA HMI image as `solar-fallback.jpg`, cached by the service worker; fallback is explicitly marked as a saved reference rather than presented as a current observation.
-- **Cursor-anchored zoom** for **both** celestial discs: mouse-wheel zooms around the pointer, plus and minus buttons zoom around the last pointer position or centre, drag pans the magnified view, and **Reset view** restores the centre. Zoom/pan state is independent for Sun and Moon. Normal and fullscreen layouts use the same controls.
-- **Data/time distinction:** current NASA solar photographs are *not* rewound when the simulated date changes. The moon view continues to reflect the selected astronomical date/time. No unverified automated interpretation of the NASA embedded timestamp is attempted.
-
-
-## Version 26 — Point-focused polar sky zoom and pan
-
-- Scrolling the mouse wheel over the **polar sky** magnifies the astronomical chart *toward the pointer* instead of only around the zenith. Its pan offset is adjusted using the ratio of new and old projection radii to keep the selected celestial position stationary.
-- With zoom greater than 1×, dragging pans the view in two dimensions. At 1×, dragging continues to rotate the compass as before; **Shift+drag** rotates the compass while zoomed. The existing heading slider also continues to rotate.
-- **Reset sky** restores 1× scale, heading 0°, and zero pan offset.
-- The polar reference grid, stars, ecliptic, Sun/Moon, and Vieira Milky Way overlays all use the same translated canvas frame. The established rectangular sky and Milky Way geometry are untouched.
-
-## Version 27 — Corrected top-down orrery handedness
-
-- Corrects the previous mirror-image display of the eight approximate heliocentric orbital positions.
-- The conventional view is **from north of the ecliptic**, with heliocentric longitude 0° at the top and orbital longitudes increasing **counterclockwise**. Planet coordinates now use `x = centerX - radius * sin(longitude)`, `y = centerY - radius * cos(longitude)` to compensate for canvas's downward-positive Y axis.
-- Retains the existing simplified circular orbits, orbital phases, visual proportions, AU rings, and inner/outer zoom views. This change fixes **orientation only**, not full ephemeris accuracy.
-- Firefox regression test verifies Earth's and Mercury's opposing J2000 orientations, making a future accidental mirror reversal detectable.
-
-## Version 28 — Fix disappearing stars during zoomed polar panning
-
-The sky atlas previously rejected points using unshifted polar projection coordinates before the canvas pan transform was applied. This made stars and labels disappear prematurely near the screen edges when the polar view was zoomed and dragged. Stars and labels are now culled using their **final translated screen coordinates**. The Milky Way, constellation geometry, sky zoom/drag behavior, and rectangular projection are unchanged. Regression coverage includes independent viewport-boundary assertions and a browser panning smoke test.
-
-## Version 29 — Zoom-sensitive star designations and live sky cursor coordinates
-
-- The **Labels** checkbox is now independent of limiting magnitude, including magnitude 5–7. In polar mode, higher magnification gradually reveals fainter proper names and Bayer/Flamsteed identifiers from the D3-Celestial star-name catalogue; zoomed-out views remain comparatively uncluttered. Candidate labels are ranked and placed only when their visible screen rectangles do not overlap existing labels.
-- The bundled star catalogue keeps its stellar B−V colours and magnitude data, and now joins a compact descriptive designation for stars where an actual name is available. These names are real catalogue metadata, never inferred from star positions.
-- A new **Cursor: RA / Dec / Az / Alt** strip appears beneath the sky canvas. It converts the pointer's screen position to sky coordinates in both polar and rectangular modes, accounting for the observer's latitude/longitude, simulation time, sky heading and polar zoom/pan. The RA/Dec readout follows the current chart coordinate model, and the display clears when the pointer leaves.
-- Tests cover inverse equatorial/horizontal coordinate round trips, large-magnitude labels and both cursor projections. Milky Way geometry, source star positions, and the orrery are unchanged.
-
-## Version 31 — Stable Milky Way contour orientation
-
-The rectangular Milky Way renderer now normalizes each source contour's spherical winding in its fixed J2000 celestial coordinates **before** converting it to the rotating observer horizon. The prior orientation check on projected Alt/Az vertices could switch interior/complement when the azimuth seam moved across a contour as time advanced. D3 still splits polygons at the rectangular seam, with the catalogue MultiPolygon groupings and holes preserved. The polar renderer is unchanged. Check the same one-hour comparison that exposed the v30 issue to verify the visual result.
-
-## Version 32 — Inertial Milky Way shading in rectangular sky
-
-Rectangular Milky Way **fills** now sample a fixed, offline J2000 RA/Dec coverage mask rather than asking a spherical projector to resolve a polygon's winding after local rotation. This avoids the time-dependent selection of the complementary sky region and keeps all uncovered black-sky pixels black. Equatorial-to-horizontal inverse transformation respects sidereal time, observer, heading and optional precession. The mask includes the original five contour levels and hole rings; existing vector outlines and polar shading remain independently available. Firefox regression checks multiple hours around the reported reversal and requires the black background to remain unshaded outside the Milky Way.
-
-## Version 33 — Spherical seam-safe fixed Milky Way mask
-
-Replaces the planar contour closing used to build the fixed J2000 mask with spherical antimeridian clipping via D3, retaining the original five Vieira contour levels and their hole rings. An additional topology safeguard derives the maximum galactic latitude of every published contour vertex and rejects any raster fill beyond that legitimate catalogue footprint, eliminating spurious high-latitude bands. This prevents long false arcs created by wrapping a planar polygon across the RA seam. Rectangular shading continues to sample the time-independent mask; the polar implementation is not changed. Adds the exact November 9, 2026 07:44 Manitoba local (12:44 UTC) artifact scene to Firefox regression coverage, including checks for spurious shading well outside the galactic plane.
-
-## Version 34 — Milky Way diagnostic comparison
-
-The rectangular Milky Way renderer exposes both fixed-mask construction algorithms (planar RA seam unwrapping and spherical clipping) under a diagnostic dropdown. The default is the guarded planar method for comparison against the more sparse v33 spherical shading. The status readout shows actual mask coverage, source polygon count and the catalogue-derived latitude guard; **Copy Debug State** exports a JSON report of the precise simulation date/time (UTC and browser local), observer, mode, controls, mask statistics and canvas dimensions. This build is instrumentation for diagnosing missing contour regions, not a claim that the mask geometry has been completely solved. Polar rendering remains unchanged.
-
-### Mask selection after visual verification
-
-The user-facing spherical-clip comparison toggle has been retired because its shading was incomplete. The repaired planar J2000 mask is selected automatically for rectangular views, and the previously validated legacy planar mask is retained for polar views. Copy Debug State and cursor diagnostics remain available. The internal source-mode comparison is no longer offered as a UI setting.
-
-## v35: Verified Milky Way and lunar display
-
-The fixed equatorial Milky Way masks are retained: repaired planar rendering for rectangular sky and the verified legacy mask for polar. The unreliable spherical-clip user toggle remains retired. Lunar visualization uses a slightly brighter midtone curve without changing lunar phase or ephemerides. The Moon panel adds a **Show Earthshine / dark-side detail** option (enabled by default), which subtly exposes the night-side lunar surface and adds a faint outline at near-new phase as a clearly identified educational display aid. Turn the option off for a naturally dark new-Moon presentation. Sun view hides this Moon-only setting.
-
-## v36: Browser-local preferences
-
-HelioClock now automatically remembers observer coordinates, Earth/sky/orrery modes, star magnitude, labels, Milky Way, Earthshine, other view checkboxes and panel layout using versioned browser localStorage. Optional **Remember zoom and map positions** restores zoom/angles as well. The simulation clock always opens **Live** by default. Export/import a human-readable `HelioClock-settings.json` to move settings between browsers, or use **Reset preferences** for factory defaults. The existing `helioclock-layout-v21` preferences migrate automatically. No cookies, account, or network request is needed for settings. Earth 4K and twilight controls are separate planned work; this release does not add them.
-
-## v37 · offline Earth quality and twilight bands
-
-The Earth panel now includes a 2K (default) / 4K texture selector, using a separately bundled **4096 × 2048** NASA Blue Marble Next Generation July mosaic for high-detail mode (NASA original, derived image hosted in MaxwellLee/physics-lab). Both textures are packaged with the offline PWA. At higher zoom the renderer samples a denser intermediate buffer for 4K. Independent twilight overlays use the Sun's calculated altitude at each projected Earth point: civil (0° to −6°), nautical (−6° to −12°), astronomical (−12° to −18°), and optional night below −18°. Background satellite lighting and geographical centering are preserved. Settings persist via the existing v36 localStorage preferences, with safe defaults for existing records.
-
-### v37 Earth presentation correction
-
-The initial 2K option failed to start its image loader because its loading state was initialized prematurely. Both resolutions now load and report readiness independently. The Earth renderer also uses achromatic, brightness-only shading for civil/nautical/astronomical/night stages; no coloured purple/blue overlays are applied to the satellite image. The gradient's per-channel tint offsets were removed to preserve the real satellite texture's natural colours.
-
-### v37 flat projection reset correction
-
-Reset fits the complete Equal Earth or Mercator world vertically with the equator at the canvas center and the observer's longitude centered horizontally; the user's northern latitude stays above center, rather than cropping the Southern Hemisphere. 3D Globe Reset remains centered on observer longitude and latitude. Firefox tests now assert the world bounds stay in the viewport rather than incorrectly requiring all projections to place the observer at canvas center.
-
-### Restored flat-map vertical tilt (v37 maintenance)
-
-Equal Earth and Mercator retain north-up, equator-centered Reset geometry while allowing vertical dragging to apply an oblique spherical rotation to the map. The drag angle is measured relative to the current observer latitude, so Reset returns to 0° flat-map tilt without sacrificing the observer-centered globe. A Firefox regression test verifies both projection changes on vertical drag and correct Reset for each mode.
-
-### Sky compass planets and adaptive coordinate grids
-
-Both polar and rectangular sky views have independent persisted controls for planets, Alt/Az grid, and RA/Dec grid. Mercury through Neptune use Astronomy Engine apparent topocentric coordinates. The two grid types can be hidden or shown together, with RA/Dec meridians and parallels computed against the selected date's local sidereal time. Grid density increases as the sky zooms; equatorial paths split correctly at the rectangular azimuth seam. Existing Sun, Moon, Milky Way, horizon and stellar features remain available. Older v36/v37 JSON settings exports can still be imported; absent grid options assume declared defaults.
-
-### Sky azimuth grid correction (v37 maintenance)
-
-The rectangular Alt/Az grid now uses a single 30° major-azimuth spacing system at the default zoom, with 15°/10°/5° subdivisions at greater zoom. Previously the legacy 30° grid and new 45° overlay created uneven meridians and the grid was drawn beneath the Milky Way. All new grid lines now draw over the Milky Way background and beneath stars, planets, and Sun/Moon. A browser regression test measures every 30° meridian's visible pixel contrast against adjacent sky.
-
-### Interior sky grid labels
-
-Coordinate labels for Alt/Az and RA/Dec are now positioned on visible grid curves inside the sky canvas. The label placement uses the same projection and polar pan as the grid strokes, avoids overlapping nearby labels, and adapts to zoom; coordinates no longer depend on outer edge labels being visible. Firefox tests check both sky projections and polar zoom/pan.
-
-### Rectangular sky navigation
-
-The rectangular sky now supports cursor-anchored wheel/slider zoom and two-axis dragging when magnified. At 1×, dragging still changes the heading; Shift+drag continues to rotate at higher zoom. A shared Canvas 2D viewport transform keeps the atmosphere, Milky Way, stars, planets, ecliptic, Sun/Moon and both coordinate grids in lockstep. Mouse cursor RA/Dec readouts undo that same transform. Pan and zoom are bounded; Reset returns to the original 360° × 180° world sky. Pan is saved with the optional Remember View preference. The polar projection is unaffected.
-
-### Polar daylight grid cleanup
-
-Polar Alt/Az radials and altitude rings are now drawn only by the shared adaptive grid renderer, eliminating the old mismatched dark 45° spokes. Labels use small contrast halos rather than opaque black rectangles, so daylight-blue sky remains visible beneath the coordinate text. An additional Firefox daylight-grid regression test guards the radial contrast.
-
-### Mobile sky pinch / fixed-size glyphs
-
-In the zoomed rectangular projection, sky-coordinate geometry still magnifies but star discs, planet markers, Sun/Moon symbols and sky/coordinate labels retain constant screen sizes. Star label collision checks now use transformed on-screen coordinates. The sky canvas supports two-pointer pinch-to-zoom (touch-action:none), and the existing sky zoom slider is supplemented with − and + buttons for touch devices; one-finger dragging retains navigation. Both projections use cursor/midpoint-anchored zoom.
-
-### Pinch-to-zoom in the other zoomable panels
-
-Two-finger pinch gestures are supported on the Earth map (all map projections), Moon image, Sun image and orrery, in addition to both sky projections. Disc pinch zooms about the touch midpoint and suspends single-finger panning; Earth and orrery pinch adjust the existing zoom controls and preserve the established Earth drag-to-rotate behavior. The daylight-year chart and nonzoomable readout panels remain unchanged. Firefox regression tests synthesize two independent touch pointers for all four visualizations.
-
-### Plot-first mobile fullscreen
-
-On viewports at most 1050 CSS pixels wide, fullscreen Earth, sky, Sun/Moon, orrery and daylight-year charts reserve most of the screen for the plot. A small Controls button opens a temporary settings drawer containing the original interactive controls; closing the drawer or leaving fullscreen restores the original elements, event listeners, and preference state. A single compact 48-pixel simulation-time dock stays visible; its ☷ button temporarily reveals date, time and scrubber inputs. This mode is responsive to phone landscape and portrait without modifying desktop fullscreen or other dashboard panels. Pinch-zoom remains separately under investigation.
-
-### v38: Milky Way polar mask and release identity
-
-Polar shading now uses the corrected full-RA contour closure (same source as rectangular), and its inverse projection samples visible screen positions adjusted for sky pan. The bitmap is composited at the inverse pan offset so no shading ends at the previous canvas edge. All displayed release badges, build-info JSON and service-worker cache key are bumped to v38. The built Git commit remains visible in the About section for exact identification.
-
-## Automatic Cloudflare Pages deployment
-
-The GitHub Actions `Build standalone PWA ZIP` workflow first bundles the full offline distribution and runs Firefox tests. After a successful test run it publishes the `HelioClock-ChatGPT-PWA` artifact and, when configured, deploys the very same `dist/` directory to the separate Cloudflare Pages project `helioclock-chatgpt` using Wrangler.
-
-Configure the GitHub Actions repository secrets `CLOUDFLARE_API_TOKEN` (Cloudflare Pages Edit permission scoped to the account) and `CLOUDFLARE_ACCOUNT_ID` for deployment. Never commit the API token to the repository. If either secret is missing, the Pages step skips while the ZIP build remains usable. The original AI Studio HelioClock repository and its Cloudflare Pages project are not touched.
-
-## Version 39 — Messier deep-sky objects
-
-The sky includes independent **Galaxies**, **Nebulae**, **Star clusters**, and **DSO labels** controls. All three object classes use subtle nonstellar glyphs: small oval glows for galaxies, diffuse patches and planetary rings for nebulae, and open or compact globular cluster marks. Familiar Messier designations are labelled first; more appear as the user zooms, with collision checks against star labels.
-
-The offline catalogue includes 107 Messier galaxies, nebulae and clusters, sourced from [D3-Celestial's Messier data](https://github.com/ofrohn/d3-celestial) (BSD licence). The three remaining entries are star fields or asterisms, not classified as DSOs for these controls. Both sky projections, J2000 precession, panning, below-horizon visibility and preference export/import are supported. The new object classes are **off by default**, keeping existing sky views unchanged until a user enables them.
-
-## Version 40 — Constellation names
-
-A separate **Constellation names** checkbox adds restrained labels to the polar and rectangular sky plots, independent of constellation lines, stars, and DSOs. Names are based on the 88 IAU constellations, with two spatial label anchors for Serpens (Caput and Cauda). Only major constellations are named at default zoom; more labels appear as zoom increases. Coordinates are bundled offline from [D3-Celestial's constellation catalogue](https://github.com/ofrohn/d3-celestial) (BSD licence). Precession, horizon visibility, and existing label collision checks apply. This new overlay is disabled by default to preserve previous chart appearances.
+*Created by Darethehair with assistance from ChatGPT · README refreshed for HelioClock v46 (November 2026).*
