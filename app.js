@@ -79,7 +79,7 @@ function worldMap(){
  $('earth-cloud-status').textContent=!cloudEnabled
   ?'Clouds off · NASA daily true-colour imagery (approximate)'
   :cloud.status==='ready'
-   ?'NASA Terra/MODIS daily mosaic '+cloud.day+' UTC · approximate clouds (not measured cloud fraction) · independent of simulated date'
+   ?'NASA VIIRS daily mosaic '+cloud.day+' UTC · approximate clouds (not measured cloud fraction) · independent of simulated date'
    :cloud.status==='loading'?'Loading NASA satellite imagery…'
    :cloud.status==='unavailable'?'Cloud imagery unavailable · check connection / NASA GIBS'
    :'Clouds awaiting imagery';
@@ -787,7 +787,7 @@ window.addEventListener('helioclock-milkyway-ready',render);
 $('mw-copy-debug').addEventListener('click',async()=>{
  const chosen='planar';
  const debug={
-  version:50,utc:state.date.toISOString(),
+  version:51,utc:state.date.toISOString(),
   local:state.date.toLocaleString('en-CA',{timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone}),
   timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,
   observer:{lat:state.lat,lon:state.lon},

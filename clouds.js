@@ -1,9 +1,9 @@
-// NASA GIBS daily MODIS Terra true-colour satellite mosaic.
+// NASA GIBS daily VIIRS true-colour satellite mosaic.
 // Produces a qualitative photographic cloud overlay, NOT a measured cloud fraction.
 // Retrieved independently from HelioClock's simulated date; no credentials required.
 const URL='https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi';
 const DAYS_BACK=[1,2,3,4];
-const LAYER='MODIS_Terra_CorrectedReflectance_TrueColor';
+const LAYER='VIIRS_SNPP_CorrectedReflectance_TrueColor';
 let snapshot={status:'idle',image:null,day:null,error:null,requested:null};
 let loading=false;
 export const cloudStatus=()=>snapshot;
