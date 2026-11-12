@@ -1619,7 +1619,7 @@ test('v47 night lights, Kp and NOAA aurora work in all Earth projections',async(
 
 test('v48 grayscale Black Marble texture loads and does not tint the night side',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
- const image=await page.request.get('/earth-black-marble-lights-2016.jpg');
+ const image=await page.request.get('http://127.0.0.1:8765/earth-black-marble-lights-2016.jpg');
  expect(image.ok()).toBe(true);
  expect(image.headers()['content-type']).toMatch(/image/);
  await page.locator('#observe-date').fill('2026-11-12');
