@@ -486,3 +486,19 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 .hero .hero-heading{filter:drop-shadow(0 3px 8px #0009)}
 @media(max-width:1050px){.hero{min-height:550px}}
 @media(max-width:750px){.hero{min-height:auto;row-gap:24px}.hero .hero-landscape{object-position:center bottom}.hero:after{background:linear-gradient(90deg,rgba(5,17,36,.8),rgba(6,19,39,.55)),linear-gradient(0deg,#06132980,transparent 54%)}}
+
+/* v46: Keep all Sky Compass options inside the half-width dashboard card.
+   Fullscreen/mobile drawer rules retain their existing behavior. */
+.sky-panel:not(:fullscreen) .sky-options{
+ display:flex;
+ flex-wrap:wrap;
+ column-gap:14px;
+ row-gap:10px;
+ max-width:100%;
+ min-width:0;
+}
+.sky-panel:not(:fullscreen) .sky-options label{
+ flex:0 0 auto;
+ max-width:100%;
+ white-space:normal;
+}

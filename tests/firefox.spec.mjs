@@ -309,8 +309,8 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#sunrise')).not.toHaveText('—');
  // Release identity and provenance are visible even offline.
- await expect(page.locator('#app-version')).toHaveText('v45');
- await expect(page.locator('#dock-version')).toHaveText('v45');
+ await expect(page.locator('#app-version')).toHaveText('v46');
+ await expect(page.locator('#dock-version')).toHaveText('v46');
  await expect(page.locator('.credits-footer')).toContainText('Created by Darethehair with assistance from ChatGPT');
  await expect(page.locator('.credits-footer a')).toHaveAttribute('href','https://github.com/darethehair/HelioClock-ChatGPT');
  await expect(page.locator('#build-meta')).toContainText('commit');
@@ -656,7 +656,7 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
  const errors=[];
  page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v45');
+ await expect(page.locator('#app-version')).toHaveText('v46');
  await expect(page.locator('.almanac-panel')).toBeVisible();
  await page.locator('#layout-sky').click();
  await expect(page.locator('.sky-panel')).toBeVisible();
@@ -965,7 +965,7 @@ test('Version 36 stores, restores, imports, exports and resets preferences',asyn
 test('Version 25 Sun and Moon use the same zoomable pannable fullscreen stage',async({page})=>{
  const errors=[];page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v45');
+ await expect(page.locator('#app-version')).toHaveText('v46');
  await expect(page.locator('#moon')).toBeVisible();
  await expect(page.locator('#solar-photo')).toBeHidden();
  await page.locator('[data-disc-view="sun"]').click();
@@ -1402,7 +1402,7 @@ test('Version 34 offers comparable Milky Way masks and copyable exact debug stat
  });
  await page.locator('#mw-copy-debug').click();
  const data=await page.evaluate(()=>JSON.parse(window.__debugCopy));
- expect(data.version).toBe(45);
+ expect(data.version).toBe(46);
  expect(data.utc).toBe('2026-11-09T12:44:00.000Z');
  expect(data.observer).toEqual({lat:49.19,lon:-98.10});
  expect(data.sky.projection).toBe('rect');
@@ -1559,4 +1559,32 @@ test('v45 below-horizon Sun stays marked on its time and altitude axes',async({p
  await page.locator('#observe-time').dispatchEvent('change');
  await expect(ghost).toHaveAttribute('visibility','hidden');
  await expect(page.locator('#solar-journey-sun')).toHaveAttribute('visibility','visible');
+});
+
+test('v46 desktop Sky Compass toggle labels wrap inside the dashboard card',async({page})=>{
+ await page.setViewportSize({width:1649,height:928});
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('#observe-date').fill('2026-11-12');
+ await page.locator('#observe-time').fill('08:38');
+ await page.locator('#observe-time').dispatchEvent('change');
+ await page.locator('[data-sky-projection="rect"]').click();
+ await expect(page.locator('.sky-panel')).toBeVisible();
+ const info=await page.locator('.sky-panel').evaluate(panel=>{
+  const options=panel.querySelector('.sky-options');
+  const bound=panel.getBoundingClientRect(),area=options.getBoundingClientRect();
+  const ids=['show-labels','show-sky-paths','show-ecliptic'];
+  const labels=ids.map(id=>{
+   const label=panel.querySelector('#'+id).closest('label'),box=label.getBoundingClientRect();
+   return {id,right:box.right,left:box.left,top:box.top,display:getComputedStyle(label).display};
+  });
+  return {panelRight:bound.right,optionRight:area.right,optionScroll:options.scrollWidth,optionClient:options.clientWidth,labels};
+ });
+ expect(info.optionScroll).toBeLessThanOrEqual(info.optionClient+1);
+ expect(info.optionRight).toBeLessThanOrEqual(info.panelRight+1);
+ for(const item of info.labels){
+  expect(item.left).toBeGreaterThan(0);
+  expect(item.right).toBeLessThanOrEqual(info.panelRight+1);
+ }
+ const tops=await page.locator('.sky-panel .sky-options label').evaluateAll(items=>[...new Set(items.map(el=>Math.round(el.getBoundingClientRect().top)))]);
+ expect(tops.length).toBeGreaterThan(1);
 });

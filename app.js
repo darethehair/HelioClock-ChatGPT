@@ -748,7 +748,7 @@ window.addEventListener('helioclock-milkyway-ready',render);
 $('mw-copy-debug').addEventListener('click',async()=>{
  const chosen='planar';
  const debug={
-  version:45,utc:state.date.toISOString(),
+  version:46,utc:state.date.toISOString(),
   local:state.date.toLocaleString('en-CA',{timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone}),
   timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,
   observer:{lat:state.lat,lon:state.lon},
