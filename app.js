@@ -1057,6 +1057,8 @@ const panelVisibility={
  moon:'.moon-panel',orrery:'.orrery-panel',details:'.details-panel',almanac:'.almanac-panel'
 };
 const defaultLayout={hero:true,chart:true,earth:true,sky:true,moon:true,orrery:true,details:true,almanac:true};
+// Upgrade old layouts once; previous builds never displayed the almanac by default.
+const migratingAlmanacLayout=localStorage.getItem('helioclock-layout-v45')===null;
 let activeLayout={...defaultLayout};
 try{
  const modern=localStorage.getItem('helioclock-layout-v45');
@@ -1229,7 +1231,7 @@ function applyPrefs(saved,{restoreLayout=true}={}){
  if(restoreLayout&&saved.layout&&typeof saved.layout==='object'){
   const merged={...defaultLayout};
   for(const key of Object.keys(defaultLayout))
-   if(typeof saved.layout[key]==='boolean')merged[key]=saved.layout[key];
+   if(typeof saved.layout[key]==='boolean' && !(migratingAlmanacLayout&&key==='almanac'))merged[key]=saved.layout[key];
   applyLayout(merged);
  }
  updateDiscViewport();

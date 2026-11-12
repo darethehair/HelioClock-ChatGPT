@@ -1402,7 +1402,7 @@ test('Version 34 offers comparable Milky Way masks and copyable exact debug stat
  });
  await page.locator('#mw-copy-debug').click();
  const data=await page.evaluate(()=>JSON.parse(window.__debugCopy));
- expect(data.version).toBe(44);
+ expect(data.version).toBe(45);
  expect(data.utc).toBe('2026-11-09T12:44:00.000Z');
  expect(data.observer).toEqual({lat:49.19,lon:-98.10});
  expect(data.sky.projection).toBe('rect');
