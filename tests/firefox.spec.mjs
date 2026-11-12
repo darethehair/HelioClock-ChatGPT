@@ -309,8 +309,8 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#sunrise')).not.toHaveText('—');
  // Release identity and provenance are visible even offline.
- await expect(page.locator('#app-version')).toHaveText('v49');
- await expect(page.locator('#dock-version')).toHaveText('v49');
+ await expect(page.locator('#app-version')).toHaveText('v50');
+ await expect(page.locator('#dock-version')).toHaveText('v50');
  await expect(page.locator('.credits-footer')).toContainText('Created by Darethehair with assistance from ChatGPT');
  await expect(page.locator('.credits-footer a')).toHaveAttribute('href','https://github.com/darethehair/HelioClock-ChatGPT');
  await expect(page.locator('#build-meta')).toContainText('commit');
@@ -656,7 +656,7 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
  const errors=[];
  page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v49');
+ await expect(page.locator('#app-version')).toHaveText('v50');
  await expect(page.locator('.almanac-panel')).toBeVisible();
  await page.locator('#layout-sky').click();
  await expect(page.locator('.sky-panel')).toBeVisible();
@@ -965,7 +965,7 @@ test('Version 36 stores, restores, imports, exports and resets preferences',asyn
 test('Version 25 Sun and Moon use the same zoomable pannable fullscreen stage',async({page})=>{
  const errors=[];page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v49');
+ await expect(page.locator('#app-version')).toHaveText('v50');
  await expect(page.locator('#moon')).toBeVisible();
  await expect(page.locator('#solar-photo')).toBeHidden();
  await page.locator('[data-disc-view="sun"]').click();
@@ -1402,7 +1402,7 @@ test('Version 34 offers comparable Milky Way masks and copyable exact debug stat
  });
  await page.locator('#mw-copy-debug').click();
  const data=await page.evaluate(()=>JSON.parse(window.__debugCopy));
- expect(data.version).toBe(49);
+ expect(data.version).toBe(50);
  expect(data.utc).toBe('2026-11-09T12:44:00.000Z');
  expect(data.observer).toEqual({lat:49.19,lon:-98.10});
  expect(data.sky.projection).toBe('rect');
@@ -1651,4 +1651,39 @@ test('v49 NOAA Kp parser accepts the March 2026 object records and rejects malfo
  await expect(page.locator('#kp-badge')).toHaveText('Kp 1.3');
  await expect(page.locator('#earth-space-weather-status')).toContainText('Kp 1.3');
  await expect(page.locator('#kp-badge')).toHaveAttribute('data-tier','quiet');
+});
+
+test('v50 satellite cloud toggle, timestamp and reprojected overlay',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ const png=await page.evaluate(()=>{
+  const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=512;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#101923';ctx.fillRect(0,0,1024,512);
+  ctx.fillStyle='#f8f8f8';ctx.fillRect(100,110,270,170);
+  ctx.fillStyle='#e7e7e7';ctx.fillRect(600,280,180,110);
+  return canvas.toDataURL('image/png').split(',')[1];
+ });
+ let fetched=0;
+ await page.route('**/wms.cgi?**',route=>{
+  fetched++;
+  expect(route.request().url()).toContain('MODIS_Terra_CorrectedReflectance_TrueColor');
+  return route.fulfill({status:200,contentType:'image/png',
+   headers:{'access-control-allow-origin':'*'},body:Buffer.from(png,'base64')});
+ });
+ await expect(page.locator('#earth-clouds')).not.toBeChecked();
+ await page.locator('#earth-clouds').check();
+ await expect(page.locator('#earth-cloud-status')).toContainText('NASA Terra/MODIS daily mosaic');
+ expect(fetched).toBeGreaterThan(0);
+ await page.locator('#earth-cloud-opacity').fill('95');
+ await expect(page.locator('#earth-cloud-opacity-value')).toHaveText('95%');
+ for(const projection of ['equal','globe','mercator']){
+  await page.locator('[data-projection="'+projection+'"]').click();
+  await expect(page.locator('#earth-clouds')).toBeChecked();
+  const data=await page.locator('#earth-map').evaluate(el=>el.getContext('2d').getImageData(0,0,el.width,el.height).data);
+  expect(data.length).toBeGreaterThan(10000);
+ }
+ await page.locator('#earth-clouds').uncheck();
+ await expect(page.locator('#earth-cloud-status')).toContainText('Clouds off');
+ await page.reload();
+ await expect(page.locator('#earth-clouds')).not.toBeChecked();
 });
