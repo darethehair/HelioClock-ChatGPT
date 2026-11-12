@@ -100,7 +100,8 @@ Upstream scientific datasets and libraries retain their own license and attribut
 
 | Release | Highlights |
 | --- | --- |
-| **v47** | NOAA OVATION near-real-time auroral forecast overlay and planetary Kp, with night-side NASA Black Marble 2016 city lights. All three Earth projections; timestamps and offline messaging. |\n| **v46** | Sky Compass checkbox rows wrap within the standard two-column dashboard. |
+| **v47** | NOAA OVATION near-real-time auroral forecast overlay and planetary Kp, with night-side NASA Black Marble 2016 city lights. All three Earth projections; timestamps and offline messaging. |
+| **v46** | Sky Compass checkbox rows wrap within the standard two-column dashboard. |
 | **v45** | Astronomical Information visible by default; dotted Sun when below the hero chart's horizon. |
 | **v44** | Generated lakeside twilight panorama integrated into the local/offline PWA. |
 | **v41–v43** | Observatory-first landing page, large local clock, live solar altitude journey and responsive landscape experiments. |
