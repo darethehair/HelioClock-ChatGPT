@@ -270,7 +270,9 @@ jobs:
           if-no-files-found: error
           retention-days: 30
       - name: Deploy tested assets to Cloudflare Pages
-        if: github.ref == 'refs/heads/main'
+        # Manual workflow_dispatch runs are ZIP-only, even when started on main.
+        # Only a push to main may publish to Cloudflare Pages.
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         shell: bash
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
