@@ -400,6 +400,7 @@ function drawMoon(){
  $('moon-zoom-value').textContent=state.moonZoom.toFixed(1)+'×';
  $('moon-progress-fill').style.width=(m.phase*100).toFixed(1)+'%';
  if(info){
+  lastMoonTilt=info.parallactic;
   $('moon-tilt').textContent='Bright limb from zenith: '+(info.fromZenith>0?'+':'')+info.fromZenith.toFixed(1)+'°';
   $('moon-source').textContent=(info.photoLoaded?'NASA LRO near-side mosaic · horizon-aligned':'Loading lunar photography…')+
    ($('show-earthshine').checked?' · Earthshine visualization':' · natural dark side');
@@ -659,6 +660,7 @@ function updateDiscViewport(){
  const panX=sunMode?state.sunPanX:state.moonPanX,panY=sunMode?state.sunPanY:state.moonPanY;
  const el=sunMode?solarPhoto:$('moon');
  el.style.transform='translate('+panX+'px,'+panY+'px) scale('+zoom+')';
+ redrawDiscGrid();
  $('moon-zoom-value').textContent=zoom.toFixed(1)+'×';
 }
 function zoomDisc(factor,focus=discFocus){
