@@ -650,24 +650,23 @@ function updateSolarOrientationReadout(){
  const extra=solarImageIsFallback?' · offline photo date unknown':' · computed at image retrieval time';
  $('solar-orientation').textContent='B₀ '+(B0>=0?'+':'')+B0.toFixed(2)+'° · P '+(P>=0?'+':'')+P.toFixed(2)+'°'+extra+' · photo assumed solar-north-up';
 }
-function discCoordinateGeometry(){
+// A single geometry factory serves drawing and pointer readouts. The grid is
+// painted at unit zoom, then shares the photograph's actual CSS transform.
+function discCoordinateGeometry(baseOnly=false){
  const sun=state.discView==='sun';
- const B0=sun?solarDiscOrientation(solarObservationProxy).B0:0;
- return discGeometry(sun?'sun':'moon',discStage.clientWidth,discStage.clientHeight,
-  sun?state.sunZoom:state.moonZoom,sun?state.sunPanX:state.moonPanX,
-  sun?state.sunPanY:state.moonPanY,sun?0:lastMoonTilt,B0);
+ const b0=sun?solarDiscOrientation(solarObservationProxy).B0:0;
+ return discGeometry(state.discView,discStage.clientWidth,discStage.clientHeight,
+  baseOnly?1:sun?state.sunZoom:state.moonZoom,
+  baseOnly?0:sun?state.sunPanX:state.moonPanX,
+  baseOnly?0:sun?state.sunPanY:state.moonPanY,
+  sun?0:lastMoonTilt,b0);
 }
 function redrawDiscGrid(){
- const geometry=discCoordinateGeometry();
+ const base=discCoordinateGeometry(true);
  const overlay=$('disc-coordinate-grid');
- // Paint in the same untransformed stage coordinate system as the image.
- // CSS applies the *exact same* pan/zoom transform to both layers, avoiding
- // drift between separate viewport calculations on pointer drag or pinch.
- const base=discGeometry(state.discView,discStage.clientWidth,discStage.clientHeight,
-  1,0,0,state.discView==='sun'?0:lastMoonTilt,
-  state.discView==='sun'?solarDiscOrientation(solarObservationProxy).B0:0);
  overlay.dataset.rotationDegrees=(base.angle*180/Math.PI).toFixed(3);
- paintDiscGrid(overlay,state.discView,base,$('disc-grid-toggle').checked,geometry.r);
+ const zoom=state.discView==='sun'?state.sunZoom:state.moonZoom;
+ paintDiscGrid(overlay,state.discView,base,$('disc-grid-toggle').checked,base.r*zoom);
 }
 function updateDiscCoordinates(clientX,clientY){
  const box=discStage.getBoundingClientRect();
