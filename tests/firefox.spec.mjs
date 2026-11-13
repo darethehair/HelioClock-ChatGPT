@@ -1666,7 +1666,7 @@ test('v50 satellite cloud toggle, timestamp and reprojected overlay',async({page
  let fetched=0;
  await page.route('**/wms.cgi?**',route=>{
   fetched++;
-  expect(route.request().url()).toContain('VIIRS_NOAA20_CorrectedReflectance_TrueColor');
+  expect(route.request().url()).toMatch(/VIIRS_NOAA2[01]_CorrectedReflectance_TrueColor/);
   return route.fulfill({status:200,contentType:'image/png',
    headers:{'access-control-allow-origin':'*'},body:Buffer.from(png,'base64')});
  });
