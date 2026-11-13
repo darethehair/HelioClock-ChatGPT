@@ -16,7 +16,7 @@ This is the **independent ChatGPT edition**, created by **Darethehair with assis
 - **Sky Compass:** north-polar and full rectangular horizon projections, with stars, solar/lunar paths, planets, constellation lines and names, the ecliptic, celestial grids, and an interactive RA/Dec/Az/Alt pointer readout.
 - **Milky Way and deep sky:** shaded irregular Milky Way contour regions and outlines, galactic-centre marker, Messier galaxies, nebulae and clusters, with independently controlled labels and zoom-aware decluttering.
 - **Sun and Moon:** simulated lunar phase and orientation displayed on a NASA LRO surface mosaic; optional recent NASA SDO/HMI solar imagery, including an offline fallback. Each image supports zoom and pan.
-- **Solar system orrery:** approximate top-down heliocentric positions of Mercury through Neptune, inner/outer viewing modes, AU rings and zoom.
+- **Solar system orrery:** Astronomy Engine heliocentric ecliptic positions of Mercury through Neptune, inner/outer viewing modes, AU rings and zoom. **Planetary event navigator** finds previous/next opposition, conjunction, quadrature, or inner-planet greatest elongation relative to the simulated date, updates the global date/time, and shows the selected event geometry and Earth distance.
 - **Astronomical Information:** a detailed text almanac with Julian dates, sidereal time, Sun/Moon coordinates, rise/set and twilight events, major lunar phases, and upcoming events. Visible in the default dashboard, or usable as a stand-alone text-only view.
 
 ### Explore time and space
@@ -81,7 +81,7 @@ HelioClock is an **educational and exploratory** application, **not** a navigati
 | Stars and constellations | Offline J2000-based catalogue derived from [D3-Celestial](https://github.com/ofrohn/d3-celestial); optional precession to the selected date, star colours and magnitude limits. Positions do not model every high-precision apparent-place correction. |
 | Sky overlays | Coordinate grids, ecliptic, named constellations, 107 classified Messier deep-sky objects, and Vieira Milky Way contour fills. Contour shading is an illustrative area treatment, not calibrated surface brightness. |
 | Earth | NASA Blue Marble texture and mathematically calculated solar illumination; no real-time clouds, satellite weather data or exact atmospheric radiative transfer. |
-| Orrery | Approximate schematic heliocentric orbits and positions; not-to-scale planet sizes and no precision conjunction predictions. |
+| Orrery | Planet positions and alignment dates use Astronomy Engine. Planet sizes and circular orbit guides are schematic; calculated geometric heliocentric conjunction/opposition dates may differ slightly from apparent alignments as seen on Earth. |
 | Timezones | Civil time and DST follow the browser/device's IANA timezone rules. The observer coordinates alone do not establish the corresponding legal timezone. The annual daylight chart uses local **mean solar** time; sunrise/solar noon/sunset in the hero summary are labelled **UTC**. |
 
 ## Data, imagery and acknowledgements
@@ -100,6 +100,7 @@ Upstream scientific datasets and libraries retain their own license and attribut
 
 | Release | Highlights |
 | --- | --- |
+| **v55** | Add previous/next planetary opposition, conjunction, quadrature, and Mercury/Venus greatest-elongation navigation; date/time jumps, event details and dashed geometry, with Astronomy Engine orbital coordinates. |
 | **v54** | Repair final build metadata showing v51, prefer network for PWA navigation/version checks and update existing tabs. Fill genuine black satellite swath gaps with the previous day's NOAA-20/21 observations, labelled as multi-day imagery. |
 | **v53** | Combine available same-day NOAA-20 and NOAA-21 VIIRS cloud observations per map position to reduce unobserved Pacific swath gaps without fabricating clouds. |
 | **v52** | Restore cloud imagery after Suomi-NPP's November 2026 retirement, using active NOAA-20 VIIRS with NOAA-21 fallback and explicit satellite identification. |
@@ -127,4 +128,4 @@ This repository and its Cloudflare Pages site are **separate from** [the origina
 
 ---
 
-*Created by Darethehair with assistance from ChatGPT · README refreshed for HelioClock v54 (November 2026).*
+*Created by Darethehair with assistance from ChatGPT · README refreshed for HelioClock v55 (November 2026).*

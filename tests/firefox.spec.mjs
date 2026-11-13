@@ -309,8 +309,8 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#sunrise')).not.toHaveText('—');
  // Release identity and provenance are visible even offline.
- await expect(page.locator('#app-version')).toHaveText('v54');
- await expect(page.locator('#dock-version')).toHaveText('v54');
+ await expect(page.locator('#app-version')).toHaveText('v55');
+ await expect(page.locator('#dock-version')).toHaveText('v55');
  await expect(page.locator('.credits-footer')).toContainText('Created by Darethehair with assistance from ChatGPT');
  await expect(page.locator('.credits-footer a')).toHaveAttribute('href','https://github.com/darethehair/HelioClock-ChatGPT');
  await expect(page.locator('#build-meta')).toContainText('commit');
@@ -656,7 +656,7 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
  const errors=[];
  page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v54');
+ await expect(page.locator('#app-version')).toHaveText('v55');
  await expect(page.locator('.almanac-panel')).toBeVisible();
  await page.locator('#layout-sky').click();
  await expect(page.locator('.sky-panel')).toBeVisible();
@@ -965,7 +965,7 @@ test('Version 36 stores, restores, imports, exports and resets preferences',asyn
 test('Version 25 Sun and Moon use the same zoomable pannable fullscreen stage',async({page})=>{
  const errors=[];page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v54');
+ await expect(page.locator('#app-version')).toHaveText('v55');
  await expect(page.locator('#moon')).toBeVisible();
  await expect(page.locator('#solar-photo')).toBeHidden();
  await page.locator('[data-disc-view="sun"]').click();
@@ -1402,7 +1402,7 @@ test('Version 34 offers comparable Milky Way masks and copyable exact debug stat
  });
  await page.locator('#mw-copy-debug').click();
  const data=await page.evaluate(()=>JSON.parse(window.__debugCopy));
- expect(data.version).toBe(54);
+ expect(data.version).toBe(55);
  expect(data.utc).toBe('2026-11-09T12:44:00.000Z');
  expect(data.observer).toEqual({lat:49.19,lon:-98.10});
  expect(data.sky.projection).toBe('rect');
@@ -1741,4 +1741,30 @@ test('v53 NOAA-20 and NOAA-21 each cover complementary real geographic swaths',a
  // The compiled browser build bundles clouds.js into app.js, so test the
  // rendered result rather than importing a source module from dist/.
  await expect.poll(()=>page.locator('#earth-map').evaluate(el=>el.toDataURL())).not.toBe(original);
+});
+
+test('v55 orrery event navigator jumps forward and backward on the global simulation clock',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('#observe-date').fill('2026-11-13');
+ await page.locator('#observe-time').fill('12:00');
+ await page.locator('#observe-time').dispatchEvent('change');
+ const planet=page.locator('#orrery-event-planet'),kind=page.locator('#orrery-event-kind');
+ await planet.selectOption('Venus');await kind.selectOption('east');
+ await page.locator('[data-event-direction="1"]').click();
+ await expect(page.locator('#orrery-event-status')).toContainText('Greatest eastern elongation');
+ let future=await page.locator('#observe-date').inputValue();
+ expect(future>'2026-11-13').toBeTruthy();
+ await page.locator('[data-event-direction="-1"]').click();
+ const past=await page.locator('#observe-date').inputValue();
+ expect(past<future).toBeTruthy();
+ await page.locator('[data-orbit-mode="outer"]').click();
+ await expect(planet.locator('option')).toHaveCount(5);
+ await planet.selectOption('Jupiter');await kind.selectOption('opposition');
+ const before=await page.locator('#observe-date').inputValue();
+ await page.locator('[data-event-direction="1"]').click();
+ await expect(page.locator('#orrery-event-status')).toContainText('Jupiter · Opposition');
+ const after=await page.locator('#observe-date').inputValue();
+ expect(after>before).toBeTruthy();
+ await page.locator('[data-event-direction="-1"]').click();
+ await expect(page.locator('#orrery-event-status')).toContainText('Jupiter · Opposition');
 });

@@ -12,12 +12,25 @@ import {drawSkyGrid} from './sky-grid.js';
 import {skyPlanets} from './sky-planets.js';
 import {renderEarth,earthTextureStatus} from './earth-renderer.js';
 import {cloudStatus,refreshClouds} from './clouds.js';
+import {findPlanetaryEvent,eventPlanets,eventOptions} from './planetary-events.js';
 import {spaceWeather,auroraFresh,startSpaceWeather,refreshSpaceWeather} from './space-weather.js';
 import {starsAbove} from './sky-catalog.js';
 import {RAD,PI,wrap,clamp,solar,sunHorizontal,sunEvents,moon,orbitPositions,sidereal,equatorialFromHorizontal,utcTime,durationText} from './astronomy.js';
 const $=id=>document.getElementById(id);
 const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyPanX:0,skyPanY:0,skyHeading:0,earthZoom:1,earthLon:-98.10,earthLat:49.19,earthProjection:'equal',earthTextureQuality:'2k',orreryZoom:1,moonZoom:1,discView:'moon',sunZoom:1,moonPanX:0,moonPanY:0,sunPanX:0,sunPanY:0,orbitMode:'inner',skyLight:'daylight',skyProjection:'polar',magLimit:3.5,stellarColors:true,usePrecession:true,playing:false};
 const fmt=d=>d.toISOString().slice(0,10);
+let highlightedOrreryEvent=null;
+function updateOrreryEventChoices(){
+ const planetSelect=$('orrery-event-planet'),kindSelect=$('orrery-event-kind');
+ const planets=eventPlanets(state.orbitMode),oldPlanet=planetSelect.value;
+ planetSelect.replaceChildren(...planets.map(name=>new Option(name,name)));
+ planetSelect.value=planets.includes(oldPlanet)?oldPlanet:(state.orbitMode==='inner'?'Venus':'Jupiter');
+ const events=eventOptions(planetSelect.value),oldKind=kindSelect.value;
+ kindSelect.replaceChildren(...events.map(o=>new Option(o.label,o.value)));
+ kindSelect.value=events.some(o=>o.value===oldKind)?oldKind:events[0].value;
+ highlightedOrreryEvent=null;
+ $('orrery-event-status').textContent='Choose Previous or Next to find a planetary event.';
+}
 function setDateInputs(){$('observe-date').value=fmt(state.date);$('observe-time').value=utcTime(state.date)}
 function selectDate(){
  const d=$('observe-date').value,t=$('observe-time').value||'12:00';
@@ -428,6 +441,18 @@ function orrery(){
   }
   c.restore();
  }
+ // Highlight Sun/Earth/selected planet when viewing an event date.
+ if(highlightedOrreryEvent&&Math.abs(state.date.getTime()-highlightedOrreryEvent.date.getTime())<43200000){
+  const earth=all.find(p=>p.name==='Earth');
+  const target=all.find(p=>p.name===highlightedOrreryEvent.planet);
+  if(earth&&target){
+   const point=p=>[X-p.radius*scale*Math.sin(p.angle*RAD),Y-p.radius*scale*Math.cos(p.angle*RAD)];
+   const [ex,ey]=point(earth),[px,py]=point(target);
+   c.save();c.strokeStyle='#f0c477';c.lineWidth=1.8;c.setLineDash([6,5]);
+   c.beginPath();c.moveTo(X,Y);c.lineTo(ex,ey);c.lineTo(px,py);c.stroke();
+   c.setLineDash([]);c.restore();
+  }
+ }
  // No decorative fake stars in the orrery: an uncluttered black backdrop.
  dot(c,X,Y,outer?5:12,'#ffcd7d',18);
  planets.forEach(p=>{
@@ -583,9 +608,30 @@ for(const button of document.querySelectorAll('[data-orbit-mode]')){
   for(const other of document.querySelectorAll('[data-orbit-mode]')){
    const selected=other===button;other.classList.toggle('selected',selected);other.setAttribute('aria-pressed',String(selected));
   }
-  state.orreryZoom=1;$('orrery-zoom').value=1;render();
+  state.orreryZoom=1;$('orrery-zoom').value=1;updateOrreryEventChoices();render();
  });
 }
+$('orrery-event-planet').addEventListener('change',updateOrreryEventChoices);
+$('orrery-event-kind').addEventListener('change',()=>{
+ highlightedOrreryEvent=null;
+ $('orrery-event-status').textContent='Choose Previous or Next to find a planetary event.';
+ render();
+});
+for(const button of document.querySelectorAll('[data-event-direction]')){
+ button.addEventListener('click',()=>{
+  const direction=Number(button.dataset.eventDirection);
+  const planet=$('orrery-event-planet').value,kind=$('orrery-event-kind').value;
+  try{
+   const found=findPlanetaryEvent(planet,kind,state.date,direction);
+   pausePlayback();state.live=false;state.date=found.date;setDateInputs();
+   highlightedOrreryEvent=found;
+   const label=eventOptions(planet).find(x=>x.value===kind).label;
+   $('orrery-event-status').textContent=planet+' · '+label+' · '+found.date.toISOString().slice(0,16).replace('T',' ')+' UTC · Earth distance '+found.distanceAU.toFixed(3)+' AU';
+   render();
+  }catch(error){$('orrery-event-status').textContent='Could not find event: '+String(error.message||error)}
+ });
+}
+updateOrreryEventChoices();
 // Discs share pan/zoom controls, but preserve independent zoom and pan between views.
 // A cursor-anchored zoom keeps the solar surface feature under the pointer stationary.
 const discStage=$('disc-stage'),solarPhoto=$('solar-photo');
@@ -787,7 +833,7 @@ window.addEventListener('helioclock-milkyway-ready',render);
 $('mw-copy-debug').addEventListener('click',async()=>{
  const chosen='planar';
  const debug={
-  version:54,utc:state.date.toISOString(),
+  version:55,utc:state.date.toISOString(),
   local:state.date.toLocaleString('en-CA',{timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone}),
   timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,
   observer:{lat:state.lat,lon:state.lon},
@@ -986,7 +1032,7 @@ const compactControlSelectors={
  'earth-panel':['.earth-tools','.earth-twilight-controls','.earth-overlay-tools','.map-legend'],
  'sky-panel':['.sky-light-controls','.sky-observatory-toolbar','.sky-sidereal-toolbar','.sky-debug-tools','.sky-options','.sky-cursor-readout','.celestial-readout','.sky-legend'],
  'moon-panel':['.disc-view-select','.earthshine-toggle','.moon-view-tools','.moon-orientation','.solar-observation-note','.moon-bottom'],
- 'orrery-panel':['.orrery-controls','.planet-legend']
+ 'orrery-panel':['.orrery-controls','.orrery-events','.planet-legend']
 };
 let mobileFullscreenRestore=[],mobileFullscreenPanel=null,mobileDrawer=null;
 function restoreMobileFullscreenControls(){

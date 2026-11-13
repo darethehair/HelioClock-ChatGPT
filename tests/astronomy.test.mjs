@@ -74,3 +74,16 @@ for(const [ra,dec] of [[0,0],[85,45],[173.5,-28],[290,80],[354,-62]]){
  assert.ok(Math.abs(deltaRA)<1e-8&&Math.abs(inverted.decl-dec)<1e-8,
   'cursor inverse Alt/Az to equatorial coordinates at '+ra+','+dec);
 }
+
+ // v55: calculations are bidirectional relative to the simulated date.
+ const {findPlanetaryEvent,eventOptions,eventPlanets}=await import('../planetary-events.js');
+ assert.ok(eventPlanets('inner').includes('Venus'));
+ assert.ok(eventPlanets('outer').includes('Jupiter'));
+ assert.ok(eventOptions('Venus').some(x=>x.value==='east'));
+ assert.ok(!eventOptions('Venus').some(x=>x.value==='opposition'));
+ const simulated=new Date('2026-11-13T00:00:00Z');
+ for(const [planet,kind] of [['Venus','inferior'],['Mercury','east'],['Mars','opposition'],['Jupiter','conjunction'],['Jupiter','quad-east']]){
+  const previous=findPlanetaryEvent(planet,kind,simulated,-1),following=findPlanetaryEvent(planet,kind,simulated,1);
+  assert.ok(previous.date<simulated&&following.date>simulated,planet+' '+kind+' must bracket simulated date');
+  assert.ok(previous.distanceAU>0&&following.distanceAU>0,planet+' '+kind+' distance in AU');
+ }

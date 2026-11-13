@@ -522,3 +522,13 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 .earth-cloud-opacity input{accent-color:#b2d7ec;width:92px}
 .earth-cloud-opacity output{min-width:30px;font-variant-numeric:tabular-nums}
 @media(max-width:750px){.earth-cloud-opacity input{width:80px}}
+
+/* v55 planetary event navigator */
+.orrery-events{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin:10px 0;padding:9px 10px;border:1px solid #54718b5c;border-radius:8px;color:#bfd7eb;font-size:11px}
+.orrery-event-heading{font-weight:800;color:#f3d28f;text-transform:uppercase;letter-spacing:.07em;font-size:10px}
+.orrery-events label{display:inline-flex;align-items:center;gap:6px}
+.orrery-events select,.orrery-events button{border:1px solid #4d6d89;background:#152c44;color:#dfebf5;border-radius:5px;padding:6px 9px;font-size:11px;max-width:225px}
+.orrery-events button{cursor:pointer}
+.orrery-events button:hover{border-color:#9ed2f4}
+.orrery-events small{flex-basis:100%;line-height:1.5;color:#b7d2e4;font-size:10px}
+@media(max-width:700px){.orrery-events{padding:7px;gap:6px}.orrery-events select{max-width:190px}.orrery-events label{flex:1 1 140px}}
