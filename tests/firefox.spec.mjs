@@ -1827,7 +1827,7 @@ test('Disc coordinate overlay shares real CSS pan and zoom transform with both p
 test('Solar B0 overlay follows observation epoch, not simulated clock',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await page.locator('[data-disc-view="sun"]').click();
- await expect(page.locator('#solar-orientation')).toContainText(/B₀ [+-]\\d+\\.\\d+° · P [+-]\\d+\\.\\d+°/);
+ await expect(page.locator('#solar-orientation')).toContainText(/B₀ [+-]\d+\.\d+° · P [+-]\d+\.\d+°/);
  const first=await page.locator('#solar-orientation').innerText();
  await page.locator('#observe-date').fill('2031-07-01');
  await page.locator('#observe-time').fill('14:00');
