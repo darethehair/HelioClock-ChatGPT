@@ -44,7 +44,7 @@ export function screenToSurface(x,y,g) {
 export function gridInterval(radius) {
   return radius>=210?15:30;
 }
-export function paintDiscGrid(canvas,kind,g,enabled=true) {
+export function paintDiscGrid(canvas,kind,g,enabled=true,apparentRadius=g.r) {
   const width=canvas.clientWidth,height=canvas.clientHeight;
   if(!width||!height)return;
   const dpr=Math.min(window.devicePixelRatio||1,2);
@@ -53,7 +53,7 @@ export function paintDiscGrid(canvas,kind,g,enabled=true) {
   c.setTransform(dpr,0,0,dpr,0,0);
   c.clearRect(0,0,width,height);
   if(!enabled||!(g.r>0))return;
-  const sun=kind==='sun',step=gridInterval(g.r);
+  const sun=kind==='sun',step=gridInterval(apparentRadius);
   c.save();
   c.beginPath();c.arc(g.cx,g.cy,g.r,0,Math.PI*2);c.clip();
   // Thin lines are especially important when a disc fills a fullscreen panel.
@@ -83,7 +83,7 @@ export function paintDiscGrid(canvas,kind,g,enabled=true) {
   c.restore();
   // Labels along the central meridian and equator remain legible without
   // covering the whole photograph, even at larger zoom levels.
-  c.save();c.font=(g.r>210?'11px':'10px')+' sans-serif';
+  c.save();c.font=(apparentRadius>210?'11px':'10px')+' sans-serif';
   c.textAlign='center';c.textBaseline='middle';
   const textColor=sun?'#080808':'#d8f4ff';
   const halo=sun?'rgba(255,185,60,.58)':'rgba(1,10,18,.92)';
@@ -95,7 +95,7 @@ export function paintDiscGrid(canvas,kind,g,enabled=true) {
     if(x<14||x>width-14||y<10||y>height-10)return;
     c.strokeText(label,x,y);c.fillText(label,x,y);
   }
-  const labelStep=g.r>=210?30:60;
+  const labelStep=apparentRadius>=210?30:60;
   annotate(0,0,'0°',0,-9);
   for(let lon=labelStep;lon<=75;lon+=labelStep){
     annotate(0,lon,lon+'°E',0,-10);
