@@ -1865,3 +1865,54 @@ test('Maintenance contract: both disc image layers exactly match their coordinat
   await expect.poll(()=>page.evaluate(()=>!!document.fullscreenElement)).toBe(false);
  }
 });
+
+
+test('Maintenance mobile contract: Moon and Sun remain aligned at Pixel-size viewport, during simulated touch pinch and fullscreen',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.setViewportSize({width:393,height:851});
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('#disc-grid-toggle').check();
+ const stage=page.locator('#disc-stage');
+ const sample=async selector=>page.evaluate(selector=>{
+  const image=document.querySelector(selector),grid=document.querySelector('#disc-coordinate-grid'),stage=document.querySelector('#disc-stage');
+  const rect=node=>{const b=node.getBoundingClientRect();return [b.x,b.y,b.width,b.height]};
+  return {image:rect(image),grid:rect(grid),transform:getComputedStyle(image).transform,gridTransform:getComputedStyle(grid).transform,touchAction:getComputedStyle(stage).touchAction};
+ },selector);
+ const assertAligned=values=>{
+  for(let i=0;i<4;i++)expect(Math.abs(values.image[i]-values.grid[i])).toBeLessThan(1);
+  expect(values.transform).toBe(values.gridTransform);
+  expect(values.touchAction).toBe('none');
+ };
+ for(const [kind,selector] of [['moon','#moon'],['sun','#solar-photo']]){
+  await page.locator('[data-disc-view="'+kind+'"]').click();
+  await page.locator('#disc-reset').click();
+  const before=await sample(selector);assertAligned(before);
+  // Dispatch a pair of genuine PointerEvent objects to exercise the app's
+  // own two-pointer pinch handler; capture is bypassed only because these
+  // programmatic pointers are not registered as OS-level active pointers.
+  await stage.evaluate(el=>{
+   const oldCapture=el.setPointerCapture.bind(el);
+   el.setPointerCapture=()=>{};
+   const fire=(type,id,x,y)=>el.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerType:'touch',pointerId:id,isPrimary:id===100,clientX:x,clientY:y}));
+   const r=el.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2;
+   fire('pointerdown',100,x-35,y);
+   fire('pointerdown',101,x+35,y);
+   fire('pointermove',101,x+65,y);
+   fire('pointermove',100,x-55,y);
+   fire('pointerup',100,x-55,y);
+   fire('pointerup',101,x+65,y);
+   el.setPointerCapture=oldCapture;
+  });
+  const pinched=await sample(selector);
+  assertAligned(pinched);
+  expect(pinched.transform).not.toBe(before.transform);
+  await page.locator('[data-fullscreen="moon-panel"]').click();
+  await expect.poll(()=>page.evaluate(()=>!!document.fullscreenElement)).toBe(true);
+  assertAligned(await sample(selector));
+  await page.evaluate(()=>document.exitFullscreen());
+  await expect.poll(()=>page.evaluate(()=>!!document.fullscreenElement)).toBe(false);
+  await page.locator('#disc-reset').click();
+  assertAligned(await sample(selector));
+ }
+ expect(errors).toEqual([]);
+});
