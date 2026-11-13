@@ -71,7 +71,7 @@ export function paintDiscGrid(canvas,kind,g,enabled=true) {
   }
   // Complete visible parallels and meridians to the actual limb, including
   // the near-polar portions previously left blank.
-  for(let lat=-75;lat<=75;lat+=step)
+  for(let lat=-90+step;lat<90;lat+=step)
     trace(Array.from({length:361},(_,i)=>[lat,-90+i*.5]));
   for(let lon=-90;lon<=90;lon+=step)
     trace(Array.from({length:361},(_,i)=>[-90+i*.5,lon]));
