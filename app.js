@@ -7,6 +7,7 @@ import {drawSkyDSOs} from './sky-dso.js';
 import {drawConstellationNames} from './sky-constellation-labels.js';
 import {renderSolarJourney} from './solar-hero.js';
 import {renderMoon} from './moon-renderer.js';
+import {discGeometry,screenToSurface,paintDiscGrid,formatSurface} from './disc-coordinates.js';
 import {drawSolarYear} from './solar-chart.js';
 import {drawSkyGrid} from './sky-grid.js';
 import {skyPlanets} from './sky-planets.js';
@@ -637,6 +638,21 @@ updateOrreryEventChoices();
 const discStage=$('disc-stage'),solarPhoto=$('solar-photo');
 const solarSource='https://sdo.gsfc.nasa.gov/assets/img/latest/latest_2048_HMIIC.jpg';
 let discFocus=null,dragDisc=null,solarRequest=0;
+let lastMoonTilt=0;
+function discCoordinateGeometry(){
+ const sun=state.discView==='sun';
+ return discGeometry(sun?'sun':'moon',discStage.clientWidth,discStage.clientHeight,
+  sun?state.sunZoom:state.moonZoom,sun?state.sunPanX:state.moonPanX,
+  sun?state.sunPanY:state.moonPanY,lastMoonTilt);
+}
+function redrawDiscGrid(){
+ paintDiscGrid($('disc-coordinate-grid'),state.discView,discCoordinateGeometry(),$('disc-grid-toggle').checked);
+}
+function updateDiscCoordinates(clientX,clientY){
+ const box=discStage.getBoundingClientRect();
+ const point=screenToSurface(clientX-box.left,clientY-box.top,discCoordinateGeometry());
+ $('disc-coordinate-readout').textContent=point?formatSurface(point,state.discView):'Outside visible disc';
+}
 function updateDiscViewport(){
  const sunMode=state.discView==='sun';
  const zoom=sunMode?state.sunZoom:state.moonZoom;
@@ -752,6 +768,8 @@ function finishDiscPointer(e){
 for(const name of ['pointerup','pointercancel','lostpointercapture'])
  discStage.addEventListener(name,finishDiscPointer);
 discStage.addEventListener('pointerleave',()=>{discFocus=null});
+$('disc-grid-toggle').addEventListener('change',redrawDiscGrid);
+window.addEventListener('resize',redrawDiscGrid);
 discStage.addEventListener('wheel',e=>{
  e.preventDefault();zoomDisc(e.deltaY<0?1.2:1/1.2,{x:e.clientX,y:e.clientY});
 },{passive:false});
