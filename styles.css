@@ -534,7 +534,7 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 @media(max-width:700px){.orrery-events{padding:7px;gap:6px}.orrery-events select{max-width:190px}.orrery-events label{flex:1 1 140px}}
 
 /* Celestial disc surface-coordinate reference overlay (v56). */
-.moon-stage #disc-coordinate-grid{position:absolute;inset:0;width:100%;height:100%;transform:none!important;pointer-events:none;z-index:3;object-fit:fill}
+.moon-stage #disc-coordinate-grid{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3;object-fit:fill}
 .disc-grid-setting{display:inline-flex;align-items:center;gap:5px;color:#d2e4fa;font-size:12px;letter-spacing:0}
 .disc-coordinate-readout{padding:7px 0;color:#b8e8f7;font-size:12px;font-variant-numeric:tabular-nums;min-height:29px}
 .disc-coordinate-warning{display:block;color:#8999b1;font-size:10px;line-height:1.4;margin:0 0 8px}
@@ -550,4 +550,4 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
   left:0;top:0;width:100%!important;height:100%!important;
   max-height:none!important;
 }
-.moon-panel .moon-stage #disc-coordinate-grid {transform:none!important;object-fit:fill;pointer-events:none}
+.moon-panel .moon-stage #disc-coordinate-grid {object-fit:fill;pointer-events:none}
