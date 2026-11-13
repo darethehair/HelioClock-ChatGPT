@@ -1840,3 +1840,28 @@ test('Solar B0 overlay follows observation epoch, not simulated clock',async({pa
  expect(await grid.evaluate(el=>getComputedStyle(el).transform))
   .toBe(await photo.evaluate(el=>getComputedStyle(el).transform));
 });
+
+
+test('Maintenance contract: both disc image layers exactly match their coordinate overlays in normal and fullscreen layouts',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('#disc-grid-toggle').check();
+ const assertLayerAlignment=async subject=>{
+  const rects=await page.evaluate(selector=>{
+   const rect=id=>{const r=document.querySelector(id).getBoundingClientRect();return [r.x,r.y,r.width,r.height]};
+   return {image:rect(selector),grid:rect('#disc-coordinate-grid')};
+  },subject);
+  for(let i=0;i<4;i++)expect(Math.abs(rects.image[i]-rects.grid[i])).toBeLessThan(1);
+ };
+ for(const [view,subject] of [['moon','#moon'],['sun','#solar-photo']]){
+  await page.locator('[data-disc-view="'+view+'"]').click();
+  await page.locator('#disc-reset').click();
+  await assertLayerAlignment(subject);
+  await page.locator('#moon-zoom-in').click();
+  await assertLayerAlignment(subject);
+  await page.locator('[data-fullscreen="moon-panel"]').click();
+  await expect.poll(()=>page.evaluate(()=>!!document.fullscreenElement)).toBe(true);
+  await assertLayerAlignment(subject);
+  await page.evaluate(()=>document.exitFullscreen());
+  await expect.poll(()=>page.evaluate(()=>!!document.fullscreenElement)).toBe(false);
+ }
+});
