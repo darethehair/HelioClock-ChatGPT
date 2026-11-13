@@ -83,7 +83,6 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 .panel-heading{padding-right:92px}
 .panel:fullscreen{box-sizing:border-box;width:100vw;height:100vh;max-width:none;border:0;border-radius:0;padding:24px!important;background:#0c172b;overflow:auto}
 .panel:fullscreen canvas{height:calc(100vh - 190px)!important;max-height:none}
-.panel:fullscreen .moon-stage canvas{height:calc(100vh - 220px)!important}
 .panel:fullscreen .panel-fullscreen{position:fixed;top:15px;right:15px}
 .moon-view-tools{display:flex;align-items:center;justify-content:center;gap:10px;color:#d3e9fa;font-size:11px}
 .moon-view-tools button{background:#1b3956;color:#e1efff;border:1px solid #5b7898;border-radius:7px;padding:5px 12px;font-size:15px;font-weight:700}
@@ -142,12 +141,9 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 @media(max-width:750px){.sky-observatory-toolbar,.sky-sidereal-toolbar{gap:7px}.sky-sidereal-toolbar strong{width:100%}.dock-sidereal{display:none}}
 
 /* Enlarged Moon in the standard dashboard (roughly polar-compass scale). */
-.moon-panel #moon{height:385px}
 .moon-panel .moon-stage{min-height:385px;overflow:hidden}
-.moon-panel:fullscreen #moon{height:calc(100vh - 260px)!important}
 .moon-panel:fullscreen .moon-stage{min-height:0}
 @media(max-width:750px){
- .moon-panel #moon{height:325px}
  .moon-panel .moon-stage{min-height:325px}
 }
 
