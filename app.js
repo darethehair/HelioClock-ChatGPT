@@ -719,6 +719,7 @@ function showDisc(which){
   button.classList.toggle('selected',selected);button.setAttribute('aria-pressed',String(selected));
  }
  if(sun&&solarRequest===0)refreshSolarImage();
+ if(sun)updateSolarOrientationReadout();
  render();
 }
 function refreshSolarImage(){
@@ -734,6 +735,8 @@ function refreshSolarImage(){
  solarPhoto.onerror=()=>{
   // A packaged offline reference is explicitly labelled as a fallback.
   if(!solarPhoto.src.endsWith('/solar-fallback.jpg')){
+   solarImageIsFallback=true;
+   updateSolarOrientationReadout();redrawDiscGrid();
    $('solar-status').textContent='NASA offline reference image · not a current observation';
    solarPhoto.onload=null;solarPhoto.onerror=null;solarPhoto.src='./solar-fallback.jpg';
   }else $('solar-status').textContent='Solar image unavailable';
