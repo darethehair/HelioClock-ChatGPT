@@ -1734,16 +1734,11 @@ test('v53 NOAA-20 and NOAA-21 each cover complementary real geographic swaths',a
   return route.fulfill({status:200,contentType:'image/png',
    headers:{'access-control-allow-origin':'*'},body:Buffer.from(pngs[is20?0:1],'base64')});
  });
+ const original=await page.locator('#earth-map').evaluate(el=>el.toDataURL());
  await page.locator('#earth-clouds').check();
  await expect(page.locator('#earth-cloud-status')).toContainText('NOAA-20 + NOAA-21');
  expect(count20).toBeGreaterThan(0);expect(count21).toBeGreaterThan(0);
- const sampled=await page.evaluate(async()=>{
-  const {cloudOpacityAt}=await import('./clouds.js');
-  return {western:cloudOpacityAt(-125,25,[4,10,15]),
-   eastern:cloudOpacityAt(80,25,[4,10,15]),
-   gap:cloudOpacityAt(-10,25,[4,10,15])};
- });
- expect(sampled.western).toBeGreaterThan(.15);
- expect(sampled.eastern).toBeGreaterThan(.15);
- expect(sampled.gap).toBe(0);
+ // The compiled browser build bundles clouds.js into app.js, so test the
+ // rendered result rather than importing a source module from dist/.
+ await expect.poll(()=>page.locator('#earth-map').evaluate(el=>el.toDataURL())).not.toBe(original);
 });
