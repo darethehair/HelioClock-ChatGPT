@@ -248,6 +248,11 @@ jobs:
         run: npx playwright install firefox
       - name: Exercise browser controls in Firefox
         run: npm run test:browser
+      - name: Install Chromium for Pixel mobile checks
+        timeout-minutes: 5
+        run: npx playwright install chromium
+      - name: Exercise Pixel-size Chromium touch and fullscreen controls
+        run: npx playwright test --config=playwright.mobile.config.mjs
       - name: Assemble standalone distribution
         shell: bash
         run: |
