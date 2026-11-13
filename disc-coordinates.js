@@ -9,7 +9,7 @@
 const rad = Math.PI / 180;
 const deg = 180 / Math.PI;
 const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
-export function discGeometry(kind,width,height,zoom=1,panX=0,panY=0,orientation=0) {
+export function discGeometry(kind,width,height,zoom=1,panX=0,panY=0,orientation=0,viewLatitude=0) {
   // Moon matches renderMoon's exact mathematical limb (including its floor).
   // The SDO image is rendered with object-fit:contain: its square image is
   // centred inside the wide stage. Its observed limb is about 94% of the
@@ -17,11 +17,14 @@ export function discGeometry(kind,width,height,zoom=1,panX=0,panY=0,orientation=
   const radius=kind==='moon'
     ? Math.max(20,Math.floor(Math.min(width*.82,height*.90)))/2
     : Math.min(width,height)*.47;
-  return {cx:width/2+panX,cy:height/2+panY,r:radius*zoom,angle:kind==='moon'?orientation*rad:0};
+  return {cx:width/2+panX,cy:height/2+panY,r:radius*zoom,angle:orientation*rad,tilt:kind==='sun'?viewLatitude*rad:0};
 }
 export function surfaceToScreen(latitude,longitude,g) {
   const lat=latitude*rad,lon=longitude*rad;
-  const x=Math.cos(lat)*Math.sin(lon),y=-Math.sin(lat),z=Math.cos(lat)*Math.cos(lon);
+  const x=Math.cos(lat)*Math.sin(lon);
+  const north=Math.sin(lat),forward=Math.cos(lat)*Math.cos(lon);
+  const b=g.tilt||0,cb=Math.cos(b),sb=Math.sin(b);
+  const y=-(north*cb-forward*sb),z=north*sb+forward*cb;
   if(z<0)return null;
   const ca=Math.cos(g.angle),sa=Math.sin(g.angle);
   return {x:g.cx+g.r*(x*ca-y*sa),y:g.cy+g.r*(x*sa+y*ca)};
@@ -32,8 +35,11 @@ export function screenToSurface(x,y,g) {
   const nx=dx*ca+dy*sa,ny=-dx*sa+dy*ca;
   const rr=nx*nx+ny*ny;
   if(rr>1)return null;
-  const latitude=-Math.asin(clamp(ny,-1,1))*deg;
-  const longitude=Math.atan2(nx,Math.sqrt(Math.max(0,1-rr)))*deg;
+  const forward=Math.sqrt(Math.max(0,1-rr));
+  const b=g.tilt||0,cb=Math.cos(b),sb=Math.sin(b);
+  const north=-ny*cb+forward*sb;
+  const longitude=Math.atan2(nx,ny*sb+forward*cb)*deg;
+  const latitude=Math.asin(clamp(north,-1,1))*deg;
   return {latitude:latitude===0?0:latitude,longitude:longitude===0?0:longitude};
 }
 /**
