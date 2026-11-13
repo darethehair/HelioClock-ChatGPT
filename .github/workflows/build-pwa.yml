@@ -239,7 +239,7 @@ jobs:
           print('Bundled NASA Black Marble:',p.stat().st_size)
           PY
       - name: Stage static files for browser test
-        run: cp index.html styles.css astronomy.js manifest.webmanifest sw.js icon.svg hero-landscape-natural.webp dist/ && ver="$(node -p \"parseInt(require('./package.json').version,10)\")" && printf '{"version":%s,"test":true,"commit":"%s","built_utc":"%s"}\n' "$ver" "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > dist/build-info.json
+        run: cp index.html styles.css astronomy.js manifest.webmanifest sw.js icon.svg hero-landscape-natural.webp dist/ && ver="$(node -p 'require("./package.json").version.split(".")[0]')" && printf '{"version":%s,"test":true,"commit":"%s","built_utc":"%s"}\n' "$ver" "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > dist/build-info.json
       # Pin a stable runner and download only the Playwright browser binary.
       # Avoid apt-based --with-deps: the Ubuntu archive DNS endpoint can
       # intermittently fail and strand the job for 20+ minutes.
@@ -254,7 +254,7 @@ jobs:
           set -euo pipefail
           mkdir -p dist
           cp index.html styles.css astronomy.js manifest.webmanifest sw.js icon.svg hero-landscape-natural.webp dist/
-          ver="$(node -p \"parseInt(require('./package.json').version,10)\")"
+          ver="$(node -p 'require("./package.json").version.split(".")[0]')"
           printf '{"version":%s,"commit":"%s","built_utc":"%s","repository":"%s"}\n' "$ver" "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$GITHUB_REPOSITORY" > dist/build-info.json
           node -e "const a=require('./dist/build-info.json');const b=require('./package.json');if(a.version!==parseInt(b.version,10))process.exit(1)"
       - name: Upload PWA ZIP
