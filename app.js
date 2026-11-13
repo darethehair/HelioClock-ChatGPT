@@ -647,7 +647,10 @@ function discCoordinateGeometry(){
   sun?state.sunPanY:state.moonPanY,lastMoonTilt);
 }
 function redrawDiscGrid(){
- paintDiscGrid($('disc-coordinate-grid'),state.discView,discCoordinateGeometry(),$('disc-grid-toggle').checked);
+ const geometry=discCoordinateGeometry();
+ const overlay=$('disc-coordinate-grid');
+ overlay.dataset.rotationDegrees=(geometry.angle*180/Math.PI).toFixed(3);
+ paintDiscGrid(overlay,state.discView,geometry,$('disc-grid-toggle').checked);
 }
 function updateDiscCoordinates(clientX,clientY){
  const box=discStage.getBoundingClientRect();
