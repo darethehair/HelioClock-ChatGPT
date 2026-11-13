@@ -1788,3 +1788,37 @@ test('v57 Moon coordinate grid rotates with selected date and tracks pan and zoo
  const zoomed=await grid.evaluate(el=>Array.from(el.getContext('2d').getImageData(0,0,el.width,el.height).data).reduce((a,b)=>a+b,0));
  expect(zoomed).not.toBe(original);
 });
+
+
+test('Disc coordinate overlay shares real CSS pan and zoom transform with both photographs',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('#disc-grid-toggle').check();
+ const stage=page.locator('#disc-stage'),overlay=page.locator('#disc-coordinate-grid');
+ for(const [view,subject] of [['moon','#moon'],['sun','#solar-photo']]){
+  await page.locator('[data-disc-view="'+view+'"]').click();
+  await page.locator('#disc-reset').click();
+  const getTransforms=()=>page.evaluate(selector=>{
+   const img=document.querySelector(selector),grid=document.querySelector('#disc-coordinate-grid');
+   return {image:getComputedStyle(img).transform,grid:getComputedStyle(grid).transform};
+  },subject);
+  const original=await getTransforms();
+  expect(original.image).toBe(original.grid);
+  const box=await stage.boundingBox();
+  const x=box.x+box.width*.5,y=box.y+box.height*.5;
+  await page.mouse.move(x,y);
+  await page.mouse.down();
+  await page.mouse.move(x+85,y+35,{steps:5});
+  await page.mouse.up();
+  const moved=await getTransforms();
+  expect(moved.grid).toBe(moved.image);
+  expect(moved.image).not.toBe(original.image);
+  await page.locator('#moon-zoom-in').click();
+  const zoomed=await getTransforms();
+  expect(zoomed.grid).toBe(zoomed.image);
+  expect(zoomed.image).not.toBe(moved.image);
+  await page.locator('#disc-reset').click();
+  const reset=await getTransforms();
+  expect(reset.grid).toBe(reset.image);
+  expect(reset.image).toBe(original.image);
+ }
+});
