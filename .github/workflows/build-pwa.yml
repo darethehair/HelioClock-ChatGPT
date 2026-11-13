@@ -1,7 +1,7 @@
 name: Build standalone PWA ZIP
 on:
   push:
-    branches: [main]
+    branches: [main, maintenance/v60-code-quality]
   workflow_dispatch:
 permissions:
   contents: read
@@ -265,6 +265,7 @@ jobs:
           if-no-files-found: error
           retention-days: 30
       - name: Deploy tested assets to Cloudflare Pages
+        if: github.ref == 'refs/heads/main'
         shell: bash
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
