@@ -30,8 +30,9 @@ export function screenToSurface(x,y,g) {
   const nx=dx*ca+dy*sa,ny=-dx*sa+dy*ca;
   const rr=nx*nx+ny*ny;
   if(rr>1)return null;
-  return {latitude:-Math.asin(clamp(ny,-1,1))*deg,
-    longitude:Math.atan2(nx,Math.sqrt(Math.max(0,1-rr)))*deg};
+  const latitude=-Math.asin(clamp(ny,-1,1))*deg;
+  const longitude=Math.atan2(nx,Math.sqrt(Math.max(0,1-rr)))*deg;
+  return {latitude:latitude===0?0:latitude,longitude:longitude===0?0:longitude};
 }
 export function paintDiscGrid(canvas,kind,g,enabled=true) {
   const width=canvas.clientWidth,height=canvas.clientHeight;
