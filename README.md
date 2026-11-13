@@ -100,6 +100,7 @@ Upstream scientific datasets and libraries retain their own license and attribut
 
 | Release | Highlights |
 | --- | --- |
+| **v53** | Combine available same-day NOAA-20 and NOAA-21 VIIRS cloud observations per map position to reduce unobserved Pacific swath gaps without fabricating clouds. |
 | **v52** | Restore cloud imagery after Suomi-NPP's November 2026 retirement, using active NOAA-20 VIIRS with NOAA-21 fallback and explicit satellite identification. |
 | **v51** | Replace MODIS daily imagery with wider-swath VIIRS/Suomi-NPP imagery to avoid orbital-scan gaps in the cloud overlay. |\n| **v50** | Optional NASA VIIRS satellite cloud approximation on all Earth map projections; strength control, imagery date, refresh and unavailable status. Daily observed imagery is independent of the simulation clock; not a forecast or measured cloud fraction. |
 | **v49** | Fix planetary Kp parsing for NOAA's March 2026 JSON format change while preserving legacy responses. |
@@ -125,4 +126,4 @@ This repository and its Cloudflare Pages site are **separate from** [the origina
 
 ---
 
-*Created by Darethehair with assistance from ChatGPT · README refreshed for HelioClock v52 (November 2026).*
+*Created by Darethehair with assistance from ChatGPT · README refreshed for HelioClock v53 (November 2026).*

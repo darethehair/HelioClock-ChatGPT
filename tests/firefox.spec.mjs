@@ -309,8 +309,8 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#sunrise')).not.toHaveText('—');
  // Release identity and provenance are visible even offline.
- await expect(page.locator('#app-version')).toHaveText('v52');
- await expect(page.locator('#dock-version')).toHaveText('v52');
+ await expect(page.locator('#app-version')).toHaveText('v53');
+ await expect(page.locator('#dock-version')).toHaveText('v53');
  await expect(page.locator('.credits-footer')).toContainText('Created by Darethehair with assistance from ChatGPT');
  await expect(page.locator('.credits-footer a')).toHaveAttribute('href','https://github.com/darethehair/HelioClock-ChatGPT');
  await expect(page.locator('#build-meta')).toContainText('commit');
@@ -656,7 +656,7 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
  const errors=[];
  page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v52');
+ await expect(page.locator('#app-version')).toHaveText('v53');
  await expect(page.locator('.almanac-panel')).toBeVisible();
  await page.locator('#layout-sky').click();
  await expect(page.locator('.sky-panel')).toBeVisible();
@@ -965,7 +965,7 @@ test('Version 36 stores, restores, imports, exports and resets preferences',asyn
 test('Version 25 Sun and Moon use the same zoomable pannable fullscreen stage',async({page})=>{
  const errors=[];page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v52');
+ await expect(page.locator('#app-version')).toHaveText('v53');
  await expect(page.locator('#moon')).toBeVisible();
  await expect(page.locator('#solar-photo')).toBeHidden();
  await page.locator('[data-disc-view="sun"]').click();
@@ -1402,7 +1402,7 @@ test('Version 34 offers comparable Milky Way masks and copyable exact debug stat
  });
  await page.locator('#mw-copy-debug').click();
  const data=await page.evaluate(()=>JSON.parse(window.__debugCopy));
- expect(data.version).toBe(52);
+ expect(data.version).toBe(53);
  expect(data.utc).toBe('2026-11-09T12:44:00.000Z');
  expect(data.observer).toEqual({lat:49.19,lon:-98.10});
  expect(data.sky.projection).toBe('rect');
@@ -1672,7 +1672,7 @@ test('v50 satellite cloud toggle, timestamp and reprojected overlay',async({page
  });
  await expect(page.locator('#earth-clouds')).not.toBeChecked();
  await page.locator('#earth-clouds').check();
- await expect(page.locator('#earth-cloud-status')).toContainText('NASA NOAA-20 VIIRS mosaic');
+ await expect(page.locator('#earth-cloud-status')).toContainText('NASA NOAA-20 + NOAA-21 VIIRS mosaics');
  expect(fetched).toBeGreaterThan(0);
  await page.locator('#earth-cloud-opacity').fill('95');
  await expect(page.locator('#earth-cloud-opacity-value')).toHaveText('95%');
@@ -1709,7 +1709,41 @@ test('v52 cloud fallback uses NOAA-21 when NOAA-20 is unavailable',async({page})
   return route.abort();
  });
  await page.locator('#earth-clouds').check();
- await expect(page.locator('#earth-cloud-status')).toContainText('NASA NOAA-21 VIIRS mosaic');
+ await expect(page.locator('#earth-cloud-status')).toContainText('NASA NOAA-21 VIIRS mosaics');
  expect(primary).toBeGreaterThan(0);
  expect(backup).toBeGreaterThan(0);
+});
+
+test('v53 NOAA-20 and NOAA-21 each cover complementary real geographic swaths',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ const pngs=await page.evaluate(()=>{
+  function make(left){
+   const c=document.createElement('canvas');c.width=1024;c.height=512;
+   const x=c.getContext('2d');x.fillStyle='#000000';x.fillRect(0,0,1024,512);
+   x.fillStyle='#ffffff';x.fillRect(left?80:550,100,260,280);
+   return c.toDataURL('image/png').split(',')[1];
+  }
+  return [make(true),make(false)];
+ });
+ let count20=0,count21=0;
+ await page.route('**/wms.cgi?**',route=>{
+  const url=route.request().url(),is20=url.includes('VIIRS_NOAA20_CorrectedReflectance_TrueColor');
+  const is21=url.includes('VIIRS_NOAA21_CorrectedReflectance_TrueColor');
+  if(is20)count20++;if(is21)count21++;
+  if(!is20&&!is21)return route.abort();
+  return route.fulfill({status:200,contentType:'image/png',
+   headers:{'access-control-allow-origin':'*'},body:Buffer.from(pngs[is20?0:1],'base64')});
+ });
+ await page.locator('#earth-clouds').check();
+ await expect(page.locator('#earth-cloud-status')).toContainText('NOAA-20 + NOAA-21');
+ expect(count20).toBeGreaterThan(0);expect(count21).toBeGreaterThan(0);
+ const sampled=await page.evaluate(async()=>{
+  const {cloudOpacityAt}=await import('./clouds.js');
+  return {western:cloudOpacityAt(-125,25,[4,10,15]),
+   eastern:cloudOpacityAt(80,25,[4,10,15]),
+   gap:cloudOpacityAt(-10,25,[4,10,15])};
+ });
+ expect(sampled.western).toBeGreaterThan(.15);
+ expect(sampled.eastern).toBeGreaterThan(.15);
+ expect(sampled.gap).toBe(0);
 });
