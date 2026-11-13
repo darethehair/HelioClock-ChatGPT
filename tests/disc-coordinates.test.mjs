@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {discGeometry,screenToSurface,surfaceToScreen,formatSurface} from '../disc-coordinates.js';
+import {discGeometry,screenToSurface,surfaceToScreen,formatSurface,gridInterval} from '../disc-coordinates.js';
 test('Moon grid centre and latitude/longitude reference',()=>{
  const g=discGeometry('moon',400,400);
  assert.deepEqual(screenToSurface(200,200,g),{latitude:0,longitude:0});
@@ -19,4 +19,16 @@ test('Rotation and zoom preserve reference inverse mapping',()=>{
 });
 test('Solar reference readout clearly avoids unsupported Carrington claim',()=>{
  assert.match(formatSurface({latitude:12,longitude:-15},'sun'),/reference/);
+});
+
+test('Disc radii reflect their rendered viewports',()=>{
+ const moon=discGeometry('moon',1600,660);
+ assert.equal(moon.r,Math.floor(Math.min(1600*.82,660*.90))/2);
+ const sun=discGeometry('sun',1600,660);
+ assert.ok(Math.abs(sun.r-660*.47)<1e-10);
+ assert.ok(sun.r>660*.45);
+});
+test('Large discs use a denser 15 degree grid, ordinary discs 30 degrees',()=>{
+ assert.equal(gridInterval(180),30);
+ assert.equal(gridInterval(280),15);
 });
