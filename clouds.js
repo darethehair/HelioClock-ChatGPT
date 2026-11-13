@@ -3,6 +3,7 @@
 // Retrieved independently from HelioClock's simulated date; no credentials required.
 const URL='https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi';
 const DAYS_BACK=[1,2,3,4];
+const MAX_OBSERVATION_DAYS=2; // Older-day imagery only fills missing satellite coverage.
 // Suomi-NPP stopped delivering new observations in November 2026.
 // Request active successor satellites and fall back if one has no imagery.
 const LAYERS=[['NOAA-20','VIIRS_NOAA20_CorrectedReflectance_TrueColor'],['NOAA-21','VIIRS_NOAA21_CorrectedReflectance_TrueColor']];
@@ -48,23 +49,30 @@ export async function refreshClouds(force=false){
  loading=true;snapshot={...snapshot,status:'loading',error:null};notice();
  try{
   let lastError=null;
+  const images=[],days=[];
   for(const offset of DAYS_BACK){
    const day=utcDayBack(offset);
-   // Fetch both satellites on the SAME day. A whole-globe fallback leaves
-   // large empty wedges even when the other satellite observed that region.
    const results=await Promise.allSettled(LAYERS.map(async([satellite,layer])=>({
-    satellite,image:await loadImage(day,layer)
+    satellite,day,image:await loadImage(day,layer)
    })));
-   const images=[];
+   const thisDay=[];
    for(const result of results){
-    if(result.status==='fulfilled')images.push(result.value);
+    if(result.status==='fulfilled')thisDay.push(result.value);
     else lastError=result.reason;
    }
-   if(images.length){
-    snapshot={status:'ready',images,day,satellite:images.map(x=>x.satellite).join(' + '),
-     error:null,requested:Date.now()};
-    notice();return;
+   if(thisDay.length){
+    images.push(...thisDay);
+    days.push(day);
+    // Two observed days maximum, but only use the older day where today's
+    // satellite pixels indicate missing swath coverage.
+    if(days.length>=MAX_OBSERVATION_DAYS)break;
    }
+  }
+  if(images.length){
+   snapshot={status:'ready',images,day:days.length>1?days[days.length-1]+' to '+days[0]:days[0],
+    satellite:[...new Set(images.map(x=>x.satellite))].join(' + '),
+    error:null,requested:Date.now()};
+   notice();return;
   }
   snapshot={status:'unavailable',images:[],day:null,satellite:null,error:lastError?.message||'No satellite image',requested:Date.now()};
   notice();
@@ -74,16 +82,21 @@ export async function refreshClouds(force=false){
 export function cloudOpacityAt(lon,lat,baseImage,opacity=.65){
  if(!snapshot.images.length)return 0;
  const baseBright=baseImage?Math.min(...baseImage):0;
- let best=0;
- // Use the strongest valid cloud signal from the *same day's* swaths.
- // Missing-data black pixels produce zero signal. This combines actual
- // observations without painting fictional cloud cover into remaining gaps.
- for(const {image:photo} of snapshot.images){
+ let best=0,currentDay=null,observed=false;
+ // Images are ordered newest-first, with both NOAA satellites together.
+ // Only fall back to the older day's cloud pixels at black/no-data swath gaps.
+ for(const {image:photo,day} of snapshot.images){
+  if(currentDay!==null&&day!==currentDay&&observed)break;
+  if(currentDay!==day){currentDay=day;observed=false}
   const {width,height,data}=photo;
   const x=Math.floor((((lon+180)%360+360)%360)/360*width)%width;
   const y=Math.min(height-1,Math.max(0,Math.floor((90-lat)/180*height)));
   const i=(y*width+x)*4;
   const r=data[i],g=data[i+1],b=data[i+2];
+  // The NASA WMS mosaic uses black (all channels near zero) for missing
+  // imagery. Clear ocean is normally blue/coloured, not neutral near-black.
+  if(Math.max(r,g,b)<=9)continue;
+  observed=true;
   const bright=Math.min(r,g,b),saturation=Math.max(r,g,b)-bright;
   const pale=Math.max(0,Math.min(1,(bright-108)/93));
   const neutral=Math.max(0,Math.min(1,(64-saturation)/46));
