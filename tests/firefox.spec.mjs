@@ -1768,3 +1768,23 @@ test('v55 orrery event navigator jumps forward and backward on the global simula
  await page.locator('[data-event-direction="-1"]').click();
  await expect(page.locator('#orrery-event-status')).toContainText('Jupiter · Opposition');
 });
+
+
+test('v57 Moon coordinate grid rotates with selected date and tracks pan and zoom',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('#disc-grid-toggle').check();
+ await page.locator('#observe-date').fill('2026-11-13');
+ await page.locator('#observe-time').fill('04:00');
+ const grid=page.locator('#disc-coordinate-grid');
+ const first=Number(await grid.getAttribute('data-rotation-degrees'));
+ expect(Number.isFinite(first)).toBe(true);
+ await page.locator('#observe-time').fill('16:00');
+ await expect.poll(async()=>Number(await grid.getAttribute('data-rotation-degrees'))).not.toBe(first);
+ const angle=Number(await grid.getAttribute('data-rotation-degrees'));
+ expect(Math.abs(angle)).toBeGreaterThan(.1);
+ const original=await grid.evaluate(el=>Array.from(el.getContext('2d').getImageData(0,0,el.width,el.height).data).reduce((a,b)=>a+b,0));
+ await page.locator('#moon-zoom-in').click();
+ await expect(page.locator('#moon-zoom-value')).not.toHaveText('1.0×');
+ const zoomed=await grid.evaluate(el=>Array.from(el.getContext('2d').getImageData(0,0,el.width,el.height).data).reduce((a,b)=>a+b,0));
+ expect(zoomed).not.toBe(original);
+});
