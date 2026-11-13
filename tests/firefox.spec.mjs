@@ -1822,3 +1822,21 @@ test('Disc coordinate overlay shares real CSS pan and zoom transform with both p
   expect(reset.image).toBe(original.image);
  }
 });
+
+
+test('Solar B0 overlay follows observation epoch, not simulated clock',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('[data-disc-view="sun"]').click();
+ await expect(page.locator('#solar-orientation')).toContainText(/B₀ [+-]\\d+\\.\\d+° · P [+-]\\d+\\.\\d+°/);
+ const first=await page.locator('#solar-orientation').innerText();
+ await page.locator('#observe-date').fill('2031-07-01');
+ await page.locator('#observe-time').fill('14:00');
+ await page.locator('#observe-time').dispatchEvent('change');
+ await expect(page.locator('#solar-orientation')).toHaveText(first);
+ await page.locator('#disc-grid-toggle').check();
+ const grid=page.locator('#disc-coordinate-grid');
+ const photo=page.locator('#solar-photo');
+ await page.locator('#moon-zoom-in').click();
+ expect(await grid.evaluate(el=>getComputedStyle(el).transform))
+  .toBe(await photo.evaluate(el=>getComputedStyle(el).transform));
+});
