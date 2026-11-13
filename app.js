@@ -649,8 +649,13 @@ function discCoordinateGeometry(){
 function redrawDiscGrid(){
  const geometry=discCoordinateGeometry();
  const overlay=$('disc-coordinate-grid');
- overlay.dataset.rotationDegrees=(geometry.angle*180/Math.PI).toFixed(3);
- paintDiscGrid(overlay,state.discView,geometry,$('disc-grid-toggle').checked);
+ // Paint in the same untransformed stage coordinate system as the image.
+ // CSS applies the *exact same* pan/zoom transform to both layers, avoiding
+ // drift between separate viewport calculations on pointer drag or pinch.
+ const base=discGeometry(state.discView,discStage.clientWidth,discStage.clientHeight,
+  1,0,0,lastMoonTilt);
+ overlay.dataset.rotationDegrees=(base.angle*180/Math.PI).toFixed(3);
+ paintDiscGrid(overlay,state.discView,base,$('disc-grid-toggle').checked,geometry.r);
 }
 function updateDiscCoordinates(clientX,clientY){
  const box=discStage.getBoundingClientRect();
@@ -662,7 +667,9 @@ function updateDiscViewport(){
  const zoom=sunMode?state.sunZoom:state.moonZoom;
  const panX=sunMode?state.sunPanX:state.moonPanX,panY=sunMode?state.sunPanY:state.moonPanY;
  const el=sunMode?solarPhoto:$('moon');
- el.style.transform='translate('+panX+'px,'+panY+'px) scale('+zoom+')';
+ const transform='translate('+panX+'px,'+panY+'px) scale('+zoom+')';
+ el.style.transform=transform;
+ $('disc-coordinate-grid').style.transform=transform;
  redrawDiscGrid();
  $('moon-zoom-value').textContent=zoom.toFixed(1)+'×';
 }
