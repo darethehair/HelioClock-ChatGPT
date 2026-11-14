@@ -2019,3 +2019,35 @@ test('Daylight year mobile tap inspects a date without changing simulation until
  await page.locator('#solar-inspect-select').click();
  await expect(page.locator('#observe-date')).not.toHaveValue(initial);
 });
+
+test('Simulated eclipse replaces NASA photo only at a topocentric solar eclipse',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('[data-disc-view="sun"]').click();
+ await page.locator('#observe-date').fill('2024-04-08');
+ await page.locator('#observe-time').fill('18:40');
+ await page.locator('#observe-time').dispatchEvent('change');
+ await expect(page.locator('#solar-eclipse')).toBeVisible();
+ await expect(page.locator('#solar-photo')).toBeHidden();
+ await expect(page.locator('#solar-eclipse-status')).toContainText('Simulated partial solar eclipse');
+ await expect(page.locator('#solar-eclipse-status')).toContainText('obscuration');
+ await page.locator('#observe-date').fill('2024-04-06');
+ await page.locator('#observe-date').dispatchEvent('change');
+ await expect(page.locator('#solar-eclipse')).toBeHidden();
+ await expect(page.locator('#solar-photo')).toBeVisible();
+ await expect(page.locator('#solar-eclipse-status')).toBeHidden();
+});
+
+test('Simulated eclipse is aligned with Sun pan/zoom without intercepting disc touches',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('[data-disc-view="sun"]').click();
+ await page.locator('#observe-date').fill('2024-04-08');
+ await page.locator('#observe-time').fill('18:40');
+ await page.locator('#observe-time').dispatchEvent('change');
+ await expect(page.locator('#solar-eclipse')).toBeVisible();
+ await page.locator('#moon-zoom-in').click();
+ const image=page.locator('#solar-eclipse');
+ await expect.poll(async()=>image.evaluate(el=>el.style.transform)).toContain('scale(1.25)');
+ const grid=page.locator('#disc-coordinate-grid');
+ expect(await image.evaluate(el=>el.style.transform)).toEqual(await grid.evaluate(el=>el.style.transform));
+ await expect(image).toHaveCSS('pointer-events','none');
+});
