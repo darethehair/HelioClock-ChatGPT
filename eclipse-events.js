@@ -83,7 +83,7 @@ function findFollowing({category,scope,from,observer,filter='any',requireAboveHo
   }
   if(next.peak>from && accepts(next.kind,filter) &&
      (!requireAboveHorizon || next.visibleAtPeak===true))return next;
-  if(!Number.isFinite(next.peak.getTime())||next.peak<=cursor)throw Error('Eclipse search did not advance');
+  if(!Number.isFinite(next.peak.getTime())||next.peak<=cursor)throw Error('Eclipse search did not advance: '+category+'/'+scope+' cursor='+cursor.toISOString()+' peak='+next.peak.toISOString());
   cursor=new Date(next.peak.getTime()+60000);
  }
  return null;
