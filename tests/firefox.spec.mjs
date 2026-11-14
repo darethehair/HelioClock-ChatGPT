@@ -1984,5 +1984,5 @@ test('24-hour time fields reject AM/PM and preserve simulation time for invalid 
  await expect(local).toHaveValue('18:15');
  await utc.fill('25:99');await utc.dispatchEvent('change');
  await expect(utc).not.toHaveValue('25:99');
- expect(await page.locator('#dock-local-time').textContent()).not.toMatch(/\\b(?:AM|PM)\\b/i);
+ expect(await page.locator('#dock-local-time').textContent()).not.toMatch(/\b(?:AM|PM)\b/i);
 });
