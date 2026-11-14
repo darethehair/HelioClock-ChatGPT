@@ -309,8 +309,8 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#sunrise')).not.toHaveText('—');
  // Release identity and provenance are visible even offline.
- await expect(page.locator('#app-version')).toHaveText('v61');
- await expect(page.locator('#dock-version')).toHaveText('v61');
+ await expect(page.locator('#app-version')).toHaveText('v62');
+ await expect(page.locator('#dock-version')).toHaveText('v62');
  await expect(page.locator('.credits-footer')).toContainText('Created by Darethehair with assistance from ChatGPT');
  await expect(page.locator('.credits-footer a')).toHaveAttribute('href','https://github.com/darethehair/HelioClock-ChatGPT');
  await expect(page.locator('#build-meta')).toContainText('commit');
@@ -656,7 +656,7 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
  const errors=[];
  page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v61');
+ await expect(page.locator('#app-version')).toHaveText('v62');
  await expect(page.locator('.almanac-panel')).toBeVisible();
  await page.locator('#layout-sky').click();
  await expect(page.locator('.sky-panel')).toBeVisible();
@@ -965,7 +965,7 @@ test('Version 36 stores, restores, imports, exports and resets preferences',asyn
 test('Version 25 Sun and Moon use the same zoomable pannable fullscreen stage',async({page})=>{
  const errors=[];page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v61');
+ await expect(page.locator('#app-version')).toHaveText('v62');
  await expect(page.locator('#moon')).toBeVisible();
  await expect(page.locator('#solar-photo')).toBeHidden();
  await page.locator('[data-disc-view="sun"]').click();
@@ -1985,4 +1985,37 @@ test('24-hour time fields reject AM/PM and preserve simulation time for invalid 
  await utc.fill('25:99');await utc.dispatchEvent('change');
  await expect(utc).not.toHaveValue('25:99');
  expect(await page.locator('#dock-local-time').textContent()).not.toMatch(/\b(?:AM|PM)\b/i);
+});
+
+test('Daylight year shows exact seasonal dates, daily change and hover inspection',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ const labels=page.locator('#solar-chart-seasons');
+ await expect(labels.locator('strong')).toHaveCount(4);
+ await expect(labels).toContainText('March equinox');
+ await expect(labels).toContainText('June solstice');
+ await expect(labels).toContainText('September equinox');
+ await expect(labels).toContainText('December solstice');
+ await expect(page.locator('#solar-inspect-gain')).toContainText('daylight');
+ const chart=page.locator('#daylight-chart');
+ // The dashboard chart starts below the fold; mouse.move does not scroll.
+ await chart.scrollIntoViewIfNeeded();
+ const box=await chart.boundingBox();expect(box).toBeTruthy();
+ const initial=await page.locator('#solar-inspect-date').textContent();
+ await page.mouse.move(box.x+box.width*.70,box.y+box.height*.50);
+ await expect.poll(async()=>page.locator('#solar-inspect-date').textContent()).not.toBe(initial);
+ await expect(page.locator('#solar-inspect-details')).toContainText('Astronomical');
+ await expect(page.locator('#solar-chart-inspection-line')).toBeVisible();
+ await page.locator('#solar-inspect-select').click();
+ await expect(page.locator('#solar-chart-date')).toHaveText(await page.locator('#solar-inspect-date').textContent());
+});
+
+test('Daylight year mobile tap inspects a date without changing simulation until explicitly selected',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ const initial=await page.locator('#observe-date').inputValue();
+ const chart=page.locator('#daylight-chart'),rect=await chart.boundingBox();
+ await chart.dispatchEvent('pointerdown',{pointerType:'touch',clientX:rect.x+rect.width*.68,clientY:rect.y+rect.height*.5});
+ await expect(page.locator('#solar-inspect-date')).not.toHaveText('—');
+ await expect(page.locator('#observe-date')).toHaveValue(initial);
+ await page.locator('#solar-inspect-select').click();
+ await expect(page.locator('#observe-date')).not.toHaveValue(initial);
 });

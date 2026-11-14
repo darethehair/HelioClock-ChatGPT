@@ -566,3 +566,38 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
  background:#296080;color:white;
 }
 .fullscreen-panel-navigation span{min-width:32px;text-align:center;font-size:11px;font-weight:700}
+
+/* The daylight-year explorer keeps chart interactions and its crosshair
+   independent from the astronomical simulation's date controls. */
+.solar-chart-stage{position:relative}
+.solar-inspection-line{
+ position:absolute;top:16px;bottom:27px;width:1px;
+ background:#ffffff9c;box-shadow:0 0 5px #fff7;
+ pointer-events:none;transform:translateX(-.5px)
+}
+.solar-chart-seasons{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin-top:9px}
+.solar-chart-seasons span{font-size:10px;color:#b9cee5;text-align:center}
+.solar-chart-seasons strong{display:block;color:#ffe0a0;font-weight:600}
+.solar-chart-inspector{margin-top:10px;padding:9px 10px;border:1px solid #445a79;border-radius:7px;background:#0c1c33;display:flex;flex-direction:column;gap:5px;font-size:11px;line-height:1.5;color:#cbdef0}
+.solar-inspector-header{display:flex;align-items:center;justify-content:space-between;gap:7px}
+.solar-inspector-header strong{color:#ffe2ab;font-variant-numeric:tabular-nums}
+.solar-inspector-header button{font-size:10px;border:1px solid #557597;background:#18324d;color:#e6f2ff;padding:4px 8px;border-radius:5px}
+#solar-inspect-gain{color:#b5e2bc;font-weight:600}
+@media(max-width:500px){.solar-chart-seasons span{font-size:9px}.solar-chart-inspector{font-size:10px}}
+
+/* v62 chart wrapper must fill the same plot-first fullscreen area previously
+   occupied by the direct-child canvas; overlay must not reduce touch area. */
+.panel:fullscreen.mobile-plot-fullscreen>.solar-chart-stage{
+ flex:1 1 0;min-height:0;width:100%;height:auto!important;
+ max-height:none!important;overflow:hidden
+}
+.panel:fullscreen.mobile-plot-fullscreen>.solar-chart-stage>#daylight-chart{
+ height:100%!important;max-height:none!important;width:100%
+}
+.panel:fullscreen.mobile-plot-fullscreen>.solar-chart-seasons{
+ flex:0 0 auto;margin:3px 0
+}
+.panel:fullscreen.mobile-plot-fullscreen>.solar-chart-inspector{
+ flex:0 0 auto;margin:4px 0 0;padding:5px 8px;gap:2px;
+ max-height:100px;overflow:auto
+}
