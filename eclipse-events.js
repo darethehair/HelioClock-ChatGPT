@@ -65,9 +65,10 @@ function lunar(raw,observer){
  };
 }
 function findFollowing({category,scope,from,observer,filter='any',requireAboveHorizon=false,maxEvents=120}){
- // Start marginally before reference because Astronomy Engine searches after
- // its argument; discard results at or before the requested simulation instant.
- let cursor=new Date(from.getTime()-60000);
+ // Astronomy Engine searches forward starting at this instant. Do not
+ // rewind by one minute: a backward scan advances past the previous peak,
+ // and rewinding can rediscover the SAME eclipse indefinitely.
+ let cursor=new Date(from.getTime()+1000);
  for(let i=0;i<maxEvents;i++){
   let result,next;
   if(category==='lunar'){
