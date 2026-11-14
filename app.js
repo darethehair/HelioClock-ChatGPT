@@ -1097,14 +1097,18 @@ function syncFullscreenNavigation(){
  next.addEventListener('click',()=>navigateFullscreenPanel(1));
  nav.append(prev,counter,next);active.appendChild(nav);fullscreenNavigationBar=nav;
 }
+// In fullscreen, Left/Right are global panel-navigation shortcuts even if
+// the persistent time dock has keyboard focus. Capture before range inputs,
+// time controls and their native shadow-DOM handlers consume those keys.
+// Modified arrows remain available for platform/browser shortcuts.
 document.addEventListener('keydown',e=>{
- if(!document.fullscreenElement?.classList.contains('panel')||e.defaultPrevented||e.repeat||e.altKey||e.ctrlKey||e.metaKey||e.shiftKey)return;
+ if(!document.fullscreenElement?.classList.contains('panel')||e.repeat||
+    e.altKey||e.ctrlKey||e.metaKey||e.shiftKey)return;
  if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight')return;
- const interactive='input,textarea,select,[contenteditable="true"],[role="slider"],[role="spinbutton"],[role="combobox"],[role="listbox"],[role="radio"],[role="tablist"]';
- if(e.composedPath().some(node=>node instanceof Element&&node.closest(interactive))||
-    document.activeElement?.closest(interactive))return;
- e.preventDefault();navigateFullscreenPanel(e.key==='ArrowRight'?1:-1);
-});
+ e.preventDefault();
+ e.stopImmediatePropagation();
+ navigateFullscreenPanel(e.key==='ArrowRight'?1:-1);
+},true);
 // The browser fullscreen top layer hides siblings of the fullscreen element.
 // Move the SAME dock (not a copy) into the active panel and restore it afterward,
 // retaining all input state and event listeners.
