@@ -225,7 +225,8 @@ export function drawSolarYear(canvas,{year,lat,lon,selectedDate,onSelect}){
  // Pointermove is suitable for a mouse/pen; touch uses a tap for inspection
  // and never suppresses scrolling, pinching or other application gestures.
  canvas.onpointermove=e=>{if(e.pointerType!=='touch')inspect(indexAt(e))};
- canvas.onpointerleave=e=>{if(e.pointerType!=='touch')inspect(selectedIndex)};
+ // Keep the inspected day when the pointer leaves for the Use this date button.
+ canvas.onpointerleave=null;
  canvas.onclick=e=>{
   const i=indexAt(e);
   inspect(i);
@@ -237,7 +238,7 @@ export function drawSolarYear(canvas,{year,lat,lon,selectedDate,onSelect}){
   const i=Number(canvas.dataset.inspectIndex||selectedIndex);
   onSelect(new Date(Date.UTC(year,0,i+1,selectedDate.getUTCHours(),selectedDate.getUTCMinutes())));
  };
-  const stored=Number(canvas.dataset.inspectIndex);
+ const stored=Number(canvas.dataset.inspectIndex);
  inspect(Number.isInteger(stored)&&stored>=0&&stored<days?stored:selectedIndex);
  return {selected,data,seasons};
 }
