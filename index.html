@@ -149,7 +149,7 @@
   <div class="control"><label for="longitude">LONGITUDE</label><input id="longitude" type="number" min="-180" max="180" step=".0001" value="-98.10"></div>
   <button id="locate" class="action-button" title="Use browser geolocation">⌖ <span>Locate me</span></button>
   <div class="control date-control"><label for="observe-date">OBSERVATION DATE</label><input id="observe-date" type="date"></div>
-  <div class="control time-control"><label for="observe-time">UTC TIME</label><input id="observe-time" type="time" step="60"></div>
+  <div class="control time-control"><label for="observe-time">UTC TIME</label><input id="observe-time" type="text" inputmode="numeric" maxlength="5" pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]" placeholder="HH:MM" aria-label="UTC time in 24-hour HH:MM format" title="24-hour time (HH:MM)"></div>
   <button id="now" class="action-button accent">↻ <span>Return to live</span></button>
 </section>
 <section class="mission-control panel" aria-label="Time and view controls">
@@ -184,7 +184,7 @@
 <section id="time-dock" class="time-dock" aria-label="Persistent simulation date and time controls">
  <button type="button" id="dock-mobile-more" aria-label="Show date and time controls" aria-expanded="false">☷</button><div class="dock-time-summary"><span class="dock-brand">◷ OBSERVATION</span><strong id="dock-local-time">—</strong><small id="dock-time-zone">—</small></div>
  <div class="dock-adjust"><button id="dock-prev-day" title="Previous day">−1d</button><button id="dock-prev-hour" title="Previous hour">−1h</button><button id="dock-play" title="Play / pause">▶</button><button id="dock-next-hour" title="Next hour">+1h</button><button id="dock-next-day" title="Next day">+1d</button></div>
- <div class="dock-date-fields"><label for="dock-date">Date</label><input id="dock-date" type="date"><label for="dock-time">Time (device)</label><input id="dock-time" type="time" step="60"></div>
+ <div class="dock-date-fields"><label for="dock-date">Date</label><input id="dock-date" type="date"><label for="dock-time">Time (device)</label><input id="dock-time" type="text" inputmode="numeric" maxlength="5" pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]" placeholder="HH:MM" aria-label="Device local time in 24-hour HH:MM format" title="24-hour time (HH:MM)"></div>
  <input id="dock-scrubber" type="range" min="0" max="1439" step="1" aria-label="Scrub through the selected day in device local time">
  <span class="dock-version" id="dock-version" title="HelioClock release">v51</span><span class="dock-sidereal" title="Local apparent sidereal time"><span>LST</span> <strong id="dock-sidereal">—</strong></span><button id="dock-live" class="dock-live" title="Return to current time">● LIVE</button>
 </section>
