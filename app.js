@@ -568,6 +568,7 @@ function updateCoords(){
 $('latitude').addEventListener('change',updateCoords);$('longitude').addEventListener('change',updateCoords);
 $('observe-date').addEventListener('change',selectDate);
 $('observe-time').addEventListener('change',selectDate);
+$('observe-time').addEventListener('input',e=>{if(valid24HourTime(e.target.value))selectDate()});
 $('now').addEventListener('click',()=>{pausePlayback();state.date=new Date();state.live=true;setDateInputs();render()});
 $('locate').addEventListener('click',()=>{
  if(!navigator.geolocation){notice('Geolocation is unavailable in this browser. Enter coordinates manually.');return}
@@ -1043,6 +1044,7 @@ for(const [id,minutes] of [['dock-prev-day',-1440],['dock-prev-hour',-60],['dock
 }
 $('dock-date').addEventListener('change',selectDockLocal);
 $('dock-time').addEventListener('change',selectDockLocal);
+$('dock-time').addEventListener('input',e=>{if(valid24HourTime(e.target.value))selectDockLocal()});
 $('dock-scrubber').addEventListener('input',e=>{
  pausePlayback();const minutes=Number(e.target.value);
  const d=state.date;
