@@ -34,9 +34,10 @@ function updateOrreryEventChoices(){
  $('orrery-event-status').textContent='Choose Previous or Next to find a planetary event.';
 }
 function setDateInputs(){$('observe-date').value=fmt(state.date);$('observe-time').value=utcTime(state.date)}
+const valid24HourTime=value=>/^(?:[01][0-9]|2[0-3]):[0-5][0-9]$/.test(value);
 function selectDate(){
- const d=$('observe-date').value,t=$('observe-time').value||'12:00';
- if(!d)return;
+ const d=$('observe-date').value,t=$('observe-time').value;
+ if(!d||!valid24HourTime(t)){notice('Enter time in 24-hour HH:MM format (00:00–23:59).');setDateInputs();return;}
  const next=new Date(d+'T'+t+':00Z');
  if(!Number.isFinite(next.getTime()))return;
  pausePlayback();state.date=next;state.live=false;render();
@@ -99,7 +100,7 @@ function worldMap(){
    :cloud.status==='unavailable'?'Cloud imagery unavailable · check connection / NASA GIBS'
    :'Clouds awaiting imagery';
  const loaded=weather.grid&&auroraFresh();
- const stamp=weather.forecast?new Date(weather.forecast).toLocaleString():'—';
+ const stamp=weather.forecast?new Date(weather.forecast).toLocaleString('en-GB',{hour12:false}):'—';
  $('earth-space-weather-status').textContent=
   (loaded?'NOAA OVATION forecast '+stamp:'Aurora forecast unavailable or stale')+
   ' · '+(weather.kp===null?'Kp unavailable':'Kp '+weather.kp.toFixed(1))+
@@ -554,7 +555,7 @@ function updateLocalDisplay(){
 }
 function selectDockLocal(){
  const date=$('dock-date').value,time=$('dock-time').value;
- if(!date||!time)return;
+ if(!date||!valid24HourTime(time)){notice('Enter time in 24-hour HH:MM format (00:00–23:59).');updateLocalDisplay();return;}
  const next=new Date(date+'T'+time+':00');
  if(!Number.isFinite(next.getTime()))return;
  pausePlayback();state.date=next;state.live=false;setDateInputs();render();
@@ -880,7 +881,7 @@ $('mw-copy-debug').addEventListener('click',async()=>{
  const chosen='planar';
  const debug={
   version:59,utc:state.date.toISOString(),
-  local:state.date.toLocaleString('en-CA',{timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone}),
+  local:state.date.toLocaleString('en-GB',{hour12:false,timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone}),
   timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,
   observer:{lat:state.lat,lon:state.lon},
   sky:{projection:state.skyProjection,light:state.skyLight,heading:state.skyHeading,
@@ -1219,7 +1220,7 @@ async function loadBuildMeta(){
   const info=await response.json();
   const version=info.version||20,short=info.commit?info.commit.slice(0,9):'unknown';
   for(const el of document.querySelectorAll('.app-version,.release-version,.dock-version'))el.textContent='v'+version;
-  const built=info.built_utc?new Date(info.built_utc).toLocaleString('en-CA',{dateStyle:'medium',timeStyle:'short',timeZone:'UTC'})+' UTC':'date not recorded';
+  const built=info.built_utc?new Date(info.built_utc).toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short',hour12:false,timeZone:'UTC'})+' UTC':'date not recorded';
   $('build-meta').textContent='Build '+built+' · commit '+short;
   $('app-version').title='HelioClock-ChatGPT v'+version+' · commit '+short+' · '+built;
   $('dock-version').title=$('app-version').title;
