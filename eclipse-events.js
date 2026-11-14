@@ -131,3 +131,71 @@ export function findEclipse({
  }
  return last;
 }
+
+/** Responsive progressive search, with an expanding lookback and cancel support.
+ * Astronomy Engine has no reverse eclipse-search API, so previous events
+ * are found by enumerating successive lookback windows forwards.
+ * Searches are bounded by a user-visible ephemeris horizon, not 30 years.
+ */
+const YEAR_MS=365.2425*DAY;
+function yearShift(date,years){const d=new Date(date);d.setUTCFullYear(d.getUTCFullYear()+years);return d}
+function candidate(cursor,category,scope,observer){
+ if(category==='lunar')return lunar(Astronomy.SearchLunarEclipse(cursor),observer);
+ if(scope==='local')return localSolar(Astronomy.SearchLocalSolarEclipse(cursor,observer));
+ return globalSolar(Astronomy.SearchGlobalSolarEclipse(cursor));
+}
+const yieldUI=()=>new Promise(resolve=>setTimeout(resolve,0));
+async function scanRange({start,stop,reference,direction,category,scope,observer,filter,requireAboveHorizon,signal,onProgress,batchSize}){
+ let cursor=new Date(start.getTime()+1000),last=null,seen=0;
+ while(cursor<stop){
+  if(signal?.aborted)throw Error('Eclipse search cancelled');
+  const e=candidate(cursor,category,scope,observer);
+  if(!Number.isFinite(e.peak.getTime()))throw Error('Eclipse ephemeris returned an invalid date');
+  if(e.peak>=stop)break;
+  if((direction>0?e.peak>reference:e.peak<reference) &&
+     accepts(e.kind,filter) && (!requireAboveHorizon||e.visibleAtPeak===true)){
+   if(direction>0)return e;
+   last=e;
+  }
+  const end=e.contacts?.partialEnd??e.phases?.penumbral?.end??e.peak;
+  const next=Math.max(cursor.getTime(),e.peak.getTime(),end.getTime())+DAY;
+  if(!(next>cursor.getTime()))throw Error('Eclipse search cursor failed to advance');
+  cursor=new Date(next);
+  if(++seen%batchSize===0){
+   onProgress?.({yearsSearched:Math.round(Math.abs(cursor-reference)/YEAR_MS),eventsChecked:seen,direction});
+   await yieldUI();
+  }
+ }
+ return last;
+}
+export async function findEclipseAsync({category='solar',scope='local',date=new Date(),direction=1,
+ latitude=0,longitude=0,filter='any',requireAboveHorizon=false,maxSpanYears=2000,
+ batchSize=8,signal,onProgress}={}){
+ if(!['solar','lunar'].includes(category)||!['local','global'].includes(scope)||
+    ![-1,1].includes(direction)||!['any','partial','central','umbral','total'].includes(filter))
+  throw Error('Invalid eclipse search options');
+ if(!Number.isFinite(latitude)||Math.abs(latitude)>90||
+    !Number.isFinite(longitude)||Math.abs(longitude)>180)
+  throw Error('Invalid observer coordinates');
+ if(!Number.isInteger(maxSpanYears)||maxSpanYears<1||maxSpanYears>5000)
+  throw Error('Search horizon must be 1 to 5000 years');
+ if(!Number.isInteger(batchSize)||batchSize<1||batchSize>100)throw Error('Invalid batch size');
+ const reference=asDate(date);
+ if(!Number.isFinite(reference.getTime()))throw Error('Invalid reference date');
+ if(signal?.aborted)throw Error('Eclipse search cancelled');
+ const observer=new Astronomy.Observer(latitude,longitude,0);
+ const shared={reference,direction,category,scope,observer,filter,requireAboveHorizon,
+  signal,onProgress,batchSize};
+ if(direction>0){
+  onProgress?.({yearsSearched:0,eventsChecked:0,direction});
+  return scanRange({...shared,start:reference,stop:yearShift(reference,maxSpanYears)});
+ }
+ for(let years=Math.min(20,maxSpanYears);;years=Math.min(years*2,maxSpanYears)){
+  if(signal?.aborted)throw Error('Eclipse search cancelled');
+  onProgress?.({yearsSearched:years,eventsChecked:0,direction});
+  const found=await scanRange({...shared,start:yearShift(reference,-years),stop:reference});
+  if(found)return found;
+  if(years===maxSpanYears)return null;
+  await yieldUI();
+ }
+}

@@ -16,7 +16,7 @@ import {skyPlanets} from './sky-planets.js';
 import {renderEarth,earthTextureStatus} from './earth-renderer.js';
 import {cloudStatus,refreshClouds} from './clouds.js';
 import {findPlanetaryEvent,eventPlanets,eventOptions} from './planetary-events.js';
-import {findEclipse} from './eclipse-events.js';
+import {findEclipseAsync} from './eclipse-events.js';
 import {spaceWeather,auroraFresh,startSpaceWeather,refreshSpaceWeather} from './space-weather.js';
 import {starsAbove} from './sky-catalog.js';
 import {RAD,PI,wrap,clamp,solar,sunHorizontal,sunEvents,moon,orbitPositions,sidereal,equatorialFromHorizontal,utcTime,durationText} from './astronomy.js';
@@ -830,37 +830,56 @@ function showEclipseResult(event){
  showDisc(event.category==='solar'?'sun':'moon');
  setSimulationInstant(event.peak);
 }
-function navigateEclipse(direction){
- const status=$('eclipse-event-status');
- const category=$('eclipse-category').value,scope=$('eclipse-scope').value;
- const filter=$('eclipse-filter').value;
- $('eclipse-previous').disabled=true;$('eclipse-next').disabled=true;
- status.textContent='Searching '+(direction<0?'previous':'next')+' '+category+' eclipse…';
- // Yield a frame to paint feedback before the synchronous ephemeris search.
- setTimeout(()=>{
-  try{
-   const event=findEclipse({
-    category,scope,date:state.date,direction,
-    latitude:state.lat,longitude:state.lon,filter,
-    requireAboveHorizon:scope==='local'&&category==='lunar'
-   });
-   if(event)showEclipseResult(event);
-   else {
-    selectedEclipseEvent=null;
-    $('eclipse-contacts').hidden=true;
-    status.textContent='No matching eclipse found within the search limits. Try a broader filter.';
-   }
-  }catch(error){status.textContent='Eclipse search failed: '+String(error?.message||error)}
-  finally{$('eclipse-previous').disabled=false;$('eclipse-next').disabled=false}
- },0);
+let eclipseSearchController=null;
+function cancelEclipseSearch(){
+ if(eclipseSearchController){eclipseSearchController.abort();eclipseSearchController=null}
+ $('eclipse-previous').disabled=false;$('eclipse-next').disabled=false;
+ $('eclipse-cancel').hidden=true;
 }
-$('eclipse-category').addEventListener('change',updateEclipseFilters);
+async function navigateEclipse(direction){
+ cancelEclipseSearch();
+ const controller=new AbortController();eclipseSearchController=controller;
+ const category=$('eclipse-category').value,scope=$('eclipse-scope').value;
+ const filter=$('eclipse-filter').value,horizon=Number($('eclipse-horizon').value);
+ const reference=new Date(state.date),latitude=state.lat,longitude=state.lon;
+ const status=$('eclipse-event-status');
+ $('eclipse-previous').disabled=true;$('eclipse-next').disabled=true;
+ $('eclipse-cancel').hidden=false;
+ status.textContent='Searching '+(direction<0?'previous':'next')+' '+category+' eclipse…';
+ try{
+  const event=await findEclipseAsync({
+   category,scope,date:reference,direction,latitude,longitude,filter,
+   maxSpanYears:horizon,signal:controller.signal,
+   requireAboveHorizon:scope==='local'&&category==='lunar',
+   onProgress:({yearsSearched,eventsChecked})=>{
+    if(eclipseSearchController===controller)
+     status.textContent='Searching '+(direction<0?'backward':'forward')+
+      ' · '+yearsSearched+' years explored · '+eventsChecked+' eclipse candidates checked…';
+   }
+  });
+  if(eclipseSearchController!==controller)return;
+  if(event)showEclipseResult(event);
+  else{
+   selectedEclipseEvent=null;$('eclipse-contacts').hidden=true;
+   status.textContent='No matching eclipse found within '+horizon.toLocaleString('en-CA')+
+    ' years '+(direction<0?'before':'after')+' the selected date. Try a broader filter or longer horizon.';
+  }
+ }catch(error){
+  if(eclipseSearchController===controller&&!controller.signal.aborted)
+   status.textContent='Eclipse search failed: '+String(error?.message||error);
+ }finally{if(eclipseSearchController===controller)cancelEclipseSearch()}
+}
+$('eclipse-cancel').addEventListener('click',()=>{
+ if(!eclipseSearchController)return;
+ cancelEclipseSearch();$('eclipse-event-status').textContent='Eclipse search cancelled.';
+});
+$('eclipse-category').addEventListener('change',()=>{cancelEclipseSearch();updateEclipseFilters()});
 $('eclipse-scope').addEventListener('change',()=>{
- selectedEclipseEvent=null;$('eclipse-contacts').hidden=true;
+ cancelEclipseSearch();selectedEclipseEvent=null;$('eclipse-contacts').hidden=true;
  $('eclipse-event-status').textContent='Choose Previous or Next to explore an eclipse.';
 });
 $('eclipse-filter').addEventListener('change',()=>{
- selectedEclipseEvent=null;$('eclipse-contacts').hidden=true;
+ cancelEclipseSearch();selectedEclipseEvent=null;$('eclipse-contacts').hidden=true;
  $('eclipse-event-status').textContent='Choose Previous or Next to explore an eclipse.';
 });
 $('eclipse-previous').addEventListener('click',()=>navigateEclipse(-1));
