@@ -2076,3 +2076,51 @@ test('Lunar eclipse shades the textured Moon and reports actual eclipse phase',a
  await page.locator('#observe-time').dispatchEvent('change');
  await expect(page.locator('#lunar-eclipse-status')).toBeHidden();
 });
+
+test('Eclipse Explorer finds previous and next events from simulated time',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('#observe-date').fill('2024-01-01');
+ await page.locator('#observe-date').dispatchEvent('change');
+ await page.locator('#eclipse-category').selectOption('solar');
+ await page.locator('#eclipse-scope').selectOption('local');
+ await page.locator('#eclipse-next').click();
+ await expect(page.locator('#eclipse-event-status')).toContainText('solar eclipse',{timeout:20000});
+ await expect(page.locator('#eclipse-event-status')).toContainText('2024-04-08');
+ await expect(page.locator('#eclipse-contacts')).toBeVisible();
+ await expect(page.locator('#observe-date')).toHaveValue('2024-04-08');
+ await expect(page.locator('#solar-eclipse')).toBeVisible();
+ await expect(page.locator('#solar-photo')).toBeHidden();
+ await page.locator('#eclipse-contacts button').filter({hasText:'First contact'}).click();
+ await expect(page.locator('#observe-date')).toHaveValue('2024-04-08');
+ await page.locator('#eclipse-contacts button').filter({hasText:'Maximum'}).click();
+ await expect(page.locator('#solar-eclipse')).toBeVisible();
+});
+
+test('Eclipse Explorer offers lunar penumbral and totality contacts',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('#observe-date').fill('2025-01-01');
+ await page.locator('#observe-date').dispatchEvent('change');
+ await page.locator('#eclipse-category').selectOption('lunar');
+ await expect(page.locator('#eclipse-filter option[value="umbral"]')).toHaveCount(1);
+ await page.locator('#eclipse-scope').selectOption('global');
+ await page.locator('#eclipse-filter').selectOption('total');
+ await page.locator('#eclipse-next').click();
+ await expect(page.locator('#eclipse-event-status')).toContainText('Total lunar eclipse',{timeout:20000});
+ await expect(page.locator('#eclipse-event-status')).toContainText('2025-03-14');
+ await expect(page.locator('#observe-date')).toHaveValue('2025-03-14');
+ await expect(page.locator('#lunar-eclipse-status')).toBeVisible();
+ await expect(page.locator('#eclipse-contacts button')).toHaveCount(7);
+ await page.locator('#eclipse-contacts button').filter({hasText:'Totality begins'}).click();
+ await expect(page.locator('#lunar-eclipse-status')).toContainText('lunar eclipse');
+});
+
+test('Global solar eclipse search explicitly distinguishes worldwide and local visibility',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('#observe-date').fill('2024-01-01');
+ await page.locator('#observe-date').dispatchEvent('change');
+ await page.locator('#eclipse-scope').selectOption('global');
+ await page.locator('#eclipse-next').click();
+ await expect(page.locator('#eclipse-event-status')).toContainText('Global',{timeout:20000});
+ await expect(page.locator('#eclipse-event-status')).toContainText('does not imply an eclipse at the observer');
+ await expect(page.locator('#eclipse-contacts button')).toHaveCount(1);
+});
