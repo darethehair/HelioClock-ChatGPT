@@ -10,7 +10,7 @@ import * as Astronomy from 'astronomy-engine';
  */
 const DAY=86400000;
 const asDate=value=>value instanceof Date?value:new Date(value);
-const dateOf=event=>new Date(event?.date instanceof Date?event.date:event?.date??event);
+const dateOf=event=>new Date(event?.time?.date??event?.date??event);
 const eclipseKind=kind=>String(kind).toLowerCase();
 const accepts=(kind,filter)=>{
  if(filter==='any')return true;
@@ -27,6 +27,8 @@ function localSolar(raw){
   category:'solar',scope:'local',kind:eclipseKind(raw.kind),peak,
   obscuration:raw.obscuration,
   visibleAtPeak:raw.peak.altitude>0,
+  // The altitude at maximum may be below the horizon even when part of
+  // the eclipse is visible. This sample-based field is conservative.
   visibleDuringEvent:[raw.partial_begin,raw.peak,raw.partial_end].some(p=>p?.altitude>0),
   contacts:{
    partialBegin:dateOf(raw.partial_begin),
@@ -52,9 +54,8 @@ function lunar(raw,observer){
   begin:new Date(peak.getTime()-sd*60000),
   end:new Date(peak.getTime()+sd*60000)
  }:null;
- const alt=observer?Astronomy.Horizon(peak,observer,
-   Astronomy.Equator(Astronomy.Body.Moon,peak,observer,true,true).ra,
-   Astronomy.Equator(Astronomy.Body.Moon,peak,observer,true,true).dec,'').altitude:null;
+ const eq=observer?Astronomy.Equator(Astronomy.Body.Moon,peak,observer,true,true):null;
+ const alt=eq?Astronomy.Horizon(peak,observer,eq.ra,eq.dec,'').altitude:null;
  return {
   category:'lunar',scope:'global',kind:eclipseKind(raw.kind),peak,
   obscuration:raw.obscuration,
