@@ -7,6 +7,7 @@ import {drawSkyDSOs} from './sky-dso.js';
 import {drawConstellationNames} from './sky-constellation-labels.js';
 import {renderSolarJourney} from './solar-hero.js';
 import {renderMoon} from './moon-renderer.js';
+import {renderSolarEclipse} from './solar-eclipse-renderer.js';
 import {discGeometry,screenToSurface,paintDiscGrid,formatSurface} from './disc-coordinates.js';
 import {solarDiscOrientation} from './solar-disc-orientation.js';
 import {drawSolarYear} from './solar-chart.js';
@@ -394,6 +395,19 @@ $('sky').addEventListener('pointerleave',()=>{
 });
 function drawMoon(){
  if(state.discView==='sun'){
+  // Simulated eclipse geometry must never be placed over a NASA photo
+  // captured on a different date.
+  const eclipse=renderSolarEclipse($('solar-eclipse'),state.date,state.lat,state.lon);
+  const active=eclipse?.kind!=='none';
+  $('solar-eclipse').hidden=!active;
+  solarPhoto.hidden=active;
+  $('solar-eclipse-status').hidden=!active;
+  if(active){
+   $('solar-eclipse-status').textContent='Simulated '+eclipse.kind+' solar eclipse · '+
+    (eclipse.obscuration*100).toFixed(2)+'% obscuration · '+
+    (eclipse.aboveHorizon?'Sun above horizon':'Sun below horizon')+' · '+
+    state.date.toISOString().slice(0,16).replace('T',' ')+' UTC';
+  }
   updateDiscViewport();
   return;
  }
@@ -668,7 +682,8 @@ function redrawDiscGrid(){
  const overlay=$('disc-coordinate-grid');
  overlay.dataset.rotationDegrees=(base.angle*180/Math.PI).toFixed(3);
  const zoom=state.discView==='sun'?state.sunZoom:state.moonZoom;
- paintDiscGrid(overlay,state.discView,base,$('disc-grid-toggle').checked,base.r*zoom);
+ paintDiscGrid(overlay,state.discView,base,$('disc-grid-toggle').checked &&
+  !(state.discView==='sun'&&!$('solar-eclipse').hidden),base.r*zoom);
 }
 function updateDiscCoordinates(clientX,clientY){
  const box=discStage.getBoundingClientRect();
@@ -679,10 +694,14 @@ function updateDiscViewport(){
  const sunMode=state.discView==='sun';
  const zoom=sunMode?state.sunZoom:state.moonZoom;
  const panX=sunMode?state.sunPanX:state.moonPanX,panY=sunMode?state.sunPanY:state.moonPanY;
- const el=sunMode?solarPhoto:$('moon');
+ const el=sunMode?($('solar-eclipse').hidden?solarPhoto:$('solar-eclipse')):$('moon');
  const transform='translate('+panX+'px,'+panY+'px) scale('+zoom+')';
  el.style.transform=transform;
  $('disc-coordinate-grid').style.transform=transform;
+ if(sunMode){
+  solarPhoto.style.transform=transform;
+  $('solar-eclipse').style.transform=transform;
+ }
  redrawDiscGrid();
  $('moon-zoom-value').textContent=zoom.toFixed(1)+'×';
 }
@@ -708,6 +727,7 @@ function showDisc(which){
  state.discView=which;
  const sun=which==='sun';
  $('moon').hidden=sun;solarPhoto.hidden=!sun;
+ $('solar-eclipse').hidden=true;$('solar-eclipse-status').hidden=true;
  $('moon-bottom').hidden=sun;$('solar-note').hidden=!sun;
  $('solar-refresh').hidden=!sun;
  $('disc-kind').textContent=sun?'SOLAR OBSERVATION':'LUNAR CYCLE';
@@ -1393,6 +1413,7 @@ function applyPrefs(saved,{restoreLayout=true}={}){
  }
  const sun=state.discView==='sun';
  $('moon').hidden=sun;$('solar-photo').hidden=!sun;
+ $('solar-eclipse').hidden=true;$('solar-eclipse-status').hidden=true;
  $('moon-bottom').hidden=sun;$('solar-note').hidden=!sun;
  $('solar-refresh').hidden=!sun;$('moon-phase').hidden=sun;
  $('earthshine-setting').hidden=sun;
