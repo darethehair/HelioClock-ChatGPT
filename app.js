@@ -745,6 +745,7 @@ function showDisc(which){
  const sun=which==='sun';
  $('moon').hidden=sun;solarPhoto.hidden=!sun;
  $('solar-eclipse').hidden=true;$('solar-eclipse-status').hidden=true;
+ $('lunar-eclipse-status').hidden=sun;
  $('moon-bottom').hidden=sun;$('solar-note').hidden=!sun;
  $('solar-refresh').hidden=!sun;
  $('disc-kind').textContent=sun?'SOLAR OBSERVATION':'LUNAR CYCLE';
@@ -1431,6 +1432,7 @@ function applyPrefs(saved,{restoreLayout=true}={}){
  const sun=state.discView==='sun';
  $('moon').hidden=sun;$('solar-photo').hidden=!sun;
  $('solar-eclipse').hidden=true;$('solar-eclipse-status').hidden=true;
+ $('lunar-eclipse-status').hidden=sun;
  $('moon-bottom').hidden=sun;$('solar-note').hidden=!sun;
  $('solar-refresh').hidden=!sun;$('moon-phase').hidden=sun;
  $('earthshine-setting').hidden=sun;
