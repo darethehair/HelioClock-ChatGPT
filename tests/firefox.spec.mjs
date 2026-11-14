@@ -1949,8 +1949,11 @@ test('Fullscreen arrow keys do not steal keyboard input or the Tab key',async({p
  await page.goto('http://127.0.0.1:8765/');
  await page.locator('[data-fullscreen="chart-panel"]').click();
  await expect.poll(()=>page.evaluate(()=>!!document.fullscreenElement)).toBe(true);
- await page.locator('#dock-time').focus();
- await page.keyboard.press('ArrowRight');
+ // Directly dispatch to the real input to check the event's target/path;
+ // browser-native date/time subcontrols can move focus into shadow DOM.
+ await page.locator('#dock-time').evaluate(el=>{
+  el.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}));
+ });
  await expect.poll(()=>page.evaluate(()=>document.fullscreenElement?.classList.contains('chart-panel'))).toBe(true);
  await page.keyboard.press('Tab');
  await expect.poll(()=>page.evaluate(()=>document.fullscreenElement?.classList.contains('chart-panel'))).toBe(true);
