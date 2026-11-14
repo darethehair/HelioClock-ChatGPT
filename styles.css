@@ -584,3 +584,20 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 .solar-inspector-header button{font-size:10px;border:1px solid #557597;background:#18324d;color:#e6f2ff;padding:4px 8px;border-radius:5px}
 #solar-inspect-gain{color:#b5e2bc;font-weight:600}
 @media(max-width:500px){.solar-chart-seasons span{font-size:9px}.solar-chart-inspector{font-size:10px}}
+
+/* v62 chart wrapper must fill the same plot-first fullscreen area previously
+   occupied by the direct-child canvas; overlay must not reduce touch area. */
+.panel:fullscreen.mobile-plot-fullscreen>.solar-chart-stage{
+ flex:1 1 0;min-height:0;width:100%;height:auto!important;
+ max-height:none!important;overflow:hidden
+}
+.panel:fullscreen.mobile-plot-fullscreen>.solar-chart-stage>#daylight-chart{
+ height:100%!important;max-height:none!important;width:100%
+}
+.panel:fullscreen.mobile-plot-fullscreen>.solar-chart-seasons{
+ flex:0 0 auto;margin:3px 0
+}
+.panel:fullscreen.mobile-plot-fullscreen>.solar-chart-inspector{
+ flex:0 0 auto;margin:4px 0 0;padding:5px 8px;gap:2px;
+ max-height:100px;overflow:auto
+}
