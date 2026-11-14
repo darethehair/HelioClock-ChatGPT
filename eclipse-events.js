@@ -83,8 +83,12 @@ function findFollowing({category,scope,from,observer,filter='any',requireAboveHo
   }
   if(next.peak>from && accepts(next.kind,filter) &&
      (!requireAboveHorizon || next.visibleAtPeak===true))return next;
-  if(!Number.isFinite(next.peak.getTime())||next.peak<=cursor)throw Error('Eclipse search did not advance: '+category+'/'+scope+' cursor='+cursor.toISOString()+' peak='+next.peak.toISOString());
-  cursor=new Date(next.peak.getTime()+60000);
+  if(!Number.isFinite(next.peak.getTime()))throw Error('Eclipse search returned an invalid date');
+  // Solar searches can return an eclipse already underway even when its peak
+  // precedes the search cursor. Advance beyond the LAST contact, not merely
+  // one minute past maximum, or a reverse enumeration will rediscover it.
+  const lastContact=next.contacts?.partialEnd??next.phases?.penumbral?.end??next.peak;
+  cursor=new Date(Math.max(cursor.getTime(),next.peak.getTime(),lastContact.getTime())+DAY);
  }
  return null;
 }
@@ -122,7 +126,8 @@ export function findEclipse({
   });
   if(!found || found.peak>=from)break;
   if(accepts(found.kind,filter)&&(!requireAboveHorizon||found.visibleAtPeak===true))last=found;
-  cursor=new Date(found.peak.getTime()+60000);
+  const end=found.contacts?.partialEnd??found.phases?.penumbral?.end??found.peak;
+  cursor=new Date(Math.max(found.peak.getTime(),end.getTime())+DAY);
  }
  return last;
 }
