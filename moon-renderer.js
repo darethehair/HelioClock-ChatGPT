@@ -1,4 +1,5 @@
 import {clamp,moon,moonOrientation} from './astronomy.js';
+import {lunarEclipseGeometry,lunarShadowShading} from './eclipse-geometry.js';
 
 let lunarPhoto=null;
 let loading='loading';
@@ -34,6 +35,7 @@ export function renderMoon(canvas,when,latitude,longitude,zoom=1,{showEarthshine
  const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);
  c.clearRect(0,0,w,h);
  const m=moon(when,latitude,longitude),tilt=moonOrientation(when,latitude,longitude);
+ const eclipse=lunarEclipseGeometry(when);
  // At 1×, fill most of the Moon canvas (and hence its panel), while
  // leaving enough space for the rotated disc without clipping its edges.
  const size=Math.max(20,Math.floor(Math.min(w*.82,h*.90)*zoom));
@@ -62,6 +64,13 @@ export function renderMoon(canvas,when,latitude,longitude,zoom=1,{showEarthshine
    const earthshine=showEarthshine?
     .025+.045*Math.pow(1-m.illuminated,2):0;
    const shade=clamp(earthshine+sunlit,0,1.18);
+   // Eclipse geometry is geocentric; lunar surface texture is north-up,
+   // with east to image left. The whole image is subsequently rotated by
+   // the normal parallactic-angle transform, preserving its sky position.
+   const shadow=eclipse.active?lunarShadowShading(eclipse,-nx,-ny):{opacity:0,umbra:0};
+   // Penumbral darkening is graded. In the umbra the illustrative warm tint
+   // preserves LRO surface detail without claiming to predict exact colour.
+   const eclipseOpacity=shadow.opacity;
    const fade=clamp((1-Math.sqrt(rr))*radius,0,1);
    const q=(y*size+x)*4;
    let red=180,green=185,blue=195;
@@ -72,9 +81,9 @@ export function renderMoon(canvas,when,latitude,longitude,zoom=1,{showEarthshine
     const p=(sy*photo.width+sx)*4;
     red=photo.data[p];green=photo.data[p+1];blue=photo.data[p+2];
    }
-   pixels.data[q]=red*shade;
-   pixels.data[q+1]=green*shade;
-   pixels.data[q+2]=blue*shade;
+   pixels.data[q]=red*shade*(1-.72*eclipseOpacity);
+   pixels.data[q+1]=green*shade*(1-.91*eclipseOpacity);
+   pixels.data[q+2]=blue*shade*(1-.96*eclipseOpacity);
    pixels.data[q+3]=Math.round(fade*255);
   }
  }
@@ -90,5 +99,5 @@ export function renderMoon(canvas,when,latitude,longitude,zoom=1,{showEarthshine
   c.strokeStyle='rgba(170,192,218,.18)';c.lineWidth=1;c.stroke();
  }
  c.restore();
- return {...tilt,photoLoaded:loading==='ready',illumination:m.illuminated};
+ return {...tilt,photoLoaded:loading==='ready',illumination:m.illuminated,eclipse};
 }

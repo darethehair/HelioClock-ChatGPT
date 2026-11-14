@@ -601,3 +601,50 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
  flex:0 0 auto;margin:4px 0 0;padding:5px 8px;gap:2px;
  max-height:100px;overflow:auto
 }
+
+/* Simulated eclipse uses a separate canvas aligned exactly with the Sun photo.
+   Never composite a historical eclipse onto a latest-observation NASA image. */
+.moon-panel .moon-stage #solar-eclipse,
+.moon-panel:fullscreen .moon-stage #solar-eclipse{
+ position:absolute;left:0;top:0;width:100%!important;height:100%!important;
+ max-height:none!important;object-fit:fill;pointer-events:none;z-index:2;
+ transform-origin:50% 50%;
+}
+.moon-panel .moon-stage #solar-eclipse[hidden],
+.moon-panel .moon-stage #solar-photo[hidden],
+.moon-panel .moon-stage #moon[hidden],
+.solar-eclipse-status[hidden]{display:none!important}
+.solar-eclipse-status{font-size:11px;color:#ffe0a2;padding:6px 8px;
+ background:#162c40;border:1px solid #81653d;border-radius:6px;
+ line-height:1.5;margin-top:8px}
+
+/* Eclipse Explorer: compact on normal panels, contained in the optional
+   control drawer in mobile plot-first fullscreen. */
+.eclipse-explorer{margin:4px 0 13px;padding:10px 12px;
+ border:1px solid #46617e;border-radius:8px;background:#10253b}
+.eclipse-explorer-heading{display:flex;justify-content:space-between;
+ align-items:center;gap:8px;margin-bottom:9px;flex-wrap:wrap}
+.eclipse-explorer-heading strong{font-size:12px;color:#ffe0a1}
+.eclipse-explorer-heading span{font-size:10px;color:#9db6d0}
+.eclipse-explorer-options{display:flex;gap:8px;flex-wrap:wrap}
+.eclipse-explorer-options label{display:flex;flex-direction:column;gap:4px;
+ flex:1 1 116px;min-width:0;font-size:10px;color:#b9ccdf}
+.eclipse-explorer-options select{width:100%;min-height:32px;border-radius:5px;
+ color:#ecf5ff;background:#172e47;border:1px solid #456481;padding:5px;
+ font:inherit;font-size:11px}
+.eclipse-explorer-actions,.eclipse-contacts{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+.eclipse-explorer-actions button,.eclipse-contacts button{
+ border:1px solid #55789b;background:#193753;color:#f0f6ff;
+ border-radius:5px;min-height:31px;padding:5px 10px;font-size:11px}
+.eclipse-explorer-actions button:disabled{opacity:.5;cursor:wait}
+.eclipse-explorer-actions button:hover:not(:disabled),
+.eclipse-contacts button:hover{border-color:#f1c78a}
+#eclipse-event-status{font-size:11px;line-height:1.6;margin-top:9px;
+ color:#ffe2aa;font-variant-numeric:tabular-nums}
+.eclipse-explorer small{display:block;font-size:10px;line-height:1.45;
+ color:#95aec9;margin-top:9px}
+.eclipse-contacts[hidden]{display:none!important}
+@media(max-width:520px){
+ .eclipse-explorer{padding:8px;margin-bottom:10px}
+ .eclipse-explorer-options label{flex:1 1 130px}
+}

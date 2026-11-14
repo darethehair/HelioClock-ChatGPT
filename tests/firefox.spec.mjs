@@ -309,8 +309,8 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#sunrise')).not.toHaveText('—');
  // Release identity and provenance are visible even offline.
- await expect(page.locator('#app-version')).toHaveText('v62');
- await expect(page.locator('#dock-version')).toHaveText('v62');
+ await expect(page.locator('#app-version')).toHaveText('v63');
+ await expect(page.locator('#dock-version')).toHaveText('v63');
  await expect(page.locator('.credits-footer')).toContainText('Created by Darethehair with assistance from ChatGPT');
  await expect(page.locator('.credits-footer a')).toHaveAttribute('href','https://github.com/darethehair/HelioClock-ChatGPT');
  await expect(page.locator('#build-meta')).toContainText('commit');
@@ -656,7 +656,7 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
  const errors=[];
  page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v62');
+ await expect(page.locator('#app-version')).toHaveText('v63');
  await expect(page.locator('.almanac-panel')).toBeVisible();
  await page.locator('#layout-sky').click();
  await expect(page.locator('.sky-panel')).toBeVisible();
@@ -965,7 +965,7 @@ test('Version 36 stores, restores, imports, exports and resets preferences',asyn
 test('Version 25 Sun and Moon use the same zoomable pannable fullscreen stage',async({page})=>{
  const errors=[];page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v62');
+ await expect(page.locator('#app-version')).toHaveText('v63');
  await expect(page.locator('#moon')).toBeVisible();
  await expect(page.locator('#solar-photo')).toBeHidden();
  await page.locator('[data-disc-view="sun"]').click();
@@ -2018,4 +2018,109 @@ test('Daylight year mobile tap inspects a date without changing simulation until
  await expect(page.locator('#observe-date')).toHaveValue(initial);
  await page.locator('#solar-inspect-select').click();
  await expect(page.locator('#observe-date')).not.toHaveValue(initial);
+});
+
+test('Simulated eclipse replaces NASA photo only at a topocentric solar eclipse',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('[data-disc-view="sun"]').click();
+ await page.locator('#observe-date').fill('2024-04-08');
+ await page.locator('#observe-time').fill('18:40');
+ await page.locator('#observe-time').dispatchEvent('change');
+ await expect(page.locator('#solar-eclipse')).toBeVisible();
+ const painted=await page.locator('#solar-eclipse').evaluate(canvas=>{
+  const ctx=canvas.getContext('2d'),x=Math.floor(canvas.width/2),y=Math.floor(canvas.height/2);
+  return canvas.width>0&&canvas.height>0&&ctx.getImageData(x,y,1,1).data[3]>0;
+ });
+ expect(painted).toBe(true,'simulated solar eclipse must contain painted pixels');
+ await expect(page.locator('#solar-photo')).toBeHidden();
+ await expect(page.locator('#solar-eclipse-status')).toContainText('Simulated partial solar eclipse');
+ await expect(page.locator('#solar-eclipse-status')).toContainText('obscuration');
+ await page.locator('#observe-date').fill('2024-04-06');
+ await page.locator('#observe-date').dispatchEvent('change');
+ await expect(page.locator('#solar-eclipse')).toBeHidden();
+ await expect(page.locator('#solar-photo')).toBeVisible();
+ await expect(page.locator('#solar-eclipse-status')).toBeHidden();
+});
+
+test('Simulated eclipse is aligned with Sun pan/zoom without intercepting disc touches',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('[data-disc-view="sun"]').click();
+ await page.locator('#observe-date').fill('2024-04-08');
+ await page.locator('#observe-time').fill('18:40');
+ await page.locator('#observe-time').dispatchEvent('change');
+ await expect(page.locator('#solar-eclipse')).toBeVisible();
+ await page.locator('#moon-zoom-in').click();
+ const image=page.locator('#solar-eclipse');
+ await expect.poll(async()=>image.evaluate(el=>el.style.transform)).toContain('scale(1.25)');
+ const grid=page.locator('#disc-coordinate-grid');
+ expect(await image.evaluate(el=>el.style.transform)).toEqual(await grid.evaluate(el=>el.style.transform));
+ await expect(image).toHaveCSS('pointer-events','none');
+});
+
+test('Lunar eclipse shades the textured Moon and reports actual eclipse phase',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('[data-disc-view="moon"]').click();
+ await page.locator('#observe-date').fill('2025-03-14');
+ await page.locator('#observe-time').fill('06:59');
+ await page.locator('#observe-time').dispatchEvent('change');
+ await expect(page.locator('#lunar-eclipse-status')).toBeVisible();
+ await expect(page.locator('#lunar-eclipse-status')).toContainText('total lunar eclipse');
+ await expect(page.locator('#lunar-eclipse-status')).toContainText('100.0%');
+ await expect(page.locator('#moon')).toBeVisible();
+ await page.locator('#observe-date').fill('2024-03-25');
+ await page.locator('#observe-time').fill('07:12');
+ await page.locator('#observe-time').dispatchEvent('change');
+ await expect(page.locator('#lunar-eclipse-status')).toContainText('penumbral lunar eclipse');
+ await page.locator('#observe-date').fill('2024-04-08');
+ await page.locator('#observe-time').fill('18:40');
+ await page.locator('#observe-time').dispatchEvent('change');
+ await expect(page.locator('#lunar-eclipse-status')).toBeHidden();
+});
+
+test('Eclipse Explorer finds previous and next events from simulated time',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('#observe-date').fill('2024-01-01');
+ await page.locator('#observe-date').dispatchEvent('change');
+ await page.locator('#eclipse-category').selectOption('solar');
+ await page.locator('#eclipse-scope').selectOption('local');
+ await page.locator('#eclipse-next').click();
+ await expect(page.locator('#eclipse-event-status')).toContainText('solar eclipse',{timeout:20000});
+ await expect(page.locator('#eclipse-event-status')).toContainText('2024-04-08');
+ await expect(page.locator('#eclipse-contacts')).toBeVisible();
+ await expect(page.locator('#observe-date')).toHaveValue('2024-04-08');
+ await expect(page.locator('#solar-eclipse')).toBeVisible();
+ await expect(page.locator('#solar-photo')).toBeHidden();
+ await page.locator('#eclipse-contacts button').filter({hasText:'First contact'}).click();
+ await expect(page.locator('#observe-date')).toHaveValue('2024-04-08');
+ await page.locator('#eclipse-contacts button').filter({hasText:'Maximum'}).click();
+ await expect(page.locator('#solar-eclipse')).toBeVisible();
+});
+
+test('Eclipse Explorer offers lunar penumbral and totality contacts',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('#observe-date').fill('2025-01-01');
+ await page.locator('#observe-date').dispatchEvent('change');
+ await page.locator('#eclipse-category').selectOption('lunar');
+ await expect(page.locator('#eclipse-filter option[value="umbral"]')).toHaveCount(1);
+ await page.locator('#eclipse-scope').selectOption('global');
+ await page.locator('#eclipse-filter').selectOption('total');
+ await page.locator('#eclipse-next').click();
+ await expect(page.locator('#eclipse-event-status')).toContainText('Total lunar eclipse',{timeout:20000});
+ await expect(page.locator('#eclipse-event-status')).toContainText('2025-03-14');
+ await expect(page.locator('#observe-date')).toHaveValue('2025-03-14');
+ await expect(page.locator('#lunar-eclipse-status')).toBeVisible();
+ await expect(page.locator('#eclipse-contacts button')).toHaveCount(7);
+ await page.locator('#eclipse-contacts button').filter({hasText:'Totality begins'}).click();
+ await expect(page.locator('#lunar-eclipse-status')).toContainText('lunar eclipse');
+});
+
+test('Global solar eclipse search explicitly distinguishes worldwide and local visibility',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('#observe-date').fill('2024-01-01');
+ await page.locator('#observe-date').dispatchEvent('change');
+ await page.locator('#eclipse-scope').selectOption('global');
+ await page.locator('#eclipse-next').click();
+ await expect(page.locator('#eclipse-event-status')).toContainText('Global',{timeout:20000});
+ await expect(page.locator('#eclipse-event-status')).toContainText('does not imply an eclipse at the observer');
+ await expect(page.locator('#eclipse-contacts button')).toHaveCount(1);
 });
