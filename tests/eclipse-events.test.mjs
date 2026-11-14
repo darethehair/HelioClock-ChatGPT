@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {findEclipse} from '../eclipse-events.js';
+import {findEclipse,findEclipseAsync} from '../eclipse-events.js';
 
 // 2024-04-08 total eclipse across Dallas: independent, well-known benchmark.
 const dallas={latitude:32.7767,longitude:-96.7970};
@@ -43,3 +43,11 @@ assert.equal(priorLunar.peak.toISOString().slice(0,10),'2025-03-14');
 assert.throws(()=>findEclipse({latitude:100}),/coordinates/);
 assert.throws(()=>findEclipse({direction:0}),/direction/);
 console.log('Eclipse forward/backward, local visibility, event contacts and lunar phases passed.');
+
+const nextAsync=await findEclipseAsync({category:'solar',scope:'local',date:new Date('2024-01-01T00:00:00Z'),...dallas,direction:1,maxSpanYears:5,batchSize:1});
+assert.equal(nextAsync.peak.toISOString().slice(0,10),'2024-04-08');
+const prevAsync=await findEclipseAsync({category:'solar',scope:'local',date:new Date('2024-05-01T00:00:00Z'),...dallas,direction:-1,maxSpanYears:5,batchSize:1});
+assert.equal(prevAsync.peak.toISOString().slice(0,10),'2024-04-08');
+const cancelled=new AbortController();cancelled.abort();
+await assert.rejects(findEclipseAsync({signal:cancelled.signal}),/cancelled/);
+console.log('Progressive forward/backward and cancellation passed.');

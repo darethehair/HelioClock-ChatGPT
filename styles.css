@@ -643,7 +643,9 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
  color:#ffe2aa;font-variant-numeric:tabular-nums}
 .eclipse-explorer small{display:block;font-size:10px;line-height:1.45;
  color:#95aec9;margin-top:9px}
-.eclipse-contacts[hidden]{display:none!important}
+.eclipse-contacts[hidden],#eclipse-cancel[hidden]{display:none!important}
+.eclipse-horizon-label{display:inline-flex;align-items:center;gap:6px;margin-left:auto;font-size:10px;color:#bed2e9}
+.eclipse-horizon-label select{background:#172e47;color:#fff;border:1px solid #55789b;border-radius:5px;padding:5px;min-height:31px;font-size:11px}
 @media(max-width:520px){
  .eclipse-explorer{padding:8px;margin-bottom:10px}
  .eclipse-explorer-options label{flex:1 1 130px}
