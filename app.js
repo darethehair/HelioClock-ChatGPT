@@ -402,6 +402,11 @@ function drawMoon(){
   $('solar-eclipse').hidden=!active;
   solarPhoto.hidden=active;
   $('solar-eclipse-status').hidden=!active;
+  $('solar-note').hidden=active;
+  $('solar-refresh').hidden=active;
+  $('disc-kind').textContent=active?'SIMULATED SOLAR ECLIPSE':'SOLAR OBSERVATION';
+  $('moon-tilt').textContent=active?'Calculated celestial-north-up geometry':'SDO/HMI continuum image';
+  $('moon-source').textContent=active?'Astronomy Engine · computed for selected date and coordinates':'NASA Solar Dynamics Observatory · HMI';
   if(active){
    $('solar-eclipse-status').textContent='Simulated '+eclipse.kind+' solar eclipse · '+
     (eclipse.obscuration*100).toFixed(2)+'% obscuration · '+
