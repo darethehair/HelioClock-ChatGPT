@@ -1100,7 +1100,9 @@ function syncFullscreenNavigation(){
 document.addEventListener('keydown',e=>{
  if(!document.fullscreenElement?.classList.contains('panel')||e.defaultPrevented||e.repeat||e.altKey||e.ctrlKey||e.metaKey||e.shiftKey)return;
  if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight')return;
- if(e.target?.closest('input,textarea,select,[contenteditable="true"],[role="slider"],[role="spinbutton"],[role="combobox"],[role="listbox"],[role="radio"],[role="tablist"]'))return;
+ const interactive='input,textarea,select,[contenteditable="true"],[role="slider"],[role="spinbutton"],[role="combobox"],[role="listbox"],[role="radio"],[role="tablist"]';
+ if(e.composedPath().some(node=>node instanceof Element&&node.closest(interactive))||
+    document.activeElement?.closest(interactive))return;
  e.preventDefault();navigateFullscreenPanel(e.key==='ArrowRight'?1:-1);
 });
 // The browser fullscreen top layer hides siblings of the fullscreen element.
