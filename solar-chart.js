@@ -31,6 +31,43 @@ export function dayBands(date,latitude,longitude){
  }
  return {noon,levels,daylight:levels.sun.halfDuration*2};
 }
+// The Sun's apparent ecliptic longitude reaches 0/90/180/270 degrees at
+// the equinoxes and solstices. Find actual instants for the selected year,
+// rather than assuming the events always fall on the same calendar dates.
+export function seasonalEvents(year){
+ const seeds=[
+  {kind:'March equinox',target:0,month:2,day:20},
+  {kind:'June solstice',target:90,month:5,day:21},
+  {kind:'September equinox',target:180,month:8,day:22},
+  {kind:'December solstice',target:270,month:11,day:21}
+ ];
+ return seeds.map(event=>{
+  const seed=Date.UTC(year,event.month,event.day,12),d=86400000;
+  const difference=t=>wrap(solar(new Date(t)).lon-event.target+180,360)-180;
+  let lo=seed-9*d,hi=seed+9*d;
+  // Both brackets are within 20 degrees of the season boundary; the
+  // wrapped longitude difference is monotonic across this short interval.
+  for(let i=0;i<39;i++){
+   const mid=(lo+hi)/2;
+   if(difference(mid)<0)lo=mid;else hi=mid;
+  }
+  return {kind:event.kind,date:new Date((lo+hi)/2),index:((lo+hi)/2-Date.UTC(year,0,1))/d};
+ });
+}
+export function daylightChange(date,lat,lon){
+ const previous=new Date(Date.UTC(date.getUTCFullYear(),date.getUTCMonth(),date.getUTCDate()-1,12));
+ const seconds=Math.round((dayBands(date,lat,lon).daylight-dayBands(previous,lat,lon).daylight)*3600);
+ return seconds;
+}
+const dayLengthText=hours=>{
+ const seconds=Math.round(hours*3600);
+ return String(Math.floor(seconds/3600)).padStart(2,'0')+'h '+String(Math.floor(seconds%3600/60)).padStart(2,'0')+'m';
+};
+const gainText=seconds=>{
+ if(seconds===0)return 'No change from yesterday';
+ const amount=Math.abs(seconds),minutes=Math.floor(amount/60),remainder=amount%60;
+ return (seconds>0?'Gaining ':'Losing ')+(minutes?minutes+'m ':'')+String(remainder).padStart(2,'0')+'s of daylight vs yesterday';
+};
 const COLORS={
  night:'#081329',astronomical:'#253b72',nautical:'#3664a3',civil:'#519bd1',
  daylight:'#80c9ec',sun:'#ffd47c',duration:'#10335f'
@@ -104,6 +141,16 @@ export function drawSolarYear(canvas,{year,lat,lon,selectedDate,onSelect}){
   const index=(Date.UTC(year,month,1)-Date.UTC(year,0,1))/86400000;
   const xx=x(index);drawLine(c,xx,g.top,xx,g.bottom,'#d6eeff15');
  }
+ // Year-specific astronomical seasons. Labels alternate above/below
+ // the plot to keep them distinct from the selected-day annotation.
+ const seasons=seasonalEvents(year);
+ c.save();c.beginPath();c.rect(g.left,g.top,g.right-g.left,g.bottom-g.top);c.clip();
+ for(const [n,event] of seasons.entries()){
+  const xx=g.left+event.index/(days-1)*(g.right-g.left);
+  c.save();c.setLineDash([3,5]);drawLine(c,xx,g.top,xx,g.bottom,'#ffe2a17a',1);c.restore();
+  c.beginPath();c.arc(xx,n%2?g.bottom-6:g.top+6,3,0,Math.PI*2);c.fillStyle='#ffe2a1';c.fill();
+ }
+ c.restore();
  const index=clamp((Date.UTC(year,selectedDate.getUTCMonth(),selectedDate.getUTCDate())-Date.UTC(year,0,1))/86400000,0,days-1);
  const selected=data[index],markerX=x(index);
  drawLine(c,markerX,g.top,markerX,g.bottom,'#ffe4aa',1.4);
@@ -140,11 +187,51 @@ export function drawSolarYear(canvas,{year,lat,lon,selectedDate,onSelect}){
  if(summary)summary.textContent=selected.levels.sun.allNight?'No sunrise / polar night':selected.levels.sun.allDay?'24-hour daylight':legend.join('   ·   ');
  const dayText=document.getElementById('solar-chart-date');
  if(dayText)dayText.textContent=selectedDate.toLocaleDateString('en-CA',{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'});
- canvas.onclick=event=>{
+ // A DOM overlay tracks pointer/touch inspection without repainting 365
+ // solar bands on every pointer move. Clicking still selects that date.
+ const inspector=document.getElementById('solar-chart-inspector');
+ const inspectionDate=document.getElementById('solar-inspect-date');
+ const inspectionDetails=document.getElementById('solar-inspect-details');
+ const inspectionGain=document.getElementById('solar-inspect-gain');
+ const pointerLine=document.getElementById('solar-chart-inspection-line');
+ const inspectDate=i=>new Date(Date.UTC(year,0,i+1,12));
+ const selectedIndex=index;
+ function inspect(i){
+  const d=inspectDate(i),day=data[i];
+  const previous=i?data[i-1]:dayBands(new Date(Date.UTC(year-1,11,31,12)),lat,lon);
+  const gain=Math.round((day.daylight-previous.daylight)*3600);
+  if(inspectionDate)inspectionDate.textContent=d.toLocaleDateString('en-CA',{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'});
+  const sun=day.levels.sun,civil=day.levels.civil,nautical=day.levels.nautical,astro=day.levels.astronomical;
+  const display=(level)=>level.allDay?'all day':level.allNight?'none':stamp(level.dawn)+'–'+stamp(level.dusk);
+  if(inspectionDetails)inspectionDetails.textContent='Sun '+display(sun)+' · Civil '+display(civil)+' · Nautical '+display(nautical)+' · Astronomical '+display(astro)+' · Daylight '+dayLengthText(day.daylight)+' (mean solar time)';
+  if(inspectionGain)inspectionGain.textContent=gainText(gain)+' · approximate';
+  if(inspector)inspector.hidden=false;
+  if(pointerLine){pointerLine.hidden=false;pointerLine.style.left=(100*(g.left+i/(days-1)*(g.right-g.left))/width)+'%';}
+ }
+ const indexAt=e=>{
   const rect=canvas.getBoundingClientRect();
-  const f=clamp((event.clientX-rect.left-g.left)/(g.right-g.left),0,1);
-  const selectedIndex=Math.round(f*(days-1));
-  onSelect(new Date(Date.UTC(year,0,selectedIndex+1,selectedDate.getUTCHours(),selectedDate.getUTCMinutes())));
+  const px=(e.clientX-rect.left)*width/rect.width;
+  return Math.round(clamp((px-g.left)/(g.right-g.left),0,1)*(days-1));
  };
- return {selected,data};
+ // Pointermove is suitable for a mouse/pen; touch uses a tap for inspection
+ // and never suppresses scrolling, pinching or other application gestures.
+ canvas.onpointermove=e=>{if(e.pointerType!=='touch')inspect(indexAt(e))};
+ canvas.onpointerleave=()=>inspect(selectedIndex);
+ canvas.onclick=e=>{
+  const i=indexAt(e);
+  inspect(i);
+  if(e.pointerType!=='touch')onSelect(new Date(Date.UTC(year,0,i+1,selectedDate.getUTCHours(),selectedDate.getUTCMinutes())));
+ };
+ canvas.onpointerdown=e=>{if(e.pointerType==='touch')inspect(indexAt(e))};
+ const choose=document.getElementById('solar-inspect-select');
+ if(choose)choose.onclick=()=>{
+  const i=Number(canvas.dataset.inspectIndex||selectedIndex);
+  onSelect(new Date(Date.UTC(year,0,i+1,selectedDate.getUTCHours(),selectedDate.getUTCMinutes())));
+ };
+ // Store the last inspected date so the touch button selects the viewed day.
+ const originalInspect=inspect;
+ inspect=function(i){canvas.dataset.inspectIndex=String(i);originalInspect(i)};
+ const stored=Number(canvas.dataset.inspectIndex);
+ inspect(Number.isInteger(stored)&&stored>=0&&stored<days?stored:selectedIndex);
+ return {selected,data,seasons};
 }
