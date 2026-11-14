@@ -309,8 +309,8 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#sunrise')).not.toHaveText('—');
  // Release identity and provenance are visible even offline.
- await expect(page.locator('#app-version')).toHaveText('v60');
- await expect(page.locator('#dock-version')).toHaveText('v60');
+ await expect(page.locator('#app-version')).toHaveText('v61');
+ await expect(page.locator('#dock-version')).toHaveText('v61');
  await expect(page.locator('.credits-footer')).toContainText('Created by Darethehair with assistance from ChatGPT');
  await expect(page.locator('.credits-footer a')).toHaveAttribute('href','https://github.com/darethehair/HelioClock-ChatGPT');
  await expect(page.locator('#build-meta')).toContainText('commit');
@@ -656,7 +656,7 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
  const errors=[];
  page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v60');
+ await expect(page.locator('#app-version')).toHaveText('v61');
  await expect(page.locator('.almanac-panel')).toBeVisible();
  await page.locator('#layout-sky').click();
  await expect(page.locator('.sky-panel')).toBeVisible();
@@ -965,7 +965,7 @@ test('Version 36 stores, restores, imports, exports and resets preferences',asyn
 test('Version 25 Sun and Moon use the same zoomable pannable fullscreen stage',async({page})=>{
  const errors=[];page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v60');
+ await expect(page.locator('#app-version')).toHaveText('v61');
  await expect(page.locator('#moon')).toBeVisible();
  await expect(page.locator('#solar-photo')).toBeHidden();
  await page.locator('[data-disc-view="sun"]').click();
@@ -1945,18 +1945,44 @@ test('Fullscreen panel navigation cycles without exiting fullscreen or replacing
  expect(errors).toEqual([]);
 });
 
-test('Fullscreen arrow keys do not steal keyboard input or the Tab key',async({page})=>{
+test('Fullscreen Left/Right override focused time-dock controls without changing time',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await page.locator('[data-fullscreen="chart-panel"]').click();
- await expect.poll(()=>page.evaluate(()=>!!document.fullscreenElement)).toBe(true);
- // Directly dispatch to the real input to check the event's target/path;
- // browser-native date/time subcontrols can move focus into shadow DOM.
- await page.locator('#dock-time').evaluate(el=>{
-  el.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}));
- });
  await expect.poll(()=>page.evaluate(()=>document.fullscreenElement?.classList.contains('chart-panel'))).toBe(true);
+ const before=await page.locator('#dock-scrubber').inputValue();
+ // Real keyboard focus in the persistent time dock must not consume ArrowRight.
+ await page.locator('#dock-scrubber').focus();
+ await page.keyboard.press('ArrowRight');
+ await expect.poll(()=>page.evaluate(()=>document.fullscreenElement?.classList.contains('earth-panel'))).toBe(true);
+ expect(await page.locator('#dock-scrubber').inputValue()).toBe(before);
+ // A focused native time input should likewise yield to panel navigation.
+ await page.locator('#dock-time').focus();
+ await page.keyboard.press('ArrowLeft');
+ await expect.poll(()=>page.evaluate(()=>document.fullscreenElement?.classList.contains('chart-panel'))).toBe(true);
+ expect(await page.locator('#dock-scrubber').inputValue()).toBe(before);
+ // Tab remains a normal focus traversal key, not panel navigation.
  await page.keyboard.press('Tab');
  await expect.poll(()=>page.evaluate(()=>document.fullscreenElement?.classList.contains('chart-panel'))).toBe(true);
  await page.locator('.fullscreen-panel-navigation button[aria-label="Next fullscreen panel"]').click();
  await expect.poll(()=>page.evaluate(()=>document.fullscreenElement?.classList.contains('earth-panel'))).toBe(true);
+});
+
+test('24-hour time fields reject AM/PM and preserve simulation time for invalid values',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ const utc=page.locator('#observe-time'),local=page.locator('#dock-time');
+ await expect(utc).toHaveAttribute('type','text');
+ await expect(local).toHaveAttribute('type','text');
+ await expect(utc).toHaveAttribute('inputmode','numeric');
+ await expect(local).toHaveAttribute('inputmode','numeric');
+ await utc.fill('23:45');await utc.dispatchEvent('change');
+ await expect(utc).toHaveValue('23:45');
+ await local.fill('18:15');await local.dispatchEvent('change');
+ await expect(local).toHaveValue('18:15');
+ const before=await page.locator('#dock-scrubber').inputValue();
+ await local.fill('6:15 PM');await local.dispatchEvent('change');
+ await expect(page.locator('#dock-scrubber')).toHaveValue(before);
+ await expect(local).toHaveValue('18:15');
+ await utc.fill('25:99');await utc.dispatchEvent('change');
+ await expect(utc).not.toHaveValue('25:99');
+ expect(await page.locator('#dock-local-time').textContent()).not.toMatch(/\b(?:AM|PM)\b/i);
 });

@@ -34,9 +34,10 @@ function updateOrreryEventChoices(){
  $('orrery-event-status').textContent='Choose Previous or Next to find a planetary event.';
 }
 function setDateInputs(){$('observe-date').value=fmt(state.date);$('observe-time').value=utcTime(state.date)}
+const valid24HourTime=value=>/^(?:[01][0-9]|2[0-3]):[0-5][0-9]$/.test(value);
 function selectDate(){
- const d=$('observe-date').value,t=$('observe-time').value||'12:00';
- if(!d)return;
+ const d=$('observe-date').value,t=$('observe-time').value;
+ if(!d||!valid24HourTime(t)){notice('Enter time in 24-hour HH:MM format (00:00–23:59).');setDateInputs();return;}
  const next=new Date(d+'T'+t+':00Z');
  if(!Number.isFinite(next.getTime()))return;
  pausePlayback();state.date=next;state.live=false;render();
@@ -99,7 +100,7 @@ function worldMap(){
    :cloud.status==='unavailable'?'Cloud imagery unavailable · check connection / NASA GIBS'
    :'Clouds awaiting imagery';
  const loaded=weather.grid&&auroraFresh();
- const stamp=weather.forecast?new Date(weather.forecast).toLocaleString():'—';
+ const stamp=weather.forecast?new Date(weather.forecast).toLocaleString('en-GB',{hour12:false}):'—';
  $('earth-space-weather-status').textContent=
   (loaded?'NOAA OVATION forecast '+stamp:'Aurora forecast unavailable or stale')+
   ' · '+(weather.kp===null?'Kp unavailable':'Kp '+weather.kp.toFixed(1))+
@@ -554,7 +555,7 @@ function updateLocalDisplay(){
 }
 function selectDockLocal(){
  const date=$('dock-date').value,time=$('dock-time').value;
- if(!date||!time)return;
+ if(!date||!valid24HourTime(time)){notice('Enter time in 24-hour HH:MM format (00:00–23:59).');updateLocalDisplay();return;}
  const next=new Date(date+'T'+time+':00');
  if(!Number.isFinite(next.getTime()))return;
  pausePlayback();state.date=next;state.live=false;setDateInputs();render();
@@ -567,6 +568,7 @@ function updateCoords(){
 $('latitude').addEventListener('change',updateCoords);$('longitude').addEventListener('change',updateCoords);
 $('observe-date').addEventListener('change',selectDate);
 $('observe-time').addEventListener('change',selectDate);
+$('observe-time').addEventListener('input',e=>{if(valid24HourTime(e.target.value))selectDate()});
 $('now').addEventListener('click',()=>{pausePlayback();state.date=new Date();state.live=true;setDateInputs();render()});
 $('locate').addEventListener('click',()=>{
  if(!navigator.geolocation){notice('Geolocation is unavailable in this browser. Enter coordinates manually.');return}
@@ -880,7 +882,7 @@ $('mw-copy-debug').addEventListener('click',async()=>{
  const chosen='planar';
  const debug={
   version:59,utc:state.date.toISOString(),
-  local:state.date.toLocaleString('en-CA',{timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone}),
+  local:state.date.toLocaleString('en-GB',{hour12:false,timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone}),
   timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,
   observer:{lat:state.lat,lon:state.lon},
   sky:{projection:state.skyProjection,light:state.skyLight,heading:state.skyHeading,
@@ -1042,6 +1044,7 @@ for(const [id,minutes] of [['dock-prev-day',-1440],['dock-prev-hour',-60],['dock
 }
 $('dock-date').addEventListener('change',selectDockLocal);
 $('dock-time').addEventListener('change',selectDockLocal);
+$('dock-time').addEventListener('input',e=>{if(valid24HourTime(e.target.value))selectDockLocal()});
 $('dock-scrubber').addEventListener('input',e=>{
  pausePlayback();const minutes=Number(e.target.value);
  const d=state.date;
@@ -1097,14 +1100,18 @@ function syncFullscreenNavigation(){
  next.addEventListener('click',()=>navigateFullscreenPanel(1));
  nav.append(prev,counter,next);active.appendChild(nav);fullscreenNavigationBar=nav;
 }
+// In fullscreen, Left/Right are global panel-navigation shortcuts even if
+// the persistent time dock has keyboard focus. Capture before range inputs,
+// time controls and their native shadow-DOM handlers consume those keys.
+// Modified arrows remain available for platform/browser shortcuts.
 document.addEventListener('keydown',e=>{
- if(!document.fullscreenElement?.classList.contains('panel')||e.defaultPrevented||e.repeat||e.altKey||e.ctrlKey||e.metaKey||e.shiftKey)return;
+ if(!document.fullscreenElement?.classList.contains('panel')||e.repeat||
+    e.altKey||e.ctrlKey||e.metaKey||e.shiftKey)return;
  if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight')return;
- const interactive='input,textarea,select,[contenteditable="true"],[role="slider"],[role="spinbutton"],[role="combobox"],[role="listbox"],[role="radio"],[role="tablist"]';
- if(e.composedPath().some(node=>node instanceof Element&&node.closest(interactive))||
-    document.activeElement?.closest(interactive))return;
- e.preventDefault();navigateFullscreenPanel(e.key==='ArrowRight'?1:-1);
-});
+ e.preventDefault();
+ e.stopImmediatePropagation();
+ navigateFullscreenPanel(e.key==='ArrowRight'?1:-1);
+},true);
 // The browser fullscreen top layer hides siblings of the fullscreen element.
 // Move the SAME dock (not a copy) into the active panel and restore it afterward,
 // retaining all input state and event listeners.
@@ -1215,7 +1222,7 @@ async function loadBuildMeta(){
   const info=await response.json();
   const version=info.version||20,short=info.commit?info.commit.slice(0,9):'unknown';
   for(const el of document.querySelectorAll('.app-version,.release-version,.dock-version'))el.textContent='v'+version;
-  const built=info.built_utc?new Date(info.built_utc).toLocaleString('en-CA',{dateStyle:'medium',timeStyle:'short',timeZone:'UTC'})+' UTC':'date not recorded';
+  const built=info.built_utc?new Date(info.built_utc).toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short',hour12:false,timeZone:'UTC'})+' UTC':'date not recorded';
   $('build-meta').textContent='Build '+built+' · commit '+short;
   $('app-version').title='HelioClock-ChatGPT v'+version+' · commit '+short+' · '+built;
   $('dock-version').title=$('app-version').title;
