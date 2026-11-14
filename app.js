@@ -397,6 +397,9 @@ function drawMoon(){
  if(state.discView==='sun'){
   // Simulated eclipse geometry must never be placed over a NASA photo
   // captured on a different date.
+  // A hidden canvas has zero client dimensions, so expose it for layout
+  // before drawing; inactive eclipses are hidden again immediately.
+  $('solar-eclipse').hidden=false;
   const eclipse=renderSolarEclipse($('solar-eclipse'),state.date,state.lat,state.lon);
   const active=eclipse?.kind!=='none';
   $('solar-eclipse').hidden=!active;
