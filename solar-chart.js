@@ -189,6 +189,14 @@ export function drawSolarYear(canvas,{year,lat,lon,selectedDate,onSelect}){
  if(dayText)dayText.textContent=selectedDate.toLocaleDateString('en-CA',{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'});
  // A DOM overlay tracks pointer/touch inspection without repainting 365
  // solar bands on every pointer move. Clicking still selects that date.
+ const seasonLabels=document.getElementById('solar-chart-seasons');
+ if(seasonLabels)seasonLabels.replaceChildren(...seasons.map(event=>{
+  const item=document.createElement('span');
+  const name=document.createElement('strong');name.textContent=event.kind;
+  const date=document.createElement('span');date.textContent=event.date.toLocaleDateString('en-CA',{month:'short',day:'numeric',timeZone:'UTC'});
+  item.title=event.kind+' · '+event.date.toISOString().slice(0,16).replace('T',' ')+' UTC';
+  item.append(name,date);return item;
+ }));
  const inspector=document.getElementById('solar-chart-inspector');
  const inspectionDate=document.getElementById('solar-inspect-date');
  const inspectionDetails=document.getElementById('solar-inspect-details');
@@ -217,7 +225,7 @@ export function drawSolarYear(canvas,{year,lat,lon,selectedDate,onSelect}){
  // Pointermove is suitable for a mouse/pen; touch uses a tap for inspection
  // and never suppresses scrolling, pinching or other application gestures.
  canvas.onpointermove=e=>{if(e.pointerType!=='touch')inspect(indexAt(e))};
- canvas.onpointerleave=()=>inspect(selectedIndex);
+ canvas.onpointerleave=e=>{if(e.pointerType!=='touch')inspect(selectedIndex)};
  canvas.onclick=e=>{
   const i=indexAt(e);
   inspect(i);
