@@ -197,6 +197,7 @@ export function drawSolarYear(canvas,{year,lat,lon,selectedDate,onSelect}){
  const inspectDate=i=>new Date(Date.UTC(year,0,i+1,12));
  const selectedIndex=index;
  function inspect(i){
+  canvas.dataset.inspectIndex=String(i);
   const d=inspectDate(i),day=data[i];
   const previous=i?data[i-1]:dayBands(new Date(Date.UTC(year-1,11,31,12)),lat,lon);
   const gain=Math.round((day.daylight-previous.daylight)*3600);
@@ -228,10 +229,7 @@ export function drawSolarYear(canvas,{year,lat,lon,selectedDate,onSelect}){
   const i=Number(canvas.dataset.inspectIndex||selectedIndex);
   onSelect(new Date(Date.UTC(year,0,i+1,selectedDate.getUTCHours(),selectedDate.getUTCMinutes())));
  };
- // Store the last inspected date so the touch button selects the viewed day.
- const originalInspect=inspect;
- inspect=function(i){canvas.dataset.inspectIndex=String(i);originalInspect(i)};
- const stored=Number(canvas.dataset.inspectIndex);
+  const stored=Number(canvas.dataset.inspectIndex);
  inspect(Number.isInteger(stored)&&stored>=0&&stored<days?stored:selectedIndex);
  return {selected,data,seasons};
 }
