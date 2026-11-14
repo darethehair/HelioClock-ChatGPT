@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import {solarShadowAt,solarShadowTrack} from '../eclipse-earth-shadow.js';
+
+const close=(x,y,tolerance)=>Math.abs(x-y)<tolerance;
+const date=new Date('1979-02-26T16:30:00Z');
+const eclipse=solarShadowAt(date);
+assert.equal(eclipse.active,true,'1979 solar eclipse must be detected');
+assert.ok(eclipse.center,'1979 eclipse central shadow must intersect Earth');
+assert.ok(eclipse.center.every(Number.isFinite),'geographic center must be finite');
+assert.ok(eclipse.center[0]>=-180&&eclipse.center[0]<=180);
+assert.ok(eclipse.center[1]>=-90&&eclipse.center[1]<=90);
+const middle=eclipse.sample(...eclipse.center);
+assert.ok(middle.penumbra>0.8,'central point must lie inside penumbra');
+assert.ok(middle.umbra>0.2,'central point must lie inside umbra/antumbra');
+const track=solarShadowTrack(date,120,12);
+assert.ok(track.length>4,'1979 eclipse has a geographic central track');
+assert.ok(track.every(point=>point.every(Number.isFinite)));
+const ordinary=solarShadowAt(new Date('2026-11-14T12:00:00Z'));
+assert.equal(ordinary.active,false,'ordinary date must not render eclipse');
+assert.equal(ordinary.sample(0,0).penumbra,0);
+console.log('Earth eclipse shadow checks passed',eclipse.center,track.length);
