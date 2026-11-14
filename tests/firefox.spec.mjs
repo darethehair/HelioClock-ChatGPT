@@ -1945,16 +1945,22 @@ test('Fullscreen panel navigation cycles without exiting fullscreen or replacing
  expect(errors).toEqual([]);
 });
 
-test('Fullscreen arrow keys do not steal keyboard input or the Tab key',async({page})=>{
+test('Fullscreen Left/Right override focused time-dock controls without changing time',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await page.locator('[data-fullscreen="chart-panel"]').click();
- await expect.poll(()=>page.evaluate(()=>!!document.fullscreenElement)).toBe(true);
- // Directly dispatch to the real input to check the event's target/path;
- // browser-native date/time subcontrols can move focus into shadow DOM.
- await page.locator('#dock-time').evaluate(el=>{
-  el.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}));
- });
  await expect.poll(()=>page.evaluate(()=>document.fullscreenElement?.classList.contains('chart-panel'))).toBe(true);
+ const before=await page.locator('#dock-scrubber').inputValue();
+ // Real keyboard focus in the persistent time dock must not consume ArrowRight.
+ await page.locator('#dock-scrubber').focus();
+ await page.keyboard.press('ArrowRight');
+ await expect.poll(()=>page.evaluate(()=>document.fullscreenElement?.classList.contains('earth-panel'))).toBe(true);
+ expect(await page.locator('#dock-scrubber').inputValue()).toBe(before);
+ // A focused native time input should likewise yield to panel navigation.
+ await page.locator('#dock-time').focus();
+ await page.keyboard.press('ArrowLeft');
+ await expect.poll(()=>page.evaluate(()=>document.fullscreenElement?.classList.contains('chart-panel'))).toBe(true);
+ expect(await page.locator('#dock-scrubber').inputValue()).toBe(before);
+ // Tab remains a normal focus traversal key, not panel navigation.
  await page.keyboard.press('Tab');
  await expect.poll(()=>page.evaluate(()=>document.fullscreenElement?.classList.contains('chart-panel'))).toBe(true);
  await page.locator('.fullscreen-panel-navigation button[aria-label="Next fullscreen panel"]').click();
