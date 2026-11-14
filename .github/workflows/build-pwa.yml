@@ -24,7 +24,7 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Syntax checks
         run: |
-          for file in astronomy.js app.js solar-chart.js moon-renderer.js sky-atlas.js milky-way.js sky-projection.js ecliptic.js almanac.js eclipse-events.js eclipse-geometry.js solar-eclipse-renderer.js; do
+          for file in astronomy.js app.js solar-chart.js moon-renderer.js sky-atlas.js milky-way.js sky-projection.js ecliptic.js almanac.js eclipse-events.js eclipse-geometry.js eclipse-earth-shadow.js solar-eclipse-renderer.js; do
             node --check "$file"
           done
           node --check sw.js
@@ -34,7 +34,7 @@ jobs:
         run: npx esbuild tests/astronomy.test.mjs --bundle --platform=node --format=esm --outfile=/tmp/helioclock-astronomy-test.mjs && node /tmp/helioclock-astronomy-test.mjs
       - name: Eclipse geometry and event regression checks
         run: |
-          for test in eclipse-events eclipse-geometry; do
+          for test in eclipse-events eclipse-geometry eclipse-earth-shadow; do
             npx esbuild "tests/${test}.test.mjs" --bundle --platform=node --format=esm --outfile="/tmp/helioclock-${test}-test.mjs"
             node "/tmp/helioclock-${test}-test.mjs"
           done
