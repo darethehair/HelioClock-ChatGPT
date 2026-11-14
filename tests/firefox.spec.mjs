@@ -1997,6 +1997,8 @@ test('Daylight year shows exact seasonal dates, daily change and hover inspectio
  await expect(labels).toContainText('December solstice');
  await expect(page.locator('#solar-inspect-gain')).toContainText('daylight');
  const chart=page.locator('#daylight-chart');
+ // The dashboard chart starts below the fold; mouse.move does not scroll.
+ await chart.scrollIntoViewIfNeeded();
  const box=await chart.boundingBox();expect(box).toBeTruthy();
  const initial=await page.locator('#solar-inspect-date').textContent();
  await page.mouse.move(box.x+box.width*.70,box.y+box.height*.50);
