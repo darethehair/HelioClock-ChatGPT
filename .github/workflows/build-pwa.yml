@@ -3,6 +3,8 @@ on:
   push:
     branches: [main, maintenance/v60-code-quality]
   workflow_dispatch:
+  pull_request:
+    branches: [main]
 permissions:
   contents: read
   actions: read
