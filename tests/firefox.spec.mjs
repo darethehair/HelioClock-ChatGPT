@@ -2056,3 +2056,23 @@ test('Simulated eclipse is aligned with Sun pan/zoom without intercepting disc t
  expect(await image.evaluate(el=>el.style.transform)).toEqual(await grid.evaluate(el=>el.style.transform));
  await expect(image).toHaveCSS('pointer-events','none');
 });
+
+test('Lunar eclipse shades the textured Moon and reports actual eclipse phase',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('[data-disc-view="moon"]').click();
+ await page.locator('#observe-date').fill('2025-03-14');
+ await page.locator('#observe-time').fill('06:59');
+ await page.locator('#observe-time').dispatchEvent('change');
+ await expect(page.locator('#lunar-eclipse-status')).toBeVisible();
+ await expect(page.locator('#lunar-eclipse-status')).toContainText('total lunar eclipse');
+ await expect(page.locator('#lunar-eclipse-status')).toContainText('100.0%');
+ await expect(page.locator('#moon')).toBeVisible();
+ await page.locator('#observe-date').fill('2024-03-25');
+ await page.locator('#observe-time').fill('07:12');
+ await page.locator('#observe-time').dispatchEvent('change');
+ await expect(page.locator('#lunar-eclipse-status')).toContainText('penumbral lunar eclipse');
+ await page.locator('#observe-date').fill('2024-04-08');
+ await page.locator('#observe-time').fill('18:40');
+ await page.locator('#observe-time').dispatchEvent('change');
+ await expect(page.locator('#lunar-eclipse-status')).toBeHidden();
+});
