@@ -420,6 +420,15 @@ function drawMoon(){
   return;
  }
  const info=renderMoon($('moon'),state.date,state.lat,state.lon,1,{showEarthshine:$('show-earthshine').checked});
+ const event=info?.eclipse;
+ const lunarStatus=$('lunar-eclipse-status');
+ lunarStatus.hidden=!event||!event.active;
+ if(event?.active){
+  const fraction=(100*event.umbralFraction).toFixed(1);
+  lunarStatus.textContent='Simulated '+event.kind+' lunar eclipse · '+fraction+
+    '% lunar disc in umbra · penumbral shading illustrative · '+
+    state.date.toISOString().slice(0,16).replace('T',' ')+' UTC';
+ }
  const m=moon(state.date,state.lat,state.lon);
  $('moon-zoom-value').textContent=state.moonZoom.toFixed(1)+'×';
  $('moon-progress-fill').style.width=(m.phase*100).toFixed(1)+'%';
