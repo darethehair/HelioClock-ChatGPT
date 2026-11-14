@@ -1055,14 +1055,54 @@ for(const button of document.querySelectorAll('[data-fullscreen]')){
  button.addEventListener('click',async()=>{
   const panel=button.closest('.panel');
   // Firefox may change viewport dimensions upon entering fullscreen.
-  if(document.fullscreenElement!==panel)compactFullscreenAtEntry=window.innerWidth<=1050;
+  if(!document.fullscreenElement)compactFullscreenAtEntry=window.innerWidth<=1050;
   try{
    if(document.fullscreenElement===panel)await document.exitFullscreen();
-   else if(document.fullscreenElement){await document.exitFullscreen();await panel.requestFullscreen()}
    else await panel.requestFullscreen();
   }catch(e){notice('Fullscreen could not be opened: '+e.message)}
  });
 }
+// Cycle actual panels without intercepting their pan and pinch gestures.
+const fullscreenNavigationPanels=[...document.querySelectorAll('.panel')].filter(p=>p.querySelector(':scope > [data-fullscreen]'));
+let fullscreenNavigationBar=null;
+function availableFullscreenPanels(){
+ return fullscreenNavigationPanels.filter(p=>!p.hidden&&!p.closest('[hidden]'));
+}
+async function navigateFullscreenPanel(direction){
+ const active=document.fullscreenElement;
+ if(!active?.classList.contains('panel'))return;
+ const panels=availableFullscreenPanels(),i=panels.indexOf(active);
+ if(i<0||panels.length<2)return;
+ const next=panels[(i+direction+panels.length)%panels.length];
+ try{
+  if(document.activeElement?.closest('.panel')===active)document.activeElement.blur();
+  await next.requestFullscreen();
+ }catch(e){notice('Could not switch fullscreen panel: '+e.message)}
+}
+function syncFullscreenNavigation(){
+ fullscreenNavigationBar?.remove();fullscreenNavigationBar=null;
+ const active=document.fullscreenElement;
+ if(!active?.classList.contains('panel'))return;
+ const panels=availableFullscreenPanels(),i=panels.indexOf(active);
+ if(i<0||panels.length<2)return;
+ const nav=document.createElement('nav');nav.className='fullscreen-panel-navigation';
+ nav.setAttribute('aria-label','Fullscreen panel navigation');
+ const prev=document.createElement('button');prev.type='button';prev.textContent='‹';
+ prev.setAttribute('aria-label','Previous fullscreen panel');prev.title='Previous panel (Left arrow)';
+ const counter=document.createElement('span');counter.textContent=(i+1)+'/'+panels.length;
+ counter.setAttribute('aria-label','Panel '+(i+1)+' of '+panels.length);
+ const next=document.createElement('button');next.type='button';next.textContent='›';
+ next.setAttribute('aria-label','Next fullscreen panel');next.title='Next panel (Right arrow)';
+ prev.addEventListener('click',()=>navigateFullscreenPanel(-1));
+ next.addEventListener('click',()=>navigateFullscreenPanel(1));
+ nav.append(prev,counter,next);active.appendChild(nav);fullscreenNavigationBar=nav;
+}
+document.addEventListener('keydown',e=>{
+ if(!document.fullscreenElement?.classList.contains('panel')||e.defaultPrevented||e.repeat||e.altKey||e.ctrlKey||e.metaKey||e.shiftKey)return;
+ if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight')return;
+ if(e.target?.closest('input,textarea,select,[contenteditable="true"],[role="slider"],[role="spinbutton"],[role="combobox"],[role="listbox"],[role="radio"],[role="tablist"]'))return;
+ e.preventDefault();navigateFullscreenPanel(e.key==='ArrowRight'?1:-1);
+});
 // The browser fullscreen top layer hides siblings of the fullscreen element.
 // Move the SAME dock (not a copy) into the active panel and restore it afterward,
 // retaining all input state and event listeners.
@@ -1155,6 +1195,7 @@ document.addEventListener('fullscreenchange',()=>{
   button.textContent=active?'⤢ Exit':'⛶ Expand';button.setAttribute('aria-pressed',String(active));
  }
  syncMobileFullscreenControls();
+ syncFullscreenNavigation();
  if(!activePanel)compactFullscreenAtEntry=false;
  requestAnimationFrame(render);
 });
