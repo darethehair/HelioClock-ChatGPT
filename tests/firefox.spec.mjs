@@ -1935,7 +1935,7 @@ test('Fullscreen panel navigation cycles without exiting fullscreen or replacing
  await expect.poll(()=>page.evaluate(()=>document.fullscreenElement?.classList.contains('chart-panel'))).toBe(true);
  // Last panel wraps to first, and vice versa.
  await page.keyboard.press('ArrowLeft');
- await expect.poll(()=>page.evaluate(()=>document.fullscreenElement?.classList.contains(panels.at(-1)))).toBe(true);
+ await expect.poll(()=>page.evaluate(last=>document.fullscreenElement?.classList.contains(last),panels.at(-1))).toBe(true);
  await page.keyboard.press('ArrowRight');
  await expect.poll(()=>page.evaluate(()=>document.fullscreenElement?.classList.contains('chart-panel'))).toBe(true);
  await page.keyboard.press('Escape');
