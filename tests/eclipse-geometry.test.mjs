@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {discOverlapFraction,solarEclipseGeometry} from '../eclipse-geometry.js';
+import {discOverlapFraction,solarEclipseGeometry,lunarEclipseGeometry,lunarShadowShading} from '../eclipse-geometry.js';
 
 // Pure circle intersections are the foundation for partial and grazing events.
 assert.equal(discOverlapFraction(1,.8,2),0);
@@ -25,3 +25,24 @@ assert.equal(before.obscuration,0);
 const after=solarEclipseGeometry(new Date('2024-04-10T18:40:00Z'),32.7767,-96.7970);
 assert.equal(after.obscuration,0);
 console.log('Solar eclipse topocentric geometry and grazing discs passed.');
+
+const marchTotal=lunarEclipseGeometry(new Date('2025-03-14T06:59:00Z'));
+assert.equal(marchTotal.kind,'total','2025-03-14 was a total lunar eclipse');
+assert.ok(marchTotal.umbralFraction>.999,'lunar disc fully enters the umbra');
+assert.ok(marchTotal.umbraRadius>2&&marchTotal.umbraRadius<4,'physical umbra size at Moon distance');
+assert.ok(marchTotal.penumbraRadius>marchTotal.umbraRadius);
+assert.ok(Math.hypot(marchTotal.x,marchTotal.y)<marchTotal.umbraRadius);
+const withinUmbra=lunarShadowShading(marchTotal,0,0);
+assert.ok(withinUmbra.umbra===1&&withinUmbra.opacity>.8);
+const outsideShadow=lunarShadowShading(marchTotal,20,20);
+assert.equal(outsideShadow.opacity,0);
+
+const marchPenumbral=lunarEclipseGeometry(new Date('2024-03-25T07:12:00Z'));
+assert.equal(marchPenumbral.kind,'penumbral','2024-03-25 lunar eclipse was penumbral');
+assert.equal(marchPenumbral.umbralFraction,0);
+assert.ok(marchPenumbral.penumbralFraction>0,'penumbral coverage should be measurable');
+const ordinaryMoon=lunarEclipseGeometry(new Date('2024-04-08T18:40:00Z'));
+assert.equal(ordinaryMoon.kind,'none','new moon cannot have lunar eclipse');
+assert.equal(ordinaryMoon.umbralFraction,0);
+assert.equal(lunarShadowShading(ordinaryMoon,0,0).opacity,0);
+console.log('Lunar umbra/penumbra geometry and shading regression cases passed.');
