@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {discOverlapFraction,solarEclipseGeometry,lunarEclipseGeometry,lunarShadowShading} from '../eclipse-geometry.js';
+import {findEclipse} from '../eclipse-events.js';
 
 // Pure circle intersections are the foundation for partial and grazing events.
 assert.equal(discOverlapFraction(1,.8,2),0);
@@ -9,7 +10,8 @@ assert.ok(discOverlapFraction(1,1,1)>0 && discOverlapFraction(1,1,1)<1);
 assert.ok(discOverlapFraction(1,.8,1.799)>0,'tiny grazing overlap');
 assert.ok(discOverlapFraction(1,.8,1.801)===0,'no overlap just outside limb');
 
-const dallas=solarEclipseGeometry(new Date('2024-04-08T18:40:00Z'),32.7767,-96.7970);
+const dallasPeak=findEclipse({category:'solar',scope:'local',date:new Date('2024-01-01T00:00:00Z'),latitude:32.7767,longitude:-96.7970});
+const dallas=solarEclipseGeometry(dallasPeak.peak,32.7767,-96.7970);
 assert.equal(dallas.kind,'total','Dallas was inside the path of totality');
 assert.ok(dallas.obscuration>.99);
 assert.ok(dallas.sunRadius>.25&&dallas.sunRadius<.28);
