@@ -309,8 +309,8 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#sunrise')).not.toHaveText('—');
  // Release identity and provenance are visible even offline.
- await expect(page.locator('#app-version')).toHaveText('v59');
- await expect(page.locator('#dock-version')).toHaveText('v59');
+ await expect(page.locator('#app-version')).toHaveText('v60');
+ await expect(page.locator('#dock-version')).toHaveText('v60');
  await expect(page.locator('.credits-footer')).toContainText('Created by Darethehair with assistance from ChatGPT');
  await expect(page.locator('.credits-footer a')).toHaveAttribute('href','https://github.com/darethehair/HelioClock-ChatGPT');
  await expect(page.locator('#build-meta')).toContainText('commit');
@@ -656,7 +656,7 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
  const errors=[];
  page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v59');
+ await expect(page.locator('#app-version')).toHaveText('v60');
  await expect(page.locator('.almanac-panel')).toBeVisible();
  await page.locator('#layout-sky').click();
  await expect(page.locator('.sky-panel')).toBeVisible();
@@ -965,7 +965,7 @@ test('Version 36 stores, restores, imports, exports and resets preferences',asyn
 test('Version 25 Sun and Moon use the same zoomable pannable fullscreen stage',async({page})=>{
  const errors=[];page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v59');
+ await expect(page.locator('#app-version')).toHaveText('v60');
  await expect(page.locator('#moon')).toBeVisible();
  await expect(page.locator('#solar-photo')).toBeHidden();
  await page.locator('[data-disc-view="sun"]').click();
@@ -1915,4 +1915,48 @@ test('Maintenance mobile contract: Moon and Sun remain aligned at Pixel-size vie
   assertAligned(await sample(selector));
  }
  expect(errors).toEqual([]);
+});
+
+
+test('Fullscreen panel navigation cycles without exiting fullscreen or replacing global time dock',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8765/');
+ const panels=await page.locator('.panel:has(> [data-fullscreen])').evaluateAll(nodes=>nodes.filter(p=>!p.hidden).map(p=>[...p.classList].find(c=>c.endsWith('-panel'))));
+ expect(panels.length).toBeGreaterThanOrEqual(5);
+ await page.locator('[data-fullscreen="chart-panel"]').click();
+ await expect.poll(()=>page.evaluate(()=>document.fullscreenElement?.classList.contains('chart-panel'))).toBe(true);
+ await expect(page.locator('.fullscreen-panel-navigation')).toContainText('1/'+panels.length);
+ const originalDock=await page.locator('#time-dock').evaluate(e=>e.id);
+ expect(originalDock).toBe('time-dock');
+ await page.keyboard.press('ArrowRight');
+ await expect.poll(()=>page.evaluate(()=>document.fullscreenElement?.classList.contains('earth-panel'))).toBe(true);
+ await expect(page.locator('.earth-panel > #time-dock')).toHaveCount(1);
+ await page.locator('.fullscreen-panel-navigation button[aria-label="Previous fullscreen panel"]').click();
+ await expect.poll(()=>page.evaluate(()=>document.fullscreenElement?.classList.contains('chart-panel'))).toBe(true);
+ // Last panel wraps to first, and vice versa.
+ await page.keyboard.press('ArrowLeft');
+ await expect.poll(()=>page.evaluate(last=>document.fullscreenElement?.classList.contains(last),panels.at(-1))).toBe(true);
+ await page.keyboard.press('ArrowRight');
+ await expect.poll(()=>page.evaluate(()=>document.fullscreenElement?.classList.contains('chart-panel'))).toBe(true);
+ await page.keyboard.press('Escape');
+ await expect.poll(()=>page.evaluate(()=>document.fullscreenElement===null)).toBe(true);
+ await expect(page.locator('.fullscreen-panel-navigation')).toHaveCount(0);
+ await expect(page.locator('#time-dock')).toHaveCount(1);
+ expect(errors).toEqual([]);
+});
+
+test('Fullscreen arrow keys do not steal keyboard input or the Tab key',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('[data-fullscreen="chart-panel"]').click();
+ await expect.poll(()=>page.evaluate(()=>!!document.fullscreenElement)).toBe(true);
+ // Directly dispatch to the real input to check the event's target/path;
+ // browser-native date/time subcontrols can move focus into shadow DOM.
+ await page.locator('#dock-time').evaluate(el=>{
+  el.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}));
+ });
+ await expect.poll(()=>page.evaluate(()=>document.fullscreenElement?.classList.contains('chart-panel'))).toBe(true);
+ await page.keyboard.press('Tab');
+ await expect.poll(()=>page.evaluate(()=>document.fullscreenElement?.classList.contains('chart-panel'))).toBe(true);
+ await page.locator('.fullscreen-panel-navigation button[aria-label="Next fullscreen panel"]').click();
+ await expect.poll(()=>page.evaluate(()=>document.fullscreenElement?.classList.contains('earth-panel'))).toBe(true);
 });
