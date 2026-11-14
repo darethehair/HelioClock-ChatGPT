@@ -996,7 +996,7 @@ $('earth-texture-quality').addEventListener('change',e=>{
 });
 for(const id of ['earth-twilight-civil','earth-twilight-nautical','earth-twilight-astronomical','earth-twilight-night'])
  $(id).addEventListener('change',render);
-for(const id of ['earth-city-lights','earth-aurora'])$(id).addEventListener('change',render);
+for(const id of ['earth-city-lights','earth-aurora','earth-eclipse-shadow'])$(id).addEventListener('change',render);
 $('earth-clouds').addEventListener('change',()=>{
  if($('earth-clouds').checked)refreshClouds().catch(()=>{});
  render();
