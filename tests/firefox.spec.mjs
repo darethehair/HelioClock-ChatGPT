@@ -2027,6 +2027,11 @@ test('Simulated eclipse replaces NASA photo only at a topocentric solar eclipse'
  await page.locator('#observe-time').fill('18:40');
  await page.locator('#observe-time').dispatchEvent('change');
  await expect(page.locator('#solar-eclipse')).toBeVisible();
+ const painted=await page.locator('#solar-eclipse').evaluate(canvas=>{
+  const ctx=canvas.getContext('2d'),x=Math.floor(canvas.width/2),y=Math.floor(canvas.height/2);
+  return canvas.width>0&&canvas.height>0&&ctx.getImageData(x,y,1,1).data[3]>0;
+ });
+ expect(painted).toBe(true,'simulated solar eclipse must contain painted pixels');
  await expect(page.locator('#solar-photo')).toBeHidden();
  await expect(page.locator('#solar-eclipse-status')).toContainText('Simulated partial solar eclipse');
  await expect(page.locator('#solar-eclipse-status')).toContainText('obscuration');
