@@ -51,3 +51,73 @@ export function discOverlapFraction(R,r,d){
   -.5*Math.sqrt(Math.max(0,(-d+R+r)*(d+R-r)*(d-R+r)*(d+R+r)));
  return clamp(area/(Math.PI*R*R),0,1);
 }
+
+const EARTH_RADIUS_KM=6378.137;
+const ATMOSPHERIC_UMBRA_FACTOR=1.02;
+const wrapDegrees=x=>((x+180)%360+360)%360-180;
+
+/**
+ * Geocentric Earth shadow at the Moon's distance.
+ *
+ * The umbra and penumbra are intersections of the solar-shadow cones with
+ * the plane perpendicular to the anti-solar axis through the Moon.
+ * The umbra radius includes the customary small atmospheric enlargement
+ * (about 2%); actual eclipse colour depends on variable atmospheric conditions.
+ *
+ * Coordinates x/y are the shadow centre relative to the Moon centre,
+ * positive toward celestial east/north respectively, in units of lunar radii.
+ * The renderer's north-up lunar photograph uses -x and -y before applying
+ * the existing horizon/parallactic rotation.
+ */
+export function lunarEclipseGeometry(date){
+ const eqd=Astronomy.Rotation_EQJ_EQD(date);
+ const moonVector=Astronomy.RotateVector(eqd,Astronomy.GeoMoon(date));
+ const sunVector=Astronomy.RotateVector(eqd,Astronomy.GeoVector(Astronomy.Body.Sun,date,true));
+ const moonEq=Astronomy.EquatorFromVector(moonVector);
+ const sunEq=Astronomy.EquatorFromVector(sunVector);
+ const moonKm=moonEq.dist*AU_KM,sunKm=sunEq.dist*AU_KM;
+ const shadowRA=(sunEq.ra*15+180)%360;
+ const shadowDec=-sunEq.dec;
+ const deltaRA=wrapDegrees(shadowRA-moonEq.ra*15)*RAD;
+ const dMoon=moonEq.dec*RAD,dShadow=shadowDec*RAD;
+ const cosine=clamp(Math.sin(dMoon)*Math.sin(dShadow)+
+  Math.cos(dMoon)*Math.cos(dShadow)*Math.cos(deltaRA),-1,1);
+ const separation=Math.acos(cosine);
+ const tangentUmbra=(SUN_RADIUS_KM-EARTH_RADIUS_KM)/sunKm;
+ const tangentPenumbra=(SUN_RADIUS_KM+EARTH_RADIUS_KM)/sunKm;
+ const umbraKm=Math.max(0,EARTH_RADIUS_KM-moonKm*tangentUmbra)*ATMOSPHERIC_UMBRA_FACTOR;
+ const penumbraKm=EARTH_RADIUS_KM+moonKm*tangentPenumbra;
+ const moonAngularRadius=Math.atan2(MOON_RADIUS_KM,moonKm);
+ const umbraRadius=Math.atan2(umbraKm,moonKm)/moonAngularRadius;
+ const penumbraRadius=Math.atan2(penumbraKm,moonKm)/moonAngularRadius;
+ // Tangent-plane east/north offsets, with the exact spherical separation
+ // determining their radial magnitude (stable even for tiny offsets).
+ const east=Math.atan2(Math.sin(deltaRA)*Math.cos(dShadow),
+  Math.sin(dShadow)*Math.cos(dMoon)-Math.cos(dShadow)*Math.sin(dMoon)*Math.cos(deltaRA));
+ const x=separation*Math.sin(east)/moonAngularRadius;
+ const y=separation*Math.cos(east)/moonAngularRadius;
+ const active=Math.hypot(x,y)<penumbraRadius+1;
+ const umbral=discOverlapFraction(1,umbraRadius,Math.hypot(x,y));
+ const penumbral=discOverlapFraction(1,penumbraRadius,Math.hypot(x,y));
+ const kind=!active?'none':
+  umbral>=.999999?'total':umbral>0?'partial':'penumbral';
+ return {date:new Date(date),kind,active,x,y,umbraRadius,penumbraRadius,
+  umbralFraction:umbral,penumbralFraction:penumbral,
+  moonDistanceKm:moonKm,separationDegrees:separation*DEG,
+  atmosphericUmbraEnlargement:ATMOSPHERIC_UMBRA_FACTOR};
+}
+
+/**
+ * Physical shadow radii above determine location and timing; this intensity
+ * profile is deliberately illustrative, not a prediction of eclipse colour.
+ */
+export function lunarShadowShading(geometry,nx,ny){
+ if(!geometry.active)return {opacity:0,umbra:0};
+ const d=Math.hypot(nx-geometry.x,ny-geometry.y);
+ const u=geometry.umbraRadius,p=geometry.penumbraRadius;
+ if(d>=p)return {opacity:0,umbra:0};
+ if(d<=u)return {opacity:.91,umbra:1};
+ const t=clamp((p-d)/(p-u),0,1);
+ // Smooth across penumbra to avoid an artificial hard black line.
+ return {opacity:.80*t*t*(3-2*t),umbra:0};
+}
