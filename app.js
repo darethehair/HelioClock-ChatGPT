@@ -16,6 +16,7 @@ import {skyPlanets} from './sky-planets.js';
 import {renderEarth,earthTextureStatus} from './earth-renderer.js';
 import {cloudStatus,refreshClouds} from './clouds.js';
 import {findPlanetaryEvent,eventPlanets,eventOptions} from './planetary-events.js';
+import {findEclipse} from './eclipse-events.js';
 import {spaceWeather,auroraFresh,startSpaceWeather,refreshSpaceWeather} from './space-weather.js';
 import {starsAbove} from './sky-catalog.js';
 import {RAD,PI,wrap,clamp,solar,sunHorizontal,sunEvents,moon,orbitPositions,sidereal,equatorialFromHorizontal,utcTime,durationText} from './astronomy.js';
@@ -761,6 +762,111 @@ function showDisc(which){
  if(sun)updateSolarOrientationReadout();
  render();
 }
+// Eclipse Explorer shares the global simulation clock, observer and existing
+// disc viewer. It never uses the present-day clock for past/future searches.
+let selectedEclipseEvent=null;
+const eclipseUTC=d=>d.toISOString().slice(0,16).replace('T',' ')+' UTC';
+function updateEclipseFilters(){
+ const lunar=$('eclipse-category').value==='lunar';
+ const filter=$('eclipse-filter'),old=filter.value;
+ const choices=lunar?[
+  ['any','Any, including penumbral'],['umbral','Partial umbral or total'],['total','Total only']
+ ]:[
+  ['any','Any, including grazing partials'],['partial','Partial only'],['central','Annular or total']
+ ];
+ filter.replaceChildren(...choices.map(([value,label])=>new Option(label,value)));
+ if(choices.some(([value])=>value===old))filter.value=old;
+ $('eclipse-scope').options[0].textContent=lunar?'Moon above horizon at maximum':'Visible from observer';
+ selectedEclipseEvent=null;
+ $('eclipse-contacts').hidden=true;
+ $('eclipse-event-status').textContent='Choose Previous or Next to explore an eclipse.';
+}
+function setSimulationInstant(date){
+ pausePlayback();state.date=new Date(date);state.live=false;
+ setDateInputs();render();
+}
+function eclipseContactPoints(event){
+ if(event.category==='solar'){
+  if(!event.contacts)return [['Maximum (global)',event.peak]];
+  return [
+   ['First contact',event.contacts.partialBegin],
+   ['Central begins',event.contacts.centralBegin],
+   ['Maximum',event.peak],
+   ['Central ends',event.contacts.centralEnd],
+   ['Last contact',event.contacts.partialEnd]
+  ].filter(([,date])=>date instanceof Date && Number.isFinite(date.getTime()));
+ }
+ const phases=event.phases;
+ return [
+  ['Penumbral begins',phases.penumbral?.begin],
+  ['Umbral begins',phases.umbral?.begin],
+  ['Totality begins',phases.total?.begin],
+  ['Maximum',event.peak],
+  ['Totality ends',phases.total?.end],
+  ['Umbral ends',phases.umbral?.end],
+  ['Penumbral ends',phases.penumbral?.end]
+ ].filter(([,date])=>date instanceof Date && Number.isFinite(date.getTime()));
+}
+function showEclipseResult(event){
+ selectedEclipseEvent=event;
+ const scope=event.category==='solar'?(event.scope==='local'?'At observer':'Global'):(
+  event.visibleAtPeak?'Moon above horizon at maximum':'Moon below horizon at maximum');
+ const percent=event.obscuration==null?'':(' · '+(100*event.obscuration).toFixed(1)+'% obscuration');
+ const warning=event.scope==='global'&&event.category==='solar'?
+  ' · Global maximum does not imply an eclipse at the observer.':
+  event.category==='solar'&&!event.visibleAtPeak?' · Sun below horizon at maximum.':'';
+ $('eclipse-event-status').textContent=event.kind[0].toUpperCase()+event.kind.slice(1)+' '+event.category+
+  ' eclipse · '+eclipseUTC(event.peak)+' · '+scope+percent+warning;
+ const buttons=eclipseContactPoints(event).map(([title,date])=>{
+  const button=document.createElement('button');
+  button.type='button';button.textContent=title;
+  button.title=eclipseUTC(date);
+  button.addEventListener('click',()=>setSimulationInstant(date));
+  return button;
+ });
+ $('eclipse-contacts').replaceChildren(...buttons);
+ $('eclipse-contacts').hidden=false;
+ // A global search selects a global instant, not a fabricated local eclipse.
+ showDisc(event.category==='solar'?'sun':'moon');
+ setSimulationInstant(event.peak);
+}
+function navigateEclipse(direction){
+ const status=$('eclipse-event-status');
+ const category=$('eclipse-category').value,scope=$('eclipse-scope').value;
+ const filter=$('eclipse-filter').value;
+ $('eclipse-previous').disabled=true;$('eclipse-next').disabled=true;
+ status.textContent='Searching '+(direction<0?'previous':'next')+' '+category+' eclipse…';
+ // Yield a frame to paint feedback before the synchronous ephemeris search.
+ setTimeout(()=>{
+  try{
+   const event=findEclipse({
+    category,scope,date:state.date,direction,
+    latitude:state.lat,longitude:state.lon,filter,
+    requireAboveHorizon:scope==='local'&&category==='lunar'
+   });
+   if(event)showEclipseResult(event);
+   else {
+    selectedEclipseEvent=null;
+    $('eclipse-contacts').hidden=true;
+    status.textContent='No matching eclipse found within the search limits. Try a broader filter.';
+   }
+  }catch(error){status.textContent='Eclipse search failed: '+String(error?.message||error)}
+  finally{$('eclipse-previous').disabled=false;$('eclipse-next').disabled=false}
+ },0);
+}
+$('eclipse-category').addEventListener('change',updateEclipseFilters);
+$('eclipse-scope').addEventListener('change',()=>{
+ selectedEclipseEvent=null;$('eclipse-contacts').hidden=true;
+ $('eclipse-event-status').textContent='Choose Previous or Next to explore an eclipse.';
+});
+$('eclipse-filter').addEventListener('change',()=>{
+ selectedEclipseEvent=null;$('eclipse-contacts').hidden=true;
+ $('eclipse-event-status').textContent='Choose Previous or Next to explore an eclipse.';
+});
+$('eclipse-previous').addEventListener('click',()=>navigateEclipse(-1));
+$('eclipse-next').addEventListener('click',()=>navigateEclipse(1));
+updateEclipseFilters();
+
 function refreshSolarImage(){
  const stamp=Date.now();solarRequest++;
  $('solar-status').textContent='Loading latest NASA image…';
@@ -1164,7 +1270,7 @@ const compactControlSelectors={
  'chart-panel':['.solar-chart-legend','.solar-chart-summary','.solar-time-position','.chart-footer'],
  'earth-panel':['.earth-tools','.earth-twilight-controls','.earth-overlay-tools','.map-legend'],
  'sky-panel':['.sky-light-controls','.sky-observatory-toolbar','.sky-sidereal-toolbar','.sky-debug-tools','.sky-options','.sky-cursor-readout','.celestial-readout','.sky-legend'],
- 'moon-panel':['.disc-view-select','.earthshine-toggle','.moon-view-tools','.moon-orientation','.solar-observation-note','.moon-bottom'],
+ 'moon-panel':['.eclipse-explorer','.disc-view-select','.earthshine-toggle','.moon-view-tools','.moon-orientation','.solar-observation-note','.moon-bottom'],
  'orrery-panel':['.orrery-controls','.orrery-events','.planet-legend']
 };
 let mobileFullscreenRestore=[],mobileFullscreenPanel=null,mobileDrawer=null;
