@@ -248,6 +248,8 @@ jobs:
       - name: Install Firefox for browser checks
         timeout-minutes: 5
         run: npx playwright install firefox
+      - name: Smoke-test fullscreen navigation in Firefox
+        run: npx playwright test --grep 'Fullscreen panel navigation|Fullscreen arrow keys'
       - name: Exercise browser controls in Firefox
         run: npm run test:browser
       - name: Install Chromium for Pixel mobile checks
