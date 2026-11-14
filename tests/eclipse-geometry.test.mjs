@@ -3,7 +3,7 @@ import {discOverlapFraction,solarEclipseGeometry} from '../eclipse-geometry.js';
 
 // Pure circle intersections are the foundation for partial and grazing events.
 assert.equal(discOverlapFraction(1,.8,2),0);
-assert.equal(discOverlapFraction(1,.8,0),.64);
+assert.ok(Math.abs(discOverlapFraction(1,.8,0)-.64)<1e-12);
 assert.equal(discOverlapFraction(1,1,0),1);
 assert.ok(discOverlapFraction(1,1,1)>0 && discOverlapFraction(1,1,1)<1);
 assert.ok(discOverlapFraction(1,.8,1.799)>0,'tiny grazing overlap');
