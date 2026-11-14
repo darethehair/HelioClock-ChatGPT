@@ -1966,3 +1966,23 @@ test('Fullscreen Left/Right override focused time-dock controls without changing
  await page.locator('.fullscreen-panel-navigation button[aria-label="Next fullscreen panel"]').click();
  await expect.poll(()=>page.evaluate(()=>document.fullscreenElement?.classList.contains('earth-panel'))).toBe(true);
 });
+
+test('24-hour time fields reject AM/PM and preserve simulation time for invalid values',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ const utc=page.locator('#observe-time'),local=page.locator('#dock-time');
+ await expect(utc).toHaveAttribute('type','text');
+ await expect(local).toHaveAttribute('type','text');
+ await expect(utc).toHaveAttribute('inputmode','numeric');
+ await expect(local).toHaveAttribute('inputmode','numeric');
+ await utc.fill('23:45');await utc.dispatchEvent('change');
+ await expect(utc).toHaveValue('23:45');
+ await local.fill('18:15');await local.dispatchEvent('change');
+ await expect(local).toHaveValue('18:15');
+ const before=await page.locator('#dock-scrubber').inputValue();
+ await local.fill('6:15 PM');await local.dispatchEvent('change');
+ await expect(page.locator('#dock-scrubber')).toHaveValue(before);
+ await expect(local).toHaveValue('18:15');
+ await utc.fill('25:99');await utc.dispatchEvent('change');
+ await expect(utc).not.toHaveValue('25:99');
+ expect(await page.locator('#dock-local-time').textContent()).not.toMatch(/\\b(?:AM|PM)\\b/i);
+});
