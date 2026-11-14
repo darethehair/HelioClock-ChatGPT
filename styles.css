@@ -601,3 +601,19 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
  flex:0 0 auto;margin:4px 0 0;padding:5px 8px;gap:2px;
  max-height:100px;overflow:auto
 }
+
+/* Simulated eclipse uses a separate canvas aligned exactly with the Sun photo.
+   Never composite a historical eclipse onto a latest-observation NASA image. */
+.moon-panel .moon-stage #solar-eclipse,
+.moon-panel:fullscreen .moon-stage #solar-eclipse{
+ position:absolute;left:0;top:0;width:100%!important;height:100%!important;
+ max-height:none!important;object-fit:fill;pointer-events:none;z-index:2;
+ transform-origin:50% 50%;
+}
+.moon-panel .moon-stage #solar-eclipse[hidden],
+.moon-panel .moon-stage #solar-photo[hidden],
+.moon-panel .moon-stage #moon[hidden],
+.solar-eclipse-status[hidden]{display:none!important}
+.solar-eclipse-status{font-size:11px;color:#ffe0a2;padding:6px 8px;
+ background:#162c40;border:1px solid #81653d;border-radius:6px;
+ line-height:1.5;margin-top:8px}
