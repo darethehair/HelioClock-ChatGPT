@@ -2151,17 +2151,21 @@ test('1979 eclipse casts a visible Earth shadow in all map projections',async({p
   expect(probe?.active,projection).toBe(true);
   expect(probe?.center,projection).toBeTruthy();
   expect(probe?.centerSample?.penumbra,projection).toBeGreaterThan(.8);
-  // Prove that the overlay changes actual canvas pixels at the projected centre.
+  // Sample a neighbourhood, not one pixel: the observer's white location
+  // marker can exactly overlap the shadow centre and mask the test pixel.
   const at=()=>page.locator('#earth-map').evaluate((el,screen)=>{
    const [x,y]=screen;
-   const cx=Math.max(0,Math.min(el.width-1,Math.round(x)));
-   const cy=Math.max(0,Math.min(el.height-1,Math.round(y)));
-   return Array.from(el.getContext('2d').getImageData(cx,cy,1,1).data);
+   const ratio=el.width/el.getBoundingClientRect().width;
+   const cx=Math.round(x*ratio),cy=Math.round(y*ratio);
+   const left=Math.max(0,cx-55),top=Math.max(0,cy-55);
+   const w=Math.min(111,el.width-left),h=Math.min(111,el.height-top);
+   return Array.from(el.getContext('2d').getImageData(left,top,w,h).data);
   },probe.screen);
   const withShadow=await at();
   await page.locator('#earth-eclipse-shadow').uncheck();
   const withoutShadow=await at();
-  expect(withShadow.slice(0,3),projection+' center pixel').not.toEqual(withoutShadow.slice(0,3));
+  const changed=withShadow.reduce((n,v,i)=>n+(i%4!==3&&Math.abs(v-withoutShadow[i])>10?1:0),0);
+  expect(changed,projection+' shadow pixel difference').toBeGreaterThan(25);
   await page.locator('#earth-eclipse-shadow').check();
   expect(probe.center[0],projection).toBeGreaterThan(-125);
   expect(probe.center[0],projection).toBeLessThan(-80);
