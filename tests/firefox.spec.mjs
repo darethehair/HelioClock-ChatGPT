@@ -2286,3 +2286,19 @@ test('v73 sky advanced layers and diagnostics are accessible without occupying d
  await sky.locator('.sky-debug-tools summary').click();
  await expect(sky.locator('#mw-copy-debug')).toBeVisible();
 });
+
+test('v74 3D orrery preserves top-down default and offers independent perspective controls',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ const toggle=page.locator('#orrery-3d');
+ await expect(toggle).not.toBeChecked();
+ await expect(page.locator('.orrery-3d-setting:visible')).toHaveCount(0);
+ await toggle.check();
+ await expect(page.locator('.orrery-3d-setting:visible')).toHaveCount(2);
+ await page.locator('#orrery-tilt').fill('70');
+ await page.locator('#orrery-rotation').fill('45');
+ await expect(page.locator('#orrery-tilt')).toHaveValue('70');
+ await expect(page.locator('#orrery-rotation')).toHaveValue('45');
+ await expect(page.locator('#au-scale-description')).toContainText('ecliptic perspective');
+ await toggle.uncheck();
+ await expect(page.locator('.orrery-3d-setting:visible')).toHaveCount(0);
+});
