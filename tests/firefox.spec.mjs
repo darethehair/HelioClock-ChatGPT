@@ -309,8 +309,8 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#sunrise')).not.toHaveText('—');
  // Release identity and provenance are visible even offline.
- await expect(page.locator('#app-version')).toHaveText('v72');
- await expect(page.locator('#dock-version')).toHaveText('v72');
+ await expect(page.locator('#app-version')).toHaveText('v73');
+ await expect(page.locator('#dock-version')).toHaveText('v73');
  await expect(page.locator('.credits-footer')).toContainText('Created by Darethehair with assistance from ChatGPT');
  await expect(page.locator('.credits-footer a')).toHaveAttribute('href','https://github.com/darethehair/HelioClock-ChatGPT');
  await expect(page.locator('#build-meta')).toContainText('commit');
@@ -656,7 +656,7 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
  const errors=[];
  page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v72');
+ await expect(page.locator('#app-version')).toHaveText('v73');
  await expect(page.locator('.almanac-panel')).toBeVisible();
  await page.locator('#layout-sky').click();
  await expect(page.locator('.sky-panel')).toBeVisible();
@@ -965,7 +965,7 @@ test('Version 36 stores, restores, imports, exports and resets preferences',asyn
 test('Version 25 Sun and Moon use the same zoomable pannable fullscreen stage',async({page})=>{
  const errors=[];page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v72');
+ await expect(page.locator('#app-version')).toHaveText('v73');
  await expect(page.locator('#moon')).toBeVisible();
  await expect(page.locator('#solar-photo')).toBeHidden();
  await page.locator('[data-disc-view="sun"]').click();
@@ -2261,4 +2261,19 @@ test('v72 administrative borders remain while region labels are suppressed',asyn
   expect(probe.regionLines,projection+' regional boundaries').toBeGreaterThan(500);
   expect(probe.cities.length,projection+' city labels').toBeGreaterThan(0);
  }
+});
+
+test('v73 sky advanced layers and diagnostics are accessible without occupying default toolbar',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ const sky=page.locator('.sky-panel');
+ const advanced=sky.locator('.sky-extra-controls');
+ await expect(advanced).toHaveCount(2);
+ await expect(sky.locator('.sky-debug-tools')).not.toHaveAttribute('open','');
+ await expect(sky.locator('#mw-copy-debug')).not.toBeVisible();
+ await advanced.first().locator('summary').click();
+ await expect(sky.locator('#show-constellations')).toBeVisible();
+ await advanced.last().locator('summary').click();
+ await expect(sky.locator('#show-dso-galaxies')).toBeVisible();
+ await sky.locator('.sky-debug-tools summary').click();
+ await expect(sky.locator('#mw-copy-debug')).toBeVisible();
 });
