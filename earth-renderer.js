@@ -5,7 +5,7 @@ import {RAD,wrap,solar,clamp} from './astronomy.js';
 import {cloudOpacityAt} from './clouds.js';
 import {solarShadowAt,solarShadowTrack,solarCentralFootprint} from './eclipse-earth-shadow.js';
 import {admin1Lines} from './earth-admin1-data.js';
-import {regions,countries} from './earth-gazetteer.js';
+import {countries} from './earth-gazetteer.js';
 import {extendedCities} from './earth-cities-data.js';
 import {nearestCatalogSettlement} from './earth-nearest-settlement.js';
 
@@ -376,7 +376,7 @@ export function renderEarth(context,width,height,date,state){
    const [x,y]=screen;
    if(x<12||x>width-12||y<12||y>height-12)return;
    const city=kind==='city';
-   const fontSize=city?(earthZoom>=3?10.5:9.5):kind==='region'?9.5:10.5;
+   const fontSize=city?(earthZoom>=3?10.5:9.5):10.5;
    context.font=(kind==='country'?'600 ':'400 ')+fontSize+'px sans-serif';
    const textWidth=context.measureText(text).width;
    const tx=city?x+8:x-textWidth/2,ty=city?y-7:y+4;
@@ -394,12 +394,9 @@ export function renderEarth(context,width,height,date,state){
    context.strokeText(text,tx,ty);context.fillText(text,tx,ty);
    context.restore();renderedNames.add(nameKey);if(city)renderedCities.push(text);labelCount++;
   };
-  // Country/region names are at deliberately sparse anchor points and
-  // city ranks are filtered by zoom, with nearby local cities prioritized.
+  // Show country labels at wide zoom and city names at closer zoom.
+  // Administrative subdivisions retain borders, never text labels.
   if(earthZoom<2.2)for(const [name,longitude,latitude] of countries)candidate(name,longitude,latitude,'country');
-  if(showRegions&&earthZoom>=1.65)for(const [name,longitude,latitude,rank] of regions){
-   if(rank<=2||earthZoom>=2.7)candidate(name,longitude,latitude,'region');
-  }
   if(showCities){
    // Progressively reveal more settlements. At broad zoom show world
    // cities; around continents include state capitals and regional centers;
