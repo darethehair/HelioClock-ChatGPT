@@ -487,7 +487,29 @@ function orrery(){
  };
  // Orbit guides use each body's instantaneous heliocentric radius, as before;
  // actual planetary markers use their measured ecliptic heights.
- planets.forEach(p=>ring(p.radius,'#40526b70'));
+ // Sample each planet's actual inclined heliocentric path over one sidereal period.
+ // Cache samples by date bucket so camera movement only projects existing geometry.
+ const periods={Mercury:87.97,Venus:224.7,Earth:365.256,Mars:686.98,Jupiter:4332.59,Saturn:10759.2,Uranus:30688.5,Neptune:60182};
+ const orbitCache=orrery.orbitCache||(orrery.orbitCache=new Map());
+ for(const p of planets){
+  const period=periods[p.name],bucket=Math.floor(state.date.getTime()/86400000/period);
+  const key=p.name+':'+bucket;
+  let path=orbitCache.get(key);
+  if(!path){
+   const center=state.date.getTime();
+   path=[];
+   for(let i=0;i<=96;i++){
+    const t=new Date(center+(i/96-.5)*period*86400000);
+    const sample=orbitPositions(t).find(body=>body.name===p.name);
+    path.push([sample.radius*Math.sin(sample.angle*RAD),sample.radius*Math.cos(sample.angle*RAD),sample.eclipticZ]);
+   }
+   orbitCache.set(key,path);
+   if(orbitCache.size>32)orbitCache.delete(orbitCache.keys().next().value);
+  }
+  c.save();c.strokeStyle='#40526b90';c.lineWidth=.8;c.beginPath();
+  path.forEach(([x,y,z],i)=>{const [sx,sy]=project(x,y,threeD?z:0);if(!i)c.moveTo(sx,sy);else c.lineTo(sx,sy)});
+  c.stroke();c.restore();
+ }
  if($('show-au-rings').checked){
   const values=outer?[5,10,15,20,25,30]:[.25,.5,.75,1,1.25,1.5];
   for(const au of values){
@@ -1231,7 +1253,7 @@ dragCanvas('orrery',(dx,dy,el)=>{
  // A full-width horizontal drag rotates 360 degrees; a full-height
  // vertical drag changes the camera elevation by 90 degrees.
  state.orreryRotation=((state.orreryRotation+dx/el.clientWidth*360+180)%360+360)%360-180;
- state.orreryTilt=clamp(state.orreryTilt+dy/el.clientHeight*90,0,80);
+ state.orreryTilt=clamp(state.orreryTilt+dy/el.clientHeight*180,-90,90);
  $('orrery-rotation').value=state.orreryRotation;
  $('orrery-tilt').value=state.orreryTilt;
 });
