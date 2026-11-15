@@ -2302,3 +2302,23 @@ test('v74 3D orrery preserves top-down default and offers independent perspectiv
  await toggle.uncheck();
  await expect(page.locator('.orrery-3d-setting:visible')).toHaveCount(0);
 });
+
+test('v77 3D orrery responds to direct pointer dragging and preserves pinch controls',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('#orrery-3d').check();
+ const canvas=page.locator('#orrery');
+ await canvas.scrollIntoViewIfNeeded();
+ const box=await canvas.boundingBox();
+ const x=box.x+box.width/2,y=box.y+box.height/2;
+ await page.mouse.move(x,y);
+ await page.mouse.down();
+ await page.mouse.move(x+box.width*.18,y+box.height*.12,{steps:6});
+ await page.mouse.up();
+ const rotation=Number(await page.locator('#orrery-rotation').inputValue());
+ const tilt=Number(await page.locator('#orrery-tilt').inputValue());
+ expect(Math.abs(rotation)).toBeGreaterThan(10);
+ expect(tilt).toBeGreaterThan(55);
+ await page.locator('#orrery-reset').click();
+ await expect(page.locator('#orrery-rotation')).toHaveValue('0');
+ await expect(page.locator('#orrery-tilt')).toHaveValue('55');
+});
