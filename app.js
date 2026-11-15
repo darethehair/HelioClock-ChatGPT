@@ -123,6 +123,7 @@ function worldMap(){
   :highStatus.status==='ready'?'2K image · 2048 × 1024 · offline':
     highStatus.status==='failed'?'2K image unavailable':'Loading 2K image…';
  $('earth-map').dataset.projectionProbe=JSON.stringify(result.projectionProbe);
+ $('earth-map').dataset.nearestSettlement=JSON.stringify({settlement:result.nearestSettlement,labelVisible:result.observerPlaceLabelVisible});
  $('earth-map').dataset.politicalProbe=JSON.stringify({style:result.mapStyle,labels:result.politicalLabels,cities:result.politicalCityLabels,catalogCount:result.cityCatalogCount,eligibleCount:result.cityEligibleCount,regionLines:result.adminBoundaryCount});
  $('earth-map').dataset.eclipseProbe=JSON.stringify({active:result.eclipseShadowActive,center:result.eclipseShadowCenter,angle:result.eclipseMoonSunAngle,centerSample:result.eclipseCenterSample,screen:result.eclipseCenterScreen,footprintType:result.eclipseFootprintType,footprint:result.eclipseFootprint,observer:result.eclipseObserverSample});
  const eclipseStatus=$('earth-eclipse-status');

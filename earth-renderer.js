@@ -7,6 +7,7 @@ import {solarShadowAt,solarShadowTrack,solarCentralFootprint} from './eclipse-ea
 import {admin1Lines} from './earth-admin1-data.js';
 import {regions,countries} from './earth-gazetteer.js';
 import {extendedCities} from './earth-cities-data.js';
+import {nearestCatalogSettlement} from './earth-nearest-settlement.js';
 
 const land=feature(atlas,atlas.objects.land);
 const borders=mesh(atlas,atlas.objects.countries,(a,b)=>a!==b);
@@ -332,8 +333,34 @@ export function renderEarth(context,width,height,date,state){
  // Collision rejection avoids unreadable stacks of names when zoomed out.
  let labelCount=0;
  const renderedCities=[];
+ const occupied=[];
+ const nearestSettlement=nearestCatalogSettlement(lon,lat);
+ const observerVisible=isVisible([lon,lat]);
+ const observerPosition=observerVisible?map([lon,lat]):null;
+ let observerPlaceLabelVisible=false;
+ if(observerPosition&&nearestSettlement&&Number.isFinite(observerPosition[0])&&Number.isFinite(observerPosition[1])){
+  // Label the selected observer position, not the fixed city coordinate.
+  // Draw before the normal map labels and reserve its screen-space rectangle.
+  const [x,y]=observerPosition;
+  const km=nearestSettlement.distanceKm;
+  const distance=km<10?km.toFixed(1):Math.round(km).toLocaleString('en-US');
+  const label=nearestSettlement.name+' · '+distance+' km (listed)';
+  context.save();context.font='500 10px sans-serif';
+  const labelWidth=context.measureText(label).width+12,boxHeight=20;
+  // Use the side that fits, then move above/below if near a map edge.
+  const lx=x+14+labelWidth<=width-5?x+14:x-14-labelWidth;
+  const ly=y-29>=5?y-29:y+14;
+  if(lx>=5&&lx+labelWidth<=width-5&&ly>=5&&ly+boxHeight<=height-5){
+   const rect=[lx,ly,lx+labelWidth,ly+boxHeight];
+   occupied.push(rect);
+   context.fillStyle='#071629cc';context.strokeStyle='#c6d6e8a8';context.lineWidth=.7;
+   context.beginPath();context.roundRect(lx,ly,labelWidth,boxHeight,4);context.fill();context.stroke();
+   context.fillStyle='#f0f2e5';context.textBaseline='middle';context.fillText(label,lx+6,ly+boxHeight/2+.2);
+   observerPlaceLabelVisible=true;
+  }
+  context.restore();
+ }
  if(political){
-  const occupied=[];
   const renderedNames=new Set();
   const nearSide=point=>!globe||geoDistance(point,[earthLon,earthLat])<Math.PI/2-.005;
   const candidate=(text,longitude,latitude,kind)=>{
@@ -400,7 +427,7 @@ export function renderEarth(context,width,height,date,state){
    for(const {row:[name,longitude,latitude]} of visible)candidate(name,longitude,latitude,'city');
   }
  }
- const user=isVisible([lon,lat])?map([lon,lat]):null;
+ const user=observerPosition;
  if(user){
   context.save();context.shadowColor='#fff9e3';context.shadowBlur=12;
   context.fillStyle='#fff7d8';context.beginPath();context.arc(user[0],user[1],4,0,Math.PI*2);context.fill();context.restore();
@@ -412,7 +439,7 @@ export function renderEarth(context,width,height,date,state){
  const observerScreen=map([lon,lat]);
  const eastScreen=map([lon+5,lat]);
  const northScreen=map([lon,Math.min(lat+5,89)]);
- return {politicalLabels:labelCount,politicalCityLabels:renderedCities,cityCatalogCount:extendedCities.length,cityEligibleCount:extendedCities.filter(row=>row[3]<=(earthZoom>=2.55?3:earthZoom>=1.4?2:1)).length,mapStyle,adminBoundaryCount:political&&showRegions&&earthZoom>=1.25?admin1Lines.length:0,sunLon,sunDecl:d.decl,nadirLon,nadirLat,eclipseShadowActive:!!shadow?.active,eclipseShadowCenter:shadow?.center||null,eclipseMoonSunAngle:shadow?.moonSunAngle??null,eclipseCenterSample:shadow?.center?shadow.sample(...shadow.center):null,eclipseFootprintType:eclipseFootprint?.type||null,eclipseFootprint:eclipseFootprint?.coordinates||null,eclipseObserverSample:shadow?shadow.sample(lon,lat):null,eclipseCenterScreen:shadow?.center?map(shadow.center):null,
+ return {nearestSettlement,observerPlaceLabelVisible,politicalLabels:labelCount,politicalCityLabels:renderedCities,cityCatalogCount:extendedCities.length,cityEligibleCount:extendedCities.filter(row=>row[3]<=(earthZoom>=2.55?3:earthZoom>=1.4?2:1)).length,mapStyle,adminBoundaryCount:political&&showRegions&&earthZoom>=1.25?admin1Lines.length:0,sunLon,sunDecl:d.decl,nadirLon,nadirLat,eclipseShadowActive:!!shadow?.active,eclipseShadowCenter:shadow?.center||null,eclipseMoonSunAngle:shadow?.moonSunAngle??null,eclipseCenterSample:shadow?.center?shadow.sample(...shadow.center):null,eclipseFootprintType:eclipseFootprint?.type||null,eclipseFootprint:eclipseFootprint?.coordinates||null,eclipseObserverSample:shadow?shadow.sample(lon,lat):null,eclipseCenterScreen:shadow?.center?map(shadow.center):null,
   textureStatus:earthTextureStatus(earthTextureQuality).status,
   projectionProbe:{projection:earthProjection,observer:observerScreen,
    east:eastScreen,north:northScreen,viewCenter:[width/2,height/2],
