@@ -331,10 +331,10 @@ export function renderEarth(context,width,height,date,state){
  // clipped to the front hemisphere and inside the map's canvas area.
  // Collision rejection avoids unreadable stacks of names when zoomed out.
  let labelCount=0;
+ const renderedCities=[];
  if(political){
   const occupied=[];
   const renderedNames=new Set();
-  const renderedCities=[];
   const nearSide=point=>!globe||geoDistance(point,[earthLon,earthLat])<Math.PI/2-.005;
   const candidate=(text,longitude,latitude,kind)=>{
    // A label must appear at most once even if its source has multiple anchors.
