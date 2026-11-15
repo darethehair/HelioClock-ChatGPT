@@ -1118,7 +1118,7 @@ $('earth-reset').addEventListener('click',()=>{
 });
 reset('orrery-reset',{orreryZoom:1});
 function wheelZoom(canvasId,controlId,key,lo,hi){
- $(canvasId).addEventListener('wheel',e=>{e.preventDefault();state[key]=clamp(state[key]*(e.deltaY>0?.88:1.14),lo,hi);$(controlId).value=state[key];render()},{passive:false});
+ $(canvasId).addEventListener('wheel',e=>{e.preventDefault();state[key]=clamp(state[key]*(e.deltaY>0?.88:1.14),lo,hi);$(controlId).value=state[key];if(canvasId==='orrery')orrery();else render()},{passive:false});
 }
 // In polar azimuthal projection, changing zoom scales every point's
 // displacement from the chart centre. Correct the pan to keep the chosen
@@ -1186,7 +1186,7 @@ function dragCanvas(id,onMove){
      $('earth-zoom').value=state.earthZoom;render();
     }else{
      state.orreryZoom=clamp(Math.round(state.orreryZoom*ratio*100)/100,.7,3);
-     $('orrery-zoom').value=state.orreryZoom;render();
+     $('orrery-zoom').value=state.orreryZoom;orrery();
     }
    }
    pinchDistance=d;return;
