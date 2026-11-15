@@ -92,7 +92,8 @@ function worldMap(){
   cityLights:$('earth-city-lights').checked,showAurora:$('earth-aurora').checked&&auroraFresh(),
   auroraGrid:weather.grid,
   showClouds:$('earth-clouds').checked&&cloudStatus().status==='ready',
-  cloudOpacity:Number($('earth-cloud-opacity').value)/100});
+  cloudOpacity:Number($('earth-cloud-opacity').value)/100,
+  showEclipseShadow:$('earth-eclipse-shadow').checked});
  const cloud=cloudStatus(),cloudEnabled=$('earth-clouds').checked;
  $('earth-cloud-status').textContent=!cloudEnabled
   ?'Clouds off · NASA daily true-colour imagery (approximate)'
@@ -616,7 +617,7 @@ function shiftTime(minutes){
  state.date=new Date(state.date.getTime()+minutes*60000);state.live=false;setDateInputs();render();
 }
 function pausePlayback(){state.playing=false;$('play-time').textContent='▶ Play'}
-for(const [id,minutes] of [['step-back-day',-1440],['step-back-hour',-60],['step-forward-hour',60],['step-forward-day',1440]]){
+for(const [id,minutes] of [['step-back-day',-1440],['step-back-hour',-60],['step-back-minute',-1],['step-forward-minute',1],['step-forward-hour',60],['step-forward-day',1440]]){
  $(id).addEventListener('click',()=>{pausePlayback();shiftTime(minutes)});
 }
 $('time-scrubber').addEventListener('input',e=>{
@@ -995,7 +996,7 @@ $('earth-texture-quality').addEventListener('change',e=>{
 });
 for(const id of ['earth-twilight-civil','earth-twilight-nautical','earth-twilight-astronomical','earth-twilight-night'])
  $(id).addEventListener('change',render);
-for(const id of ['earth-city-lights','earth-aurora'])$(id).addEventListener('change',render);
+for(const id of ['earth-city-lights','earth-aurora','earth-eclipse-shadow'])$(id).addEventListener('change',render);
 $('earth-clouds').addEventListener('change',()=>{
  if($('earth-clouds').checked)refreshClouds().catch(()=>{});
  render();
@@ -1202,7 +1203,7 @@ dragCanvas('earth-map',(dx,dy,el)=>{
   :clamp(state.earthLat+delta,state.lat-75,state.lat+75);
 });
 
-for(const [id,minutes] of [['dock-prev-day',-1440],['dock-prev-hour',-60],['dock-next-hour',60],['dock-next-day',1440]]){
+for(const [id,minutes] of [['dock-prev-day',-1440],['dock-prev-hour',-60],['dock-prev-minute',-1],['dock-next-minute',1],['dock-next-hour',60],['dock-next-day',1440]]){
  $(id).addEventListener('click',()=>{pausePlayback();shiftTime(minutes)});
 }
 $('dock-date').addEventListener('change',selectDockLocal);
