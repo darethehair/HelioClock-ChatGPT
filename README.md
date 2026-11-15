@@ -101,6 +101,7 @@ Upstream scientific datasets and libraries retain their own license and attribut
 
 | Release | Highlights |
 | --- | --- |
+| **v72** | Remove inconsistent state/province text labels while preserving their boundary lines; country names remain for broad orientation and city names for local detail. |
 | **v71** | Display the nearest catalogued city or town at the selected observer marker with an approximate great-circle distance; the label is prioritised over ordinary map names on all three Earth projections. The worldwide catalog is incomplete, so this is not guaranteed to be the actual nearest settlement. |
 | **v70** | Expand the offline city catalog to approximately 1,283 world locations using Natural Earth 1:50m populated places, all 50 U.S. state capitals and retained curated entries. City-label eligibility increases with zoom while overlap avoidance limits visible density. The catalog-based observer settlement label arrived in v71. |
 | **v69** | Remove duplicate Ontario label, prevent duplicate on-screen place labels, and refine font sizes/weights plus eclipse track and center-marker styling. |
@@ -146,4 +147,4 @@ This repository and its Cloudflare Pages site are **separate from** [the origina
 
 ---
 
-*Created by Darethehair with assistance from ChatGPT · README refreshed for HelioClock v71 (November 2026).*
+*Created by Darethehair with assistance from ChatGPT · README refreshed for HelioClock v72 (November 2026).*
