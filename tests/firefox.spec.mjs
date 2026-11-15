@@ -3,7 +3,7 @@ test('Version 38 polar Milky Way bitmap covers the panned viewport',async({page}
  await page.goto('http://127.0.0.1:8765/');
  await page.locator('[data-sky-projection="polar"]').click();
  await page.locator('[data-sky-light="black"]').click();
- await page.locator('#show-milkyway-shade').check();
+ { await revealSkyControl(page,'show-milkyway-shade'); await page.locator('#show-milkyway-shade').check(); }
  await page.waitForFunction(()=>document.querySelector('#milkyway-status').textContent.includes('loaded'));
  await page.locator('#sky').evaluate(el=>{
   window.__polarMaskDraws=[];
@@ -33,6 +33,14 @@ test('Version 38 polar Milky Way bitmap covers the panned viewport',async({page}
 });
 
 import {test,expect} from '@playwright/test';
+async function revealSkyControl(page,id){
+ await page.locator('#'+id).evaluate(el=>{
+  for(let parent=el.parentElement;parent;parent=parent.parentElement){
+   if(parent.matches('details.sky-extra-controls,details.sky-debug-tools'))parent.open=true;
+  }
+ });
+}
+
 test('Mobile fullscreen prioritizes the chart and restores controls after exit',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.setViewportSize({width:390,height:844});
@@ -49,6 +57,7 @@ test('Mobile fullscreen prioritizes the chart and restores controls after exit',
  expect(dock.height).toBeLessThan(60);
  await page.locator('.sky-panel .mobile-plot-settings').click();
  await expect(page.locator('.sky-panel .sky-options')).toBeVisible();
+ await revealSkyControl(page,'show-radec-grid');
  await page.locator('.sky-panel #show-radec-grid').check();
  await page.locator('.sky-panel .mobile-plot-settings').click();
  await expect(page.locator('.sky-panel .sky-options')).not.toBeVisible();
@@ -73,12 +82,12 @@ test('Daylight polar grid labels have no solid boxes and all radial spokes share
  await page.locator('#observe-time').dispatchEvent('change');
  await page.locator('[data-sky-projection="polar"]').click();
  await page.locator('[data-sky-light="daylight"]').click();
- await page.locator('#show-radec-grid').uncheck();
- await page.locator('#show-altaz-grid').check();
+ { await revealSkyControl(page,'show-radec-grid'); await page.locator('#show-radec-grid').uncheck(); }
+ { await revealSkyControl(page,'show-altaz-grid'); await page.locator('#show-altaz-grid').check(); }
  // Isolate the sky/grid so the label background and radial contrast can be
  // measured independently of stars, planets and the Galactic mask.
  for(const id of ['show-stars','show-planets','show-sky-paths','show-milkyway-shade','show-milkyway-outline','show-galactic-center','show-ecliptic'])
-  await page.locator('#'+id).uncheck();
+  { await revealSkyControl(page,id); await page.locator('#'+id).uncheck(); }
  const sample=await page.locator('#sky').evaluate(el=>{
   const {labels,azStep}=JSON.parse(el.dataset.gridInfo);
   const ctx=el.getContext('2d'),w=el.width,h=el.height;
@@ -163,7 +172,7 @@ test('Rectangular sky zoom and two-axis pan preserve planet, grid, and cursor pr
  const errors=[];page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
  await page.locator('[data-sky-projection="rect"]').click();
- await page.locator('#show-radec-grid').check();
+ { await revealSkyControl(page,'show-radec-grid'); await page.locator('#show-radec-grid').check(); }
  const canvas=page.locator('#sky');
  await canvas.scrollIntoViewIfNeeded();
  const geometry=()=>canvas.evaluate(el=>({w:el.clientWidth,h:el.clientHeight,grid:JSON.parse(el.dataset.gridInfo),planets:JSON.parse(el.dataset.planets)}));
@@ -201,7 +210,7 @@ test('Zoomed and panned sky keeps useful coordinate labels inside the visible ca
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:8765/');
  const info=()=>page.locator('#sky').evaluate(el=>JSON.parse(el.dataset.gridInfo));
- await page.locator('#show-radec-grid').check();
+ { await revealSkyControl(page,'show-radec-grid'); await page.locator('#show-radec-grid').check(); }
  for(const projection of ['polar','rect']){
   await page.locator('[data-sky-projection="'+projection+'"]').click();
   if(projection==='polar'){
@@ -232,9 +241,9 @@ test('Rectangular sky draws every 30-degree azimuth meridian visibly at 1x',asyn
  await page.locator('[data-sky-projection="rect"]').click();
  await page.locator('[data-sky-light="black"]').click();
  for(const id of ['show-stars','show-planets','show-sky-paths','show-ecliptic','show-milkyway-shade','show-milkyway-outline','show-galactic-center'])
-  await page.locator('#'+id).uncheck();
- await page.locator('#show-radec-grid').uncheck();
- await page.locator('#show-altaz-grid').check();
+  { await revealSkyControl(page,id); await page.locator('#'+id).uncheck(); }
+ { await revealSkyControl(page,'show-radec-grid'); await page.locator('#show-radec-grid').uncheck(); }
+ { await revealSkyControl(page,'show-altaz-grid'); await page.locator('#show-altaz-grid').check(); }
  const check=await page.locator('#sky').evaluate(el=>{
   const dpr=el.width/el.clientWidth;
   const ctx=el.getContext('2d');
@@ -257,7 +266,7 @@ test('Rectangular sky draws every 30-degree azimuth meridian visibly at 1x',asyn
  for(const p of check)expect(p.bright,JSON.stringify(p)).toBeGreaterThan(p.off+12);
  const grid=await page.locator('#sky').evaluate(el=>JSON.parse(el.dataset.gridInfo));
  expect(grid.azStep).toBe(30);
- await page.locator('#show-altaz-grid').uncheck();
+ { await revealSkyControl(page,'show-altaz-grid'); await page.locator('#show-altaz-grid').uncheck(); }
  const off=await page.locator('#sky').evaluate(el=>JSON.parse(el.dataset.gridInfo));
  expect(off.altAz).toBe(false);
  expect(errors).toEqual([]);
@@ -281,12 +290,12 @@ test('Sky compass planet option and independently controlled adaptive coordinate
   await page.locator('#show-planets').uncheck();
   expect(await getPlanets()).toEqual([]);
   await page.locator('#show-planets').check();
-  await page.locator('#show-altaz-grid').uncheck();
-  await page.locator('#show-radec-grid').check();
+  { await revealSkyControl(page,'show-altaz-grid'); await page.locator('#show-altaz-grid').uncheck(); }
+  { await revealSkyControl(page,'show-radec-grid'); await page.locator('#show-radec-grid').check(); }
   const equatorial=await getGrid();
   expect(equatorial.altAz).toBe(false);
   expect(equatorial.raDec).toBe(true);
-  await page.locator('#show-altaz-grid').check();
+  { await revealSkyControl(page,'show-altaz-grid'); await page.locator('#show-altaz-grid').check(); }
   const both=await getGrid();
   expect(both.altAz&&both.raDec).toBe(true);
   if(projection==='polar'){
@@ -309,8 +318,8 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#sunrise')).not.toHaveText('—');
  // Release identity and provenance are visible even offline.
- await expect(page.locator('#app-version')).toHaveText('v72');
- await expect(page.locator('#dock-version')).toHaveText('v72');
+ await expect(page.locator('#app-version')).toHaveText('v73');
+ await expect(page.locator('#dock-version')).toHaveText('v73');
  await expect(page.locator('.credits-footer')).toContainText('Created by Darethehair with assistance from ChatGPT');
  await expect(page.locator('.credits-footer a')).toHaveAttribute('href','https://github.com/darethehair/HelioClock-ChatGPT');
  await expect(page.locator('#build-meta')).toContainText('commit');
@@ -331,7 +340,7 @@ test('dashboard controls work in Firefox',async({page})=>{
  expect(sunnySky[2]).toBeGreaterThan(80);
  // Stars remain drawn in educational daylight mode with precession enabled.
  // Check actual canvas pixels, not merely the computed star count.
- await page.locator('#use-precession').check();
+ { await revealSkyControl(page,'use-precession'); await page.locator('#use-precession').check(); }
  const snapshot=()=>page.locator('#sky').evaluate(el=>{
   const ctx=el.getContext('2d');
   return Array.from(ctx.getImageData(0,0,el.width,el.height).data);
@@ -380,15 +389,15 @@ test('dashboard controls work in Firefox',async({page})=>{
   return result;
  };
  for(const enabled of [false,true]){
-  if(enabled)await page.locator('#use-precession').check();
-  else await page.locator('#use-precession').uncheck();
+  if(enabled){ await revealSkyControl(page,'use-precession'); await page.locator('#use-precession').check(); }
+  else { await revealSkyControl(page,'use-precession'); await page.locator('#use-precession').uncheck(); }
   const pixels=await countStarPixels();
   expect(pixels.changed).toBeGreaterThan(600);
   expect(pixels.whiter).toBeGreaterThan(150);
  }
  await page.evaluate(()=>document.exitFullscreen());
  await expect.poll(()=>page.evaluate(()=>!!document.fullscreenElement)).toBe(false);
- await page.locator('#use-precession').check();
+ { await revealSkyControl(page,'use-precession'); await page.locator('#use-precession').check(); }
  // Precession must affect the actual star layer and stick-figure lines.
  await expect(page.locator('#use-precession')).toBeChecked();
  await expect(page.locator('#precession-status')).toContainText('equinox of date');
@@ -396,7 +405,7 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.locator('#observe-time').fill('08:00');
  await page.locator('#observe-time').dispatchEvent('change');
  await page.locator('[data-sky-light="black"]').click();
- await page.locator('#show-constellations').check();
+ { await revealSkyControl(page,'show-constellations'); await page.locator('#show-constellations').check(); }
  await page.locator('#star-magnitude').selectOption('5');
  await expect(page.locator('#sky-atlas-count')).toContainText('visible');
  const skyHash=()=>page.locator('#sky').evaluate(el=>{
@@ -406,17 +415,17 @@ test('dashboard controls work in Firefox',async({page})=>{
   return hash>>>0;
  });
  const enabledSky=await skyHash();
- await page.locator('#use-precession').uncheck();
+ { await revealSkyControl(page,'use-precession'); await page.locator('#use-precession').uncheck(); }
  await expect(page.locator('#precession-status')).toContainText('fixed J2000');
  const disabledSky=await skyHash();
  expect(disabledSky).not.toBe(enabledSky);
  await page.locator('[data-sky-projection="rect"]').click();
  const disabledRect=await skyHash();
- await page.locator('#use-precession').check();
+ { await revealSkyControl(page,'use-precession'); await page.locator('#use-precession').check(); }
  const enabledRect=await skyHash();
  expect(enabledRect).not.toBe(disabledRect);
  await page.locator('[data-sky-projection="polar"]').click();
- await page.locator('#show-constellations').uncheck();
+ { await revealSkyControl(page,'show-constellations'); await page.locator('#show-constellations').uncheck(); }
  await page.locator('#star-magnitude').selectOption('3.5');
  await page.locator('#observe-date').fill('2026-12-21');
  await page.locator('#observe-time').fill('06:00');
@@ -424,11 +433,11 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.locator('[data-sky-light="daylight"]').click();
 
  // Ecliptic is an independent layer and tracks selected time and location.
- await page.locator('#show-ecliptic').uncheck();
+ { await revealSkyControl(page,'show-ecliptic'); await page.locator('#show-ecliptic').uncheck(); }
  const eclipticOff=await skyHash();
- await page.locator('#show-ecliptic').check();
+ { await revealSkyControl(page,'show-ecliptic'); await page.locator('#show-ecliptic').check(); }
  expect(await skyHash()).not.toBe(eclipticOff);
- await page.locator('#show-ecliptic').uncheck();
+ { await revealSkyControl(page,'show-ecliptic'); await page.locator('#show-ecliptic').uncheck(); }
  await expect(page.locator('#celestial-readout')).toContainText('Moon: Alt');
  await expect(page.locator('#celestial-readout')).toContainText('RA');
  await expect(page.locator('#celestial-readout')).toContainText('Dec');
@@ -453,15 +462,15 @@ test('dashboard controls work in Firefox',async({page})=>{
   return {above:sample(.45,.23),below:sample(.45,.77)};
  });
  await page.locator('#show-stars').uncheck();
- await page.locator('#show-sky-paths').uncheck();
+ { await revealSkyControl(page,'show-sky-paths'); await page.locator('#show-sky-paths').uncheck(); }
  // Turn off all luminous overlays before measuring raw atmosphere pixels.
- await page.locator('#show-milkyway-shade').uncheck();
- await page.locator('#show-galactic-center').uncheck();
- await page.locator('#show-milkyway-outline').uncheck();
+ { await revealSkyControl(page,'show-milkyway-shade'); await page.locator('#show-milkyway-shade').uncheck(); }
+ { await revealSkyControl(page,'show-galactic-center'); await page.locator('#show-galactic-center').uncheck(); }
+ { await revealSkyControl(page,'show-milkyway-outline'); await page.locator('#show-milkyway-outline').uncheck(); }
  // Isolate the atmospheric background; interior grid labels are deliberately
  // visible below the horizon when the corresponding grid is enabled.
- await page.locator('#show-altaz-grid').uncheck();
- await page.locator('#show-radec-grid').uncheck();
+ { await revealSkyControl(page,'show-altaz-grid'); await page.locator('#show-altaz-grid').uncheck(); }
+ { await revealSkyControl(page,'show-radec-grid'); await page.locator('#show-radec-grid').uncheck(); }
  await page.locator('#show-planets').uncheck();
  const fullSky=await sampleSky();
  expect(fullSky.above[2]).toBeGreaterThan(75);
@@ -471,10 +480,10 @@ test('dashboard controls work in Firefox',async({page})=>{
  expect(noAtmosphere.above).toEqual([0,0,0]);
  await page.locator('[data-sky-light="daylight"]').click();
  await page.locator('#show-stars').check();
- await page.locator('#show-sky-paths').check();
- await page.locator('#show-milkyway-shade').check();
- await page.locator('#show-galactic-center').check();
- await page.locator('#show-altaz-grid').check();
+ { await revealSkyControl(page,'show-sky-paths'); await page.locator('#show-sky-paths').check(); }
+ { await revealSkyControl(page,'show-milkyway-shade'); await page.locator('#show-milkyway-shade').check(); }
+ { await revealSkyControl(page,'show-galactic-center'); await page.locator('#show-galactic-center').check(); }
+ { await revealSkyControl(page,'show-altaz-grid'); await page.locator('#show-altaz-grid').check(); }
  await page.locator('#show-planets').check();
  await page.locator('[data-sky-projection="polar"]').click();
  await expect(page.locator('#below-horizon-setting')).toBeHidden();
@@ -488,9 +497,9 @@ test('dashboard controls work in Firefox',async({page})=>{
  // Magnitude no longer automatically disables star labels.
  await expect(page.locator('#show-labels')).toBeChecked();
  await expect(page.locator('#sky-atlas-count')).toContainText('stars');
- await page.locator('#show-constellations').check();
+ { await revealSkyControl(page,'show-constellations'); await page.locator('#show-constellations').check(); }
  await expect(page.locator('#show-constellations')).toBeChecked();
- await page.locator('#show-constellations').uncheck();
+ { await revealSkyControl(page,'show-constellations'); await page.locator('#show-constellations').uncheck(); }
  await page.locator('#star-magnitude').selectOption('3.5');
  const beforeSidereal=await page.locator('#sidereal-time').textContent();
  const beforeUtc=await page.locator('#utc-clock').textContent();
@@ -515,31 +524,31 @@ test('dashboard controls work in Firefox',async({page})=>{
  await expect(page.locator('#milkyway-status')).toContainText('loaded');
  await expect(page.locator('#show-milkyway-shade')).toBeChecked();
  await expect(page.locator('#show-galactic-center')).toBeChecked();
- await page.locator('#show-milkyway-outline').uncheck();
- await page.locator('#show-milkyway-shade').uncheck();
- await page.locator('#show-galactic-center').uncheck();
+ { await revealSkyControl(page,'show-milkyway-outline'); await page.locator('#show-milkyway-outline').uncheck(); }
+ { await revealSkyControl(page,'show-milkyway-shade'); await page.locator('#show-milkyway-shade').uncheck(); }
+ { await revealSkyControl(page,'show-galactic-center'); await page.locator('#show-galactic-center').uncheck(); }
  const blankGalactic=await skyHash();
  // v32 uses fixed equatorial raster coverage, rather than projected
  // Canvas even-odd polygon fills. Inspect actual sky pixels instead.
- await page.locator('#show-milkyway-shade').check();
+ { await revealSkyControl(page,'show-milkyway-shade'); await page.locator('#show-milkyway-shade').check(); }
  const withGlow=await skyHash();
  expect(withGlow).not.toEqual(blankGalactic);
- await page.locator('#show-milkyway-shade').uncheck();
- await page.locator('#show-milkyway-outline').check();
+ { await revealSkyControl(page,'show-milkyway-shade'); await page.locator('#show-milkyway-shade').uncheck(); }
+ { await revealSkyControl(page,'show-milkyway-outline'); await page.locator('#show-milkyway-outline').check(); }
  const withOutline=await skyHash();
  expect(withOutline).not.toEqual(blankGalactic);
- await page.locator('#show-milkyway-outline').uncheck();
- await page.locator('#show-galactic-center').check();
+ { await revealSkyControl(page,'show-milkyway-outline'); await page.locator('#show-milkyway-outline').uncheck(); }
+ { await revealSkyControl(page,'show-galactic-center'); await page.locator('#show-galactic-center').check(); }
  const withCentre=await skyHash();
  expect(withCentre).not.toEqual(blankGalactic);
- await page.locator('#show-milkyway-shade').check();
+ { await revealSkyControl(page,'show-milkyway-shade'); await page.locator('#show-milkyway-shade').check(); }
  await page.locator('[data-sky-projection="polar"]').click();
  const polarMilky=await skyHash();
- await page.locator('#show-milkyway-shade').uncheck();
- await page.locator('#show-galactic-center').uncheck();
+ { await revealSkyControl(page,'show-milkyway-shade'); await page.locator('#show-milkyway-shade').uncheck(); }
+ { await revealSkyControl(page,'show-galactic-center'); await page.locator('#show-galactic-center').uncheck(); }
  expect(await skyHash()).not.toBe(polarMilky);
- await page.locator('#show-milkyway-shade').check();
- await page.locator('#show-galactic-center').check();
+ { await revealSkyControl(page,'show-milkyway-shade'); await page.locator('#show-milkyway-shade').check(); }
+ { await revealSkyControl(page,'show-galactic-center'); await page.locator('#show-galactic-center').check(); }
  await expect(page.locator('#subsolar')).toHaveAttribute('title',/Solar nadir \(antipode\):/);
  await expect(page.locator('#show-au-rings')).toBeChecked();
  const orreryBackground=await page.locator('#orrery').evaluate(el=>{
@@ -656,7 +665,7 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
  const errors=[];
  page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v72');
+ await expect(page.locator('#app-version')).toHaveText('v73');
  await expect(page.locator('.almanac-panel')).toBeVisible();
  await page.locator('#layout-sky').click();
  await expect(page.locator('.sky-panel')).toBeVisible();
@@ -684,11 +693,11 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
  await page.locator('[data-sky-light="black"]').click();
  await expect(page.locator('#sky-atlas-count')).toContainText('visible');
  const colored=await page.locator('#sky').evaluate(c=>c.toDataURL());
- await page.locator('#show-stellar-colors').uncheck();
+ { await revealSkyControl(page,'show-stellar-colors'); await page.locator('#show-stellar-colors').uncheck(); }
  await expect(page.locator('#show-stellar-colors')).not.toBeChecked();
  const white=await page.locator('#sky').evaluate(c=>c.toDataURL());
  expect(white).not.toEqual(colored);
- await page.locator('#show-stellar-colors').check();
+ { await revealSkyControl(page,'show-stellar-colors'); await page.locator('#show-stellar-colors').check(); }
  await expect(page.locator('#show-stellar-colors')).toBeChecked();
  expect(await page.locator('#sky').evaluate(c=>c.toDataURL())).toEqual(colored);
  await page.locator('#layout-default').click();
@@ -856,9 +865,9 @@ test('Version 32 rectangular Milky Way mask changes the sky without a full-sky w
  await page.locator('[data-sky-projection="rect"]').click();
  await page.locator('[data-sky-light="black"]').click();
  await expect(page.locator('#milkyway-status')).toContainText('loaded');
- await page.locator('#show-milkyway-shade').uncheck();
+ { await revealSkyControl(page,'show-milkyway-shade'); await page.locator('#show-milkyway-shade').uncheck(); }
  const before=await page.locator('#sky').evaluate(el=>({w:el.width,h:el.height,data:Array.from(el.getContext('2d').getImageData(0,0,el.width,el.height).data)}));
- await page.locator('#show-milkyway-shade').check();
+ { await revealSkyControl(page,'show-milkyway-shade'); await page.locator('#show-milkyway-shade').check(); }
  const result=await page.locator('#sky').evaluate((el,off)=>{
   const on=el.getContext('2d').getImageData(0,0,el.width,el.height).data;
   let clear=0,shaded=0;
@@ -965,7 +974,7 @@ test('Version 36 stores, restores, imports, exports and resets preferences',asyn
 test('Version 25 Sun and Moon use the same zoomable pannable fullscreen stage',async({page})=>{
  const errors=[];page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v72');
+ await expect(page.locator('#app-version')).toHaveText('v73');
  await expect(page.locator('#moon')).toBeVisible();
  await expect(page.locator('#solar-photo')).toBeHidden();
  await page.locator('[data-disc-view="sun"]').click();
@@ -1031,7 +1040,7 @@ test('Milky Way fixed mask is consistent across projections and polar zoom',asyn
  // "planar" mask; otherwise that mask has not been generated.
  await page.locator('[data-sky-projection="rect"]').click();
  await expect(page.locator('#mw-debug-status')).toContainText(/Mask planar · [0-9.]+% equatorial pixels/);
- const stats=await page.locator('#mw-debug-status').innerText();
+ const stats=await page.locator('#mw-debug-status').textContent();
  expect(stats).toContain('2 seam closures');
  await page.locator('[data-sky-projection="polar"]').click();
  await page.locator('#sky-zoom').fill('2');
@@ -1044,7 +1053,7 @@ test('Milky Way cursor reports independently computable galactic latitude and ma
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:8765/');
  await page.locator('[data-sky-projection="rect"]').click();
- await page.locator('#use-precession').uncheck();
+ { await revealSkyControl(page,'use-precession'); await page.locator('#use-precession').uncheck(); }
  await expect(page.locator('#mw-debug-status')).toContainText(/Mask planar · [0-9.]+% equatorial pixels/);
  const sky=page.locator('#sky');
  await sky.scrollIntoViewIfNeeded();
@@ -1198,7 +1207,7 @@ test('Version 29 labels remain enabled for faint stars and sky cursor reports RA
  await page.goto('http://127.0.0.1:8765/');
  await page.locator('[data-sky-projection="polar"]').click();
  await page.locator('#star-magnitude').selectOption('7');
- await page.locator('#show-labels').check();
+ { await revealSkyControl(page,'show-labels'); await page.locator('#show-labels').check(); }
  await page.locator('#sky').evaluate(el=>{
   window.__starLabelTexts=[];
   const old=CanvasRenderingContext2D.prototype.fillText;
@@ -1242,11 +1251,11 @@ test('Version 30 polar Milky Way shading never fills most of the night sky',asyn
  await page.locator('[data-sky-projection="polar"]').click();
  await page.locator('[data-sky-light="black"]').click();
  await page.locator('#show-stars').uncheck();
- await page.locator('#show-constellations').uncheck();
- await page.locator('#show-sky-paths').uncheck();
- await page.locator('#show-labels').uncheck();
- await page.locator('#show-galactic-center').uncheck();
- await page.locator('#show-milkyway-outline').uncheck();
+ { await revealSkyControl(page,'show-constellations'); await page.locator('#show-constellations').uncheck(); }
+ { await revealSkyControl(page,'show-sky-paths'); await page.locator('#show-sky-paths').uncheck(); }
+ { await revealSkyControl(page,'show-labels'); await page.locator('#show-labels').uncheck(); }
+ { await revealSkyControl(page,'show-galactic-center'); await page.locator('#show-galactic-center').uncheck(); }
+ { await revealSkyControl(page,'show-milkyway-outline'); await page.locator('#show-milkyway-outline').uncheck(); }
  await page.waitForFunction(()=>document.querySelector('#milkyway-status').textContent.includes('loaded'));
  await page.locator('#observe-date').fill('2026-11-08');
  for(const hour of ['01:00','07:00','13:00','19:00']){
@@ -1256,9 +1265,9 @@ test('Version 30 polar Milky Way shading never fills most of the night sky',asyn
    w:el.width,h:el.height,
    data:Array.from(el.getContext('2d').getImageData(0,0,el.width,el.height).data)
   }));
-  await page.locator('#show-milkyway-shade').uncheck();
+  { await revealSkyControl(page,'show-milkyway-shade'); await page.locator('#show-milkyway-shade').uncheck(); }
   const off=await snapshot();
-  await page.locator('#show-milkyway-shade').check();
+  { await revealSkyControl(page,'show-milkyway-shade'); await page.locator('#show-milkyway-shade').check(); }
   const on=await snapshot();
   let inside=0,shaded=0;
   const x0=off.w/2,y0=off.h/2,r=Math.min(off.w,off.h)*.44;
@@ -1283,19 +1292,19 @@ test('Version 32 rectangular black sky stays black outside the fixed Milky Way m
  await page.locator('[data-sky-projection="rect"]').click();
  await page.locator('[data-sky-light="black"]').click();
  for(const id of ['show-stars','show-constellations','show-sky-paths','show-labels','show-galactic-center','show-milkyway-outline']){
-  await page.locator('#'+id).uncheck();
+  { await revealSkyControl(page,id); await page.locator('#'+id).uncheck(); }
  }
  await page.waitForFunction(()=>document.querySelector('#milkyway-status').textContent.includes('loaded'));
  await page.locator('#observe-date').fill('2026-11-09');
  for(const hour of ['09:48','10:48','11:48','12:44','15:48']){
   await page.locator('#observe-time').fill(hour);
   await page.locator('#observe-time').dispatchEvent('change');
-  await page.locator('#show-milkyway-shade').uncheck();
+  { await revealSkyControl(page,'show-milkyway-shade'); await page.locator('#show-milkyway-shade').uncheck(); }
   const off=await page.locator('#sky').evaluate(el=>{
    const c=el.getContext('2d'),w=el.width,h=el.height;
    return {w,h,data:Array.from(c.getImageData(0,0,w,h).data)};
   });
-  await page.locator('#show-milkyway-shade').check();
+  { await revealSkyControl(page,'show-milkyway-shade'); await page.locator('#show-milkyway-shade').check(); }
   const on=await page.locator('#sky').evaluate(el=>{
    const c=el.getContext('2d'),w=el.width,h=el.height;
    return Array.from(c.getImageData(0,0,w,h).data);
@@ -1328,7 +1337,7 @@ test('Version 33 avoids false Milky Way bands far from galactic plane at 07:44 M
  await page.locator('[data-sky-projection="rect"]').click();
  await page.locator('[data-sky-light="black"]').click();
  for(const id of ['show-stars','show-constellations','show-sky-paths','show-labels','show-galactic-center','show-milkyway-outline']){
-  await page.locator('#'+id).uncheck();
+  { await revealSkyControl(page,id); await page.locator('#'+id).uncheck(); }
  }
  await page.waitForFunction(()=>document.querySelector('#milkyway-status').textContent.includes('loaded'));
  await page.locator('#latitude').fill('49.19');
@@ -1338,11 +1347,11 @@ test('Version 33 avoids false Milky Way bands far from galactic plane at 07:44 M
  await page.locator('#observe-time').fill('12:44');
  await page.locator('#observe-time').dispatchEvent('change');
  const canvas=page.locator('#sky');
- await page.locator('#show-milkyway-shade').uncheck();
+ { await revealSkyControl(page,'show-milkyway-shade'); await page.locator('#show-milkyway-shade').uncheck(); }
  const off=await canvas.evaluate(el=>({
   w:el.width,h:el.height,data:Array.from(el.getContext('2d').getImageData(0,0,el.width,el.height).data)
  }));
- await page.locator('#show-milkyway-shade').check();
+ { await revealSkyControl(page,'show-milkyway-shade'); await page.locator('#show-milkyway-shade').check(); }
  const region=await canvas.evaluate((el,off)=>{
   const on=el.getContext('2d').getImageData(0,0,el.width,el.height).data;
   const w=off.w,h=off.h;
@@ -1400,7 +1409,7 @@ test('Version 34 offers comparable Milky Way masks and copyable exact debug stat
    writeText:async text=>{window.__debugCopy=text;}
   }});
  });
- await page.locator('#mw-copy-debug').click();
+ { await revealSkyControl(page,'mw-copy-debug'); await page.locator('#mw-copy-debug').click(); }
  const data=await page.evaluate(()=>JSON.parse(window.__debugCopy));
  expect(data.version).toBe(59);
  expect(data.utc).toBe('2026-11-09T12:44:00.000Z');
@@ -1422,17 +1431,17 @@ test('Version 39 Messier DSO toggles, independent labels and both sky projection
  await page.locator('#observe-time').dispatchEvent('change');
  const read=()=>page.locator('#sky').evaluate(el=>JSON.parse(el.dataset.dsoInfo));
  expect((await read()).count).toBe(0);
- await page.locator('#show-dso-galaxies').check();
+ { await revealSkyControl(page,'show-dso-galaxies'); await page.locator('#show-dso-galaxies').check(); }
  const galaxies=await read();expect(galaxies.count).toBeGreaterThan(0);
- await page.locator('#show-dso-nebulae').check();
+ { await revealSkyControl(page,'show-dso-nebulae'); await page.locator('#show-dso-nebulae').check(); }
  const nebulae=await read();expect(nebulae.count).toBeGreaterThan(galaxies.count);
- await page.locator('#show-dso-clusters').check();
+ { await revealSkyControl(page,'show-dso-clusters'); await page.locator('#show-dso-clusters').check(); }
  const all=await read();expect(all.count).toBeGreaterThan(nebulae.count);
  expect(all.visible).toContain('M31');
- await page.locator('#show-dso-labels').uncheck();
+ { await revealSkyControl(page,'show-dso-labels'); await page.locator('#show-dso-labels').uncheck(); }
  const without=await read();
  expect(without.count).toBe(all.count);expect(without.labels).toBe(0);
- await page.locator('#show-dso-labels').check();
+ { await revealSkyControl(page,'show-dso-labels'); await page.locator('#show-dso-labels').check(); }
  for(const mode of ['polar','rect']){
   await page.locator('[data-sky-projection="'+mode+'"]').click();
   const info=await read();
@@ -1449,7 +1458,7 @@ test('Version 40 constellation names stay independent from lines and DSOs',async
  const count=()=>page.locator('#sky').evaluate(el=>JSON.parse(el.dataset.constellationNames).count);
  await expect(page.locator('#show-constellation-names')).not.toBeChecked();
  expect(await count()).toBe(0);
- await page.locator('#show-constellation-names').check();
+ { await revealSkyControl(page,'show-constellation-names'); await page.locator('#show-constellation-names').check(); }
  expect(await count()).toBeGreaterThan(0);
  await expect(page.locator('#show-constellations')).not.toBeChecked();
  await expect(page.locator('#show-dso-galaxies')).not.toBeChecked();
@@ -1457,7 +1466,7 @@ test('Version 40 constellation names stay independent from lines and DSOs',async
  expect(await count()).toBeGreaterThan(0);
  await page.locator('[data-sky-projection="rect"]').click();
  expect(await count()).toBeGreaterThan(0);
- await page.locator('#show-constellation-names').uncheck();
+ { await revealSkyControl(page,'show-constellation-names'); await page.locator('#show-constellation-names').uncheck(); }
  expect(await count()).toBe(0);
  expect(errors).toEqual([]);
 });
@@ -2261,4 +2270,19 @@ test('v72 administrative borders remain while region labels are suppressed',asyn
   expect(probe.regionLines,projection+' regional boundaries').toBeGreaterThan(500);
   expect(probe.cities.length,projection+' city labels').toBeGreaterThan(0);
  }
+});
+
+test('v73 sky advanced layers and diagnostics are accessible without occupying default toolbar',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ const sky=page.locator('.sky-panel');
+ const advanced=sky.locator('.sky-extra-controls');
+ await expect(advanced).toHaveCount(2);
+ await expect(sky.locator('.sky-debug-tools')).not.toHaveAttribute('open','');
+ await expect(sky.locator('#mw-copy-debug')).not.toBeVisible();
+ await advanced.first().locator('summary').click();
+ await expect(sky.locator('#show-constellations')).toBeVisible();
+ await advanced.last().locator('summary').click();
+ await expect(sky.locator('#show-dso-galaxies')).toBeVisible();
+ await sky.locator('.sky-debug-tools summary').click();
+ await expect(sky.locator('#mw-copy-debug')).toBeVisible();
 });
