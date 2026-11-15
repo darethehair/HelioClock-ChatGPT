@@ -650,3 +650,13 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
  .eclipse-explorer{padding:8px;margin-bottom:10px}
  .eclipse-explorer-options label{flex:1 1 130px}
 }
+
+/* v68: optional offline political geography; physical Earth remains default. */
+.earth-map-style{display:inline-flex;align-items:center;gap:7px;font-size:11px;color:#c9deed}
+.earth-map-style select{background:#10263b;border:1px solid #4a6a85;border-radius:6px;color:#e3f1fc;padding:7px 9px;max-width:240px}
+.earth-political-tools{display:flex;flex-wrap:wrap;align-items:center;gap:9px 15px;padding:8px 0 10px;color:#c9dcec;font-size:11px;border-top:1px solid #44617a5c}
+.earth-political-tools>span{font-weight:800;letter-spacing:.4px;color:#efca8f}
+.earth-political-tools label{display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+.earth-political-tools input{accent-color:#91deae}
+.earth-political-tools small{color:#92adc2;font-size:10px}
+@media(max-width:750px){.earth-map-style{width:100%;justify-content:space-between}.earth-map-style select{max-width:75%}.earth-political-tools{gap:7px 10px}.earth-political-tools small{width:100%}}
