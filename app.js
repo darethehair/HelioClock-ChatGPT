@@ -119,11 +119,12 @@ function worldMap(){
   :highStatus.status==='ready'?'2K image · 2048 × 1024 · offline':
     highStatus.status==='failed'?'2K image unavailable':'Loading 2K image…';
  $('earth-map').dataset.projectionProbe=JSON.stringify(result.projectionProbe);
- $('earth-map').dataset.eclipseProbe=JSON.stringify({active:result.eclipseShadowActive,center:result.eclipseShadowCenter,angle:result.eclipseMoonSunAngle,centerSample:result.eclipseCenterSample,screen:result.eclipseCenterScreen});
+ $('earth-map').dataset.eclipseProbe=JSON.stringify({active:result.eclipseShadowActive,center:result.eclipseShadowCenter,angle:result.eclipseMoonSunAngle,centerSample:result.eclipseCenterSample,screen:result.eclipseCenterScreen,footprintType:result.eclipseFootprintType,footprint:result.eclipseFootprint,observer:result.eclipseObserverSample});
  const eclipseStatus=$('earth-eclipse-status');
  eclipseStatus.textContent=!$('earth-eclipse-shadow').checked?'Eclipse shadow hidden':
    result.eclipseShadowCenter
-    ?'Eclipse central shadow: '+Math.abs(result.eclipseShadowCenter[1]).toFixed(2)+'°'+(result.eclipseShadowCenter[1]>=0?'N':'S')+' / '+Math.abs(result.eclipseShadowCenter[0]).toFixed(2)+'°'+(result.eclipseShadowCenter[0]>=0?'E':'W')+' · calculated from selected time'
+    ?(result.eclipseObserverSample?.totality?'TOTAL ECLIPSE at observer · ':result.eclipseObserverSample?.annularity?'ANNULAR ECLIPSE at observer · ':result.eclipseObserverSample?.penumbra>0?'PARTIAL ECLIPSE at observer · ':'')+
+     'Eclipse central shadow: '+Math.abs(result.eclipseShadowCenter[1]).toFixed(2)+'°'+(result.eclipseShadowCenter[1]>=0?'N':'S')+' / '+Math.abs(result.eclipseShadowCenter[0]).toFixed(2)+'°'+(result.eclipseShadowCenter[0]>=0?'E':'W')+' · calculated from selected time'
     :result.eclipseShadowActive?'No central shadow on Earth at this instant':'No solar eclipse at selected time';
  $('earth-zoom-value').textContent=state.earthZoom.toFixed(1)+'×';
  $('subsolar').textContent=Math.abs(result.sunDecl).toFixed(1)+'°'+(result.sunDecl>=0?'N':'S')+' / '+Math.abs(result.sunLon).toFixed(1)+'°'+(result.sunLon>=0?'E':'W');

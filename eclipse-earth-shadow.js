@@ -37,22 +37,23 @@ export function solarShadowAt(date){
  const moonSunAngle=Math.acos(clamp(dot(sun,moon)/(norm(sun)*norm(moon)),-1,1))/RAD;
  const active=moonSunAngle<2.1;
  const phase=siderealDegrees*RAD;
- const cp=Math.cos(phase),sp=Math.sin(phase);
- function sample(lon,lat){
-  if(!active)return {penumbra:0,umbra:0};
+  function sample(lon,lat){
+  if(!active)return {penumbra:0,umbra:0,totality:false,annularity:false};
   const p=lat*RAD,l=(lon*RAD)+phase;
   const c=RE*Math.cos(p), surface=[c*Math.cos(l),c*Math.sin(l),RE*Math.sin(p)];
   // Only the sunlit hemisphere receives solar eclipse shadows.
-  if(dot(surface,sub(sun,surface))<=0)return {penumbra:0,umbra:0};
+  if(dot(surface,sub(sun,surface))<=0)return {penumbra:0,umbra:0,totality:false,annularity:false};
   const offset=sub(surface,moon),t=dot(offset,axis);
-  if(t<=0)return {penumbra:0,umbra:0};
+  if(t<=0)return {penumbra:0,umbra:0,totality:false,annularity:false};
   const radial=Math.sqrt(Math.max(0,dot(offset,offset)-t*t));
   const penRadius=RM+t*(RS+RM)/distance;
   const umbraRadius=RM-t*(RS-RM)/distance; // negative means antumbra
-  if(radial>=penRadius)return {penumbra:0,umbra:0};
+  if(radial>=penRadius)return {penumbra:0,umbra:0,totality:false,annularity:false};
   const fringe=clamp((penRadius-radial)/(penRadius-Math.abs(umbraRadius)+1),0,1);
   const core=radial<Math.abs(umbraRadius)?clamp((Math.abs(umbraRadius)-radial)/100,0,1):0;
-  return {penumbra:fringe,umbra:core,annular:umbraRadius<0};
+  return {penumbra:fringe,umbra:core,annular:umbraRadius<0,
+   totality:umbraRadius>0&&radial<=umbraRadius,
+   annularity:umbraRadius<0&&radial<=-umbraRadius};
  }
  return {active,center,sample,moonSunAngle};
 }
@@ -65,4 +66,43 @@ export function solarShadowTrack(date,halfMinutes=150,stepMinutes=3){
   if(g.center)points.push(g.center);
  }
  return points;
+}
+
+/**
+ * Trace the *instantaneous* geographic totality/annularity footprint.
+ * This is an actual surface intersection with the shadow cone, not a
+ * fixed-radius symbol or an arbitrary display-sized disk.
+ * Boundary is located independently along each great-circle bearing.
+ * Zoom, pan and each map projection are handled by the Earth renderer.
+ */
+export function solarCentralFootprint(shadow,bearings=72){
+ if(!shadow?.active||!shadow.center)return null;
+ const origin=shadow.center, core=shadow.sample(...origin);
+ const type=core.totality?'totality':core.annularity?'annularity':null;
+ if(!type)return null;
+ const lon0=origin[0]*RAD, lat0=origin[1]*RAD;
+ function destination(bearing,kilometres){
+  const angular=kilometres/RE, br=bearing*RAD;
+  const sinLat=Math.sin(lat0)*Math.cos(angular)+Math.cos(lat0)*Math.sin(angular)*Math.cos(br);
+  const lat=Math.asin(clamp(sinLat,-1,1));
+  const lon=lon0+Math.atan2(Math.sin(br)*Math.sin(angular)*Math.cos(lat0),Math.cos(angular)-Math.sin(lat0)*Math.sin(lat));
+  return [wrap(lon/RAD),lat/RAD];
+ }
+ const coordinates=[];
+ for(let i=0;i<bearings;i++){
+  const bearing=360*i/bearings;
+  let low=0,high=450;
+  // At the horizon or at a grazing point the footprint may extend
+  // farther than 450 km; double rather than silently truncate.
+  while(high<2500&&shadow.sample(...destination(bearing,high))[type])high*=2;
+  if(shadow.sample(...destination(bearing,high))[type])return null;
+  for(let n=0;n<16;n++){
+   const mid=(low+high)/2;
+   if(shadow.sample(...destination(bearing,mid))[type])low=mid;
+   else high=mid;
+  }
+  coordinates.push(destination(bearing,(low+high)/2));
+ }
+ coordinates.push(coordinates[0]);
+ return {type,coordinates};
 }
