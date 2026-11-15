@@ -4,10 +4,13 @@ import atlas from 'world-atlas/countries-110m.json';
 import {RAD,wrap,solar,clamp} from './astronomy.js';
 import {cloudOpacityAt} from './clouds.js';
 import {solarShadowAt,solarShadowTrack,solarCentralFootprint} from './eclipse-earth-shadow.js';
+import {admin1Lines} from './earth-admin1-data.js';
+import {cities,regions,countries} from './earth-gazetteer.js';
 
 const land=feature(atlas,atlas.objects.land);
 const borders=mesh(atlas,atlas.objects.countries,(a,b)=>a!==b);
 const graticule=geoGraticule10();
+const admin1Geometry={type:'MultiLineString',coordinates:admin1Lines.map(row=>row[1])};
 const memoCanvas=document.createElement('canvas');
 const memoCtx=memoCanvas.getContext('2d');
 const modeConstructors={equal:geoEqualEarth,globe:geoOrthographic,mercator:geoMercator};
@@ -112,6 +115,9 @@ export function renderEarth(context,width,height,date,state){
  if(earthTextureQuality==='4k')loadEarthTexture('4k');
  // The same projection factory is used by regression tests.
  const map=createEarthProjection(width,height,state);
+ const mapStyle=['physical','hybrid','political'].includes(state.earthMapStyle)?state.earthMapStyle:'physical';
+ const political=mapStyle!=='physical';
+ const showCountries=state.earthCountryBorders!==false,showRegions=state.earthRegionBorders!==false,showCities=state.earthCityLabels!==false;
  const shadow=state.showEclipseShadow===true?solarShadowAt(date):null;
  const eclipseFootprint=shadow?.active?solarCentralFootprint(shadow):null;
  const d=solar(date);
@@ -232,9 +238,24 @@ export function renderEarth(context,width,height,date,state){
  context.beginPath();path(land);
  context.fillStyle=(earthImages.standard||earthImages.high)?'#00000000':'#9abd9470';context.fill();
  context.strokeStyle=(earthImages.standard||earthImages.high)?'#d5eeff40':'#b9d3b068';context.lineWidth=.7;context.stroke();
- if(earthZoom>=1.25){
-   context.beginPath();path(borders);context.lineWidth=.35;
-   context.strokeStyle='#b1e8d64f';context.stroke();
+ if(mapStyle==='political'){
+  // Tint land without replacing the twilight, cloud and day/night rendering.
+  context.save();context.beginPath();path(land);
+  context.fillStyle='#417b72';context.globalAlpha=.57;context.fill();
+  context.restore();
+ }
+ if(political&&showCountries){
+  context.save();context.beginPath();path(borders);
+  context.strokeStyle='#f2e5bf';context.lineWidth=earthZoom>=2?1.5:1.05;
+  context.globalAlpha=.76;context.stroke();context.restore();
+ }else if(mapStyle==='physical'&&earthZoom>=1.25){
+  context.beginPath();path(borders);context.lineWidth=.35;
+  context.strokeStyle='#b1e8d64f';context.stroke();
+ }
+ if(political&&showRegions&&earthZoom>=1.25){
+  context.save();context.beginPath();path(admin1Geometry);
+  context.strokeStyle='#b8e5e7';context.lineWidth=earthZoom>2.8?1.2:.8;
+  context.globalAlpha=.76;context.stroke();context.restore();
  }
  // A closed cone-intersection footprint reveals the full totality area.
  // The darker fill and double rim remain readable over both oceans and land.
@@ -305,6 +326,57 @@ export function renderEarth(context,width,height,date,state){
    context.restore();
   }
  }
+ // Political labels are drawn above eclipse shading, but must remain
+ // clipped to the front hemisphere and inside the map's canvas area.
+ // Collision rejection avoids unreadable stacks of names when zoomed out.
+ let labelCount=0;
+ if(political){
+  const occupied=[];
+  const nearSide=point=>!globe||geoDistance(point,[earthLon,earthLat])<Math.PI/2-.005;
+  const candidate=(text,longitude,latitude,kind)=>{
+   const point=[longitude,latitude];
+   if(!nearSide(point))return;
+   const screen=map(point);
+   if(!screen||!screen.every(Number.isFinite))return;
+   const [x,y]=screen;
+   if(x<12||x>width-12||y<12||y>height-12)return;
+   const city=kind==='city';
+   const fontSize=city?(earthZoom>=3?12:11):kind==='region'?11:12;
+   context.font=(kind==='country'?'700 ':'600 ')+fontSize+'px sans-serif';
+   const textWidth=context.measureText(text).width;
+   const tx=city?x+8:x-textWidth/2,ty=city?y-7:y+4;
+   const box=[tx-4,ty-fontSize-3,tx+textWidth+4,ty+5];
+   if(box[0]<2||box[2]>width-2||box[1]<2||box[3]>height-2)return;
+   if(occupied.some(a=>box[0]<a[2]&&box[2]>a[0]&&box[1]<a[3]&&box[3]>a[1]))return;
+   occupied.push(box);
+   context.save();
+   context.lineJoin='round';context.lineWidth=3.1;
+   context.strokeStyle='#071629e8';context.fillStyle=kind==='country'?'#f7dfb0':'#f4f8ff';
+   if(city){
+    context.fillStyle='#f8edc4';context.beginPath();context.arc(x,y,earthZoom>=3?2.8:2.2,0,Math.PI*2);context.fill();
+    context.fillStyle='#f4f8ff';
+   }
+   context.strokeText(text,tx,ty);context.fillText(text,tx,ty);
+   context.restore();labelCount++;
+  };
+  // Country/region names are at deliberately sparse anchor points and
+  // city ranks are filtered by zoom, with nearby local cities prioritized.
+  if(earthZoom<2.2)for(const [name,longitude,latitude] of countries)candidate(name,longitude,latitude,'country');
+  if(showRegions&&earthZoom>=1.65)for(const [name,longitude,latitude,rank] of regions){
+   if(rank<=2||earthZoom>=2.7)candidate(name,longitude,latitude,'region');
+  }
+  if(showCities){
+   const ordered=cities.filter(row=>row[3]===1||(row[3]===2&&earthZoom>=1.6)||(row[3]===3&&earthZoom>=2.6))
+    .sort((a,b)=>{
+     if(earthZoom>=2.6){
+      const da=geoDistance([a[1],a[2]],[lon,lat]),db=geoDistance([b[1],b[2]],[lon,lat]);
+      if(da<.15||db<.15)return da-db;
+     }
+     return a[3]-b[3];
+    });
+   for(const [name,longitude,latitude] of ordered)candidate(name,longitude,latitude,'city');
+  }
+ }
  const user=isVisible([lon,lat])?map([lon,lat]):null;
  if(user){
   context.save();context.shadowColor='#fff9e3';context.shadowBlur=12;
@@ -317,7 +389,7 @@ export function renderEarth(context,width,height,date,state){
  const observerScreen=map([lon,lat]);
  const eastScreen=map([lon+5,lat]);
  const northScreen=map([lon,Math.min(lat+5,89)]);
- return {sunLon,sunDecl:d.decl,nadirLon,nadirLat,eclipseShadowActive:!!shadow?.active,eclipseShadowCenter:shadow?.center||null,eclipseMoonSunAngle:shadow?.moonSunAngle??null,eclipseCenterSample:shadow?.center?shadow.sample(...shadow.center):null,eclipseFootprintType:eclipseFootprint?.type||null,eclipseFootprint:eclipseFootprint?.coordinates||null,eclipseObserverSample:shadow?shadow.sample(lon,lat):null,eclipseCenterScreen:shadow?.center?map(shadow.center):null,
+ return {politicalLabels:labelCount,mapStyle,adminBoundaryCount:political&&showRegions&&earthZoom>=1.25?admin1Lines.length:0,sunLon,sunDecl:d.decl,nadirLon,nadirLat,eclipseShadowActive:!!shadow?.active,eclipseShadowCenter:shadow?.center||null,eclipseMoonSunAngle:shadow?.moonSunAngle??null,eclipseCenterSample:shadow?.center?shadow.sample(...shadow.center):null,eclipseFootprintType:eclipseFootprint?.type||null,eclipseFootprint:eclipseFootprint?.coordinates||null,eclipseObserverSample:shadow?shadow.sample(lon,lat):null,eclipseCenterScreen:shadow?.center?map(shadow.center):null,
   textureStatus:earthTextureStatus(earthTextureQuality).status,
   projectionProbe:{projection:earthProjection,observer:observerScreen,
    east:eastScreen,north:northScreen,viewCenter:[width/2,height/2],
