@@ -235,18 +235,35 @@ export function renderEarth(context,width,height,date,state){
    context.beginPath();path(borders);context.lineWidth=.35;
    context.strokeStyle='#b1e8d64f';context.stroke();
  }
- // The ground track is geographical, so it follows zoom/pan/projection.
+ // Ground track is in geographic coordinates; d3 handles zoom and map clipping.
+ // A bright marker makes the tiny umbra independently identifiable at 1x zoom.
  if(shadow?.active){
-  const track=solarShadowTrack(date,150,12);
+  const track=solarShadowTrack(date,150,5);
   if(track.length>1){
-   context.save();context.beginPath();path({type:'LineString',coordinates:track});
-   context.strokeStyle='#ffdb78';context.lineWidth=2.1;
-   context.setLineDash([5,4]);context.stroke();context.restore();
+   context.save();context.beginPath();
+   path({type:'MultiLineString',coordinates:track.reduce((segments,p)=>{
+    const last=segments.at(-1);
+    if(!last||Math.abs(last.at(-1)[0]-p[0])>120)segments.push([p]);
+    else last.push(p);
+    return segments;
+   },[])});
+   context.strokeStyle='#ffe69c';context.lineWidth=3;
+   context.shadowColor='#f8a53c';context.shadowBlur=7;context.setLineDash([8,5]);
+   context.stroke();context.restore();
   }
   if(shadow.center&&(!globe||isNearSide(shadow.center,earthLon,earthLat))){
    const p=map(shadow.center);
-   if(p){context.save();context.strokeStyle='#fff2a0';context.lineWidth=2;
-    context.beginPath();context.arc(p[0],p[1],6,0,Math.PI*2);context.stroke();context.restore();}
+   if(p){
+    context.save();
+    context.strokeStyle='#ffec9d';context.fillStyle='#160e0a';context.lineWidth=2.4;
+    context.shadowColor='#ffd165';context.shadowBlur=12;
+    context.beginPath();context.arc(p[0],p[1],9,0,Math.PI*2);context.fill();context.stroke();
+    context.beginPath();context.moveTo(p[0]-15,p[1]);context.lineTo(p[0]-10,p[1]);
+    context.moveTo(p[0]+10,p[1]);context.lineTo(p[0]+15,p[1]);
+    context.moveTo(p[0],p[1]-15);context.lineTo(p[0],p[1]-10);
+    context.moveTo(p[0],p[1]+10);context.lineTo(p[0],p[1]+15);context.stroke();
+    context.restore();
+   }
   }
  }
  // The nadir is antipodal to the subsolar point (180° longitude away,
@@ -286,7 +303,7 @@ export function renderEarth(context,width,height,date,state){
  const observerScreen=map([lon,lat]);
  const eastScreen=map([lon+5,lat]);
  const northScreen=map([lon,Math.min(lat+5,89)]);
- return {sunLon,sunDecl:d.decl,nadirLon,nadirLat,eclipseShadowActive:!!shadow?.active,eclipseShadowCenter:shadow?.center||null,
+ return {sunLon,sunDecl:d.decl,nadirLon,nadirLat,eclipseShadowActive:!!shadow?.active,eclipseShadowCenter:shadow?.center||null,eclipseMoonSunAngle:shadow?.moonSunAngle??null,eclipseCenterSample:shadow?.center?shadow.sample(...shadow.center):null,eclipseCenterScreen:shadow?.center?map(shadow.center):null,
   textureStatus:earthTextureStatus(earthTextureQuality).status,
   projectionProbe:{projection:earthProjection,observer:observerScreen,
    east:eastScreen,north:northScreen,viewCenter:[width/2,height/2],
