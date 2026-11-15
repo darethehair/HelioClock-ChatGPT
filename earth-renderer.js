@@ -209,11 +209,6 @@ export function renderEarth(context,width,height,date,state){
      r*=1-dim;g*=1-dim;b*=1-dim;
     }
    }
-   if(shadow?.active){
-    const cover=shadow.sample(p[0],p[1]);
-    if(cover.penumbra>0){const dim=clamp(cover.penumbra*.50+cover.umbra*.48,0,.98);
-     r*=1-dim;g*=1-dim;b*=1-dim;}
-   }
    image.data[i]=r;image.data[i+1]=g;image.data[i+2]=b;image.data[i+3]=255;
   }
  }
