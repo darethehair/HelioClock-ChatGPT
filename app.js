@@ -648,16 +648,19 @@ viewRange('sky-heading','skyHeading');
 $('sky-zoom').addEventListener('input',e=>setPolarSkyZoom(Number(e.target.value)));
 $('sky-zoom-out').addEventListener('click',()=>setPolarSkyZoom(Math.round(clamp(state.skyZoom/1.25,1,3)*100)/100));
 $('sky-zoom-in').addEventListener('click',()=>setPolarSkyZoom(Math.round(clamp(state.skyZoom*1.25,1,3)*100)/100));
-viewRange('earth-zoom','earthZoom');viewRange('orrery-zoom','orreryZoom');
+viewRange('earth-zoom','earthZoom');
+// Camera-only changes redraw the orrery, not the Earth, sky, Moon and almanac.
+function orreryRange(id,key){$(id).addEventListener('input',e=>{state[key]=Number(e.target.value);orrery()})}
+orreryRange('orrery-zoom','orreryZoom');
 $('orrery-3d').addEventListener('change',e=>{
  state.orrery3D=e.target.checked;
  document.querySelectorAll('.orrery-3d-setting').forEach(el=>el.hidden=!state.orrery3D);
- render();
+ orrery();
 });
-viewRange('orrery-tilt','orreryTilt');
-viewRange('orrery-rotation','orreryRotation');
+orreryRange('orrery-tilt','orreryTilt');
+orreryRange('orrery-rotation','orreryRotation');
 // Shared disc viewer handles the Moon slider and pan/zoom interaction.
-$('show-au-rings').addEventListener('change',render);
+$('show-au-rings').addEventListener('change',orrery);
 for(const button of document.querySelectorAll('[data-orbit-mode]')){
  button.addEventListener('click',()=>{
   state.orbitMode=button.dataset.orbitMode;
