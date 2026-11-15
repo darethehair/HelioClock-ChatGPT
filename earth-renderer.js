@@ -4,7 +4,6 @@ import atlas from 'world-atlas/countries-110m.json';
 import {RAD,wrap,solar,clamp} from './astronomy.js';
 import {cloudOpacityAt} from './clouds.js';
 import {solarShadowAt,solarShadowTrack} from './eclipse-earth-shadow.js';
-import {solarShadowAt,solarShadowTrack} from './eclipse-earth-shadow.js';
 
 const land=feature(atlas,atlas.objects.land);
 const borders=mesh(atlas,atlas.objects.countries,(a,b)=>a!==b);
@@ -34,7 +33,6 @@ export function createEarthProjection(width,height,state){
 }
 
 const normLon=(v)=>wrap(v+180,360)-180;
-const isNearSide=(point,longitude,latitude)=>geoDistance(point,[longitude,latitude])<=Math.PI/2;
 const isNearSide=(point,longitude,latitude)=>geoDistance(point,[longitude,latitude])<=Math.PI/2;
 const earthImages={};
 const earthLoadState={standard:'idle',high:'idle'};
@@ -114,7 +112,6 @@ export function renderEarth(context,width,height,date,state){
  if(earthTextureQuality==='4k')loadEarthTexture('4k');
  // The same projection factory is used by regression tests.
  const map=createEarthProjection(width,height,state);
- const shadow=state.showEclipseShadow===true?solarShadowAt(date):null;
  const shadow=state.showEclipseShadow===true?solarShadowAt(date):null;
  const d=solar(date);
  const utcMinutes=date.getUTCHours()*60+date.getUTCMinutes()+date.getUTCSeconds()/60;
@@ -243,22 +240,6 @@ export function renderEarth(context,width,height,date,state){
    context.beginPath();path(borders);context.lineWidth=.35;
    context.strokeStyle='#b1e8d64f';context.stroke();
  }
- // Ground track uses longitude/latitude and therefore follows the same
- // zoom, pan, projection clipping and antimeridian handling as the map.
- if(shadow?.active){
-  const track=solarShadowTrack(date,150,12);
-  if(track.length>1){
-   context.save();context.beginPath();
-   path({type:'LineString',coordinates:track});
-   context.strokeStyle='#ffdb78';context.lineWidth=2.1;
-   context.setLineDash([5,4]);context.stroke();context.restore();
-  }
-  if(shadow.center&&(!globe||isNearSide(shadow.center,earthLon,earthLat))){
-   const p=map(shadow.center);
-   if(p){context.save();context.strokeStyle='#fff2a0';context.lineWidth=2;
-    context.beginPath();context.arc(p[0],p[1],6,0,Math.PI*2);context.stroke();context.restore();}
-  }
- }
  // The ground track is geographical, so it follows zoom/pan/projection.
  if(shadow?.active){
   const track=solarShadowTrack(date,150,12);
@@ -310,7 +291,7 @@ export function renderEarth(context,width,height,date,state){
  const observerScreen=map([lon,lat]);
  const eastScreen=map([lon+5,lat]);
  const northScreen=map([lon,Math.min(lat+5,89)]);
- return {sunLon,sunDecl:d.decl,nadirLon,nadirLat,eclipseShadowActive:!!shadow?.active,eclipseShadowCenter:shadow?.center||null,eclipseShadowActive:!!shadow?.active,eclipseShadowCenter:shadow?.center||null,
+ return {sunLon,sunDecl:d.decl,nadirLon,nadirLat,eclipseShadowActive:!!shadow?.active,eclipseShadowCenter:shadow?.center||null,
   textureStatus:earthTextureStatus(earthTextureQuality).status,
   projectionProbe:{projection:earthProjection,observer:observerScreen,
    east:eastScreen,north:northScreen,viewCenter:[width/2,height/2],
