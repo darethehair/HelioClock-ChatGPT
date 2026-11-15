@@ -1224,7 +1224,7 @@ function dragCanvas(id,onMove){
   if(pointers.size>1)return;
   const dx=e.clientX-previous.x,dy=e.clientY-previous.y;
   start={x:e.clientX,y:e.clientY};
-  onMove(dx,dy,el,e);if(id==='orrery')orrery();else render();
+  if(id==='orrery'&&e.pointerType==='touch')return;onMove(dx,dy,el,e);if(id==='orrery')orrery();else render();
  });
  const end=e=>{
   pointers.delete(e.pointerId);
@@ -1257,6 +1257,29 @@ dragCanvas('orrery',(dx,dy,el)=>{
  $('orrery-rotation').value=state.orreryRotation;
  $('orrery-tilt').value=state.orreryTilt;
 });
+// Some Android browsers cancel pointer capture during touch gestures.
+// Use native single-touch movement as a fallback for the 3D camera.
+{
+ const el=$('orrery');let last=null;
+ el.addEventListener('touchstart',e=>{
+  last=e.touches.length===1?{x:e.touches[0].clientX,y:e.touches[0].clientY}:null;
+ },{passive:true});
+ el.addEventListener('touchmove',e=>{
+  if(!state.orrery3D||e.touches.length!==1||!last){last=null;return}
+  e.preventDefault();
+  const t=e.touches[0],dx=t.clientX-last.x,dy=t.clientY-last.y;
+  last={x:t.clientX,y:t.clientY};
+  // Touch events and pointer events can both fire; suppress duplicate
+  // pointer movement while the native touch fallback owns this gesture.
+  state.orreryRotation=((state.orreryRotation+dx/el.clientWidth*360+180)%360+360)%360-180;
+  state.orreryTilt=clamp(state.orreryTilt+dy/el.clientHeight*180,-90,90);
+  $('orrery-rotation').value=state.orreryRotation;
+  $('orrery-tilt').value=state.orreryTilt;
+  orrery();
+ },{passive:false});
+ el.addEventListener('touchend',()=>{last=null},{passive:true});
+ el.addEventListener('touchcancel',()=>{last=null},{passive:true});
+}
 dragCanvas('earth-map',(dx,dy,el)=>{
  state.earthLon=wrap(state.earthLon-dx/el.clientWidth*360/state.earthZoom+180,360)-180;
  const delta=dy/el.clientHeight*180/state.earthZoom;
