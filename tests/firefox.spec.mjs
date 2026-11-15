@@ -57,6 +57,7 @@ test('Mobile fullscreen prioritizes the chart and restores controls after exit',
  expect(dock.height).toBeLessThan(60);
  await page.locator('.sky-panel .mobile-plot-settings').click();
  await expect(page.locator('.sky-panel .sky-options')).toBeVisible();
+ await revealSkyControl(page,'show-radec-grid');
  await page.locator('.sky-panel #show-radec-grid').check();
  await page.locator('.sky-panel .mobile-plot-settings').click();
  await expect(page.locator('.sky-panel .sky-options')).not.toBeVisible();
@@ -1039,7 +1040,7 @@ test('Milky Way fixed mask is consistent across projections and polar zoom',asyn
  // "planar" mask; otherwise that mask has not been generated.
  await page.locator('[data-sky-projection="rect"]').click();
  await expect(page.locator('#mw-debug-status')).toContainText(/Mask planar · [0-9.]+% equatorial pixels/);
- const stats=await page.locator('#mw-debug-status').innerText();
+ const stats=await page.locator('#mw-debug-status').textContent();
  expect(stats).toContain('2 seam closures');
  await page.locator('[data-sky-projection="polar"]').click();
  await page.locator('#sky-zoom').fill('2');
