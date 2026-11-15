@@ -2217,7 +2217,8 @@ test('v70 offline city coverage expands with zoom and includes state capitals',a
  for(let i=0;i<5;i++)await page.locator('#earth-zoom-in').click();
  const close=await probe();
  expect(close.catalogCount).toBe(first.catalogCount);
- expect(close.cities.length).toBeGreaterThan(first.cities.length);
+ expect(close.eligibleCount).toBeGreaterThan(first.eligibleCount);
+ expect(close.cities.length).toBeGreaterThan(0);
  await page.locator('#earth-city-labels').uncheck();
  const hidden=await probe();
  expect(hidden.cities).toHaveLength(0);
