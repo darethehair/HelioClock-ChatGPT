@@ -21,7 +21,7 @@ import {spaceWeather,auroraFresh,startSpaceWeather,refreshSpaceWeather} from './
 import {starsAbove} from './sky-catalog.js';
 import {RAD,PI,wrap,clamp,solar,sunHorizontal,sunEvents,moon,orbitPositions,sidereal,equatorialFromHorizontal,utcTime,durationText} from './astronomy.js';
 const $=id=>document.getElementById(id);
-const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyPanX:0,skyPanY:0,skyHeading:0,earthZoom:1,earthLon:-98.10,earthLat:49.19,earthProjection:'equal',earthTextureQuality:'2k',orreryZoom:1,moonZoom:1,discView:'moon',sunZoom:1,moonPanX:0,moonPanY:0,sunPanX:0,sunPanY:0,orbitMode:'inner',skyLight:'daylight',skyProjection:'polar',magLimit:3.5,stellarColors:true,usePrecession:true,playing:false};
+const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyPanX:0,skyPanY:0,skyHeading:0,earthZoom:1,earthLon:-98.10,earthLat:49.19,earthProjection:'equal',earthMapStyle:'physical',earthTextureQuality:'2k',orreryZoom:1,moonZoom:1,discView:'moon',sunZoom:1,moonPanX:0,moonPanY:0,sunPanX:0,sunPanY:0,orbitMode:'inner',skyLight:'daylight',skyProjection:'polar',magLimit:3.5,stellarColors:true,usePrecession:true,playing:false};
 const fmt=d=>d.toISOString().slice(0,10);
 let highlightedOrreryEvent=null;
 function updateOrreryEventChoices(){
@@ -93,7 +93,11 @@ function worldMap(){
   auroraGrid:weather.grid,
   showClouds:$('earth-clouds').checked&&cloudStatus().status==='ready',
   cloudOpacity:Number($('earth-cloud-opacity').value)/100,
-  showEclipseShadow:$('earth-eclipse-shadow').checked});
+  showEclipseShadow:$('earth-eclipse-shadow').checked,
+  earthMapStyle:state.earthMapStyle||'physical',
+  earthCountryBorders:$('earth-country-borders').checked,
+  earthRegionBorders:$('earth-region-borders').checked,
+  earthCityLabels:$('earth-city-labels').checked});
  const cloud=cloudStatus(),cloudEnabled=$('earth-clouds').checked;
  $('earth-cloud-status').textContent=!cloudEnabled
   ?'Clouds off · NASA daily true-colour imagery (approximate)'
@@ -119,6 +123,7 @@ function worldMap(){
   :highStatus.status==='ready'?'2K image · 2048 × 1024 · offline':
     highStatus.status==='failed'?'2K image unavailable':'Loading 2K image…';
  $('earth-map').dataset.projectionProbe=JSON.stringify(result.projectionProbe);
+ $('earth-map').dataset.politicalProbe=JSON.stringify({style:result.mapStyle,labels:result.politicalLabels,regionLines:result.adminBoundaryCount});
  $('earth-map').dataset.eclipseProbe=JSON.stringify({active:result.eclipseShadowActive,center:result.eclipseShadowCenter,angle:result.eclipseMoonSunAngle,centerSample:result.eclipseCenterSample,screen:result.eclipseCenterScreen,footprintType:result.eclipseFootprintType,footprint:result.eclipseFootprint,observer:result.eclipseObserverSample});
  const eclipseStatus=$('earth-eclipse-status');
  eclipseStatus.textContent=!$('earth-eclipse-shadow').checked?'Eclipse shadow hidden':
@@ -997,6 +1002,11 @@ function adjustEarthZoom(factor){
 $('earth-zoom-in').addEventListener('click',()=>adjustEarthZoom(1.25));
 $('earth-zoom-out').addEventListener('click',()=>adjustEarthZoom(.8));
 $('earth-map-home').addEventListener('click',()=>{$('earth-reset').click()});
+$('earth-map-style').addEventListener('change',e=>{
+ state.earthMapStyle=['physical','hybrid','political'].includes(e.target.value)?e.target.value:'physical';
+ render();
+});
+for(const id of ['earth-country-borders','earth-region-borders','earth-city-labels'])$(id).addEventListener('change',render);
 $('earth-texture-quality').addEventListener('change',e=>{
  state.earthTextureQuality=e.target.value==='4k'?'4k':'2k';
  render();
@@ -1295,7 +1305,7 @@ const dockNext=timeDock.nextSibling;
 const compactFullscreenQuery=window.matchMedia('(max-width: 1050px)');
 const compactControlSelectors={
  'chart-panel':['.solar-chart-legend','.solar-chart-summary','.solar-time-position','.chart-footer'],
- 'earth-panel':['.earth-tools','.earth-twilight-controls','.earth-overlay-tools','.map-legend'],
+ 'earth-panel':['.earth-tools','.earth-political-tools','.earth-twilight-controls','.earth-overlay-tools','.map-legend'],
  'sky-panel':['.sky-light-controls','.sky-observatory-toolbar','.sky-sidereal-toolbar','.sky-debug-tools','.sky-options','.sky-cursor-readout','.celestial-readout','.sky-legend'],
  'moon-panel':['.eclipse-explorer','.disc-view-select','.earthshine-toggle','.moon-view-tools','.moon-orientation','.solar-observation-note','.moon-bottom'],
  'orrery-panel':['.orrery-controls','.orrery-events','.planet-legend']
@@ -1481,9 +1491,11 @@ const PREF_CHECKBOXES=['show-au-rings','show-earthshine','show-constellations',
  'show-ecliptic','use-precession','show-stellar-colors',
  'show-planets','show-altaz-grid','show-radec-grid',
  'earth-twilight-civil','earth-twilight-nautical',
- 'earth-twilight-astronomical','earth-twilight-night','earth-city-lights','earth-aurora','earth-clouds'];
+ 'earth-twilight-astronomical','earth-twilight-night','earth-city-lights','earth-aurora','earth-clouds',
+ 'earth-country-borders','earth-region-borders','earth-city-labels'];
 const PREF_CHOICES={
  earthProjection:['equal','globe','mercator'],
+ earthMapStyle:['physical','hybrid','political'],
  earthTextureQuality:['2k','4k'],
  skyProjection:['polar','rect'],
  skyLight:['daylight','black'],
@@ -1491,7 +1503,7 @@ const PREF_CHOICES={
  discView:['moon','sun']
 };
 const FACTORY_PREF={
- version:1,observer:{lat:49.19,lon:-98.10},earthProjection:'equal',earthTextureQuality:'2k',
+ version:1,observer:{lat:49.19,lon:-98.10},earthProjection:'equal',earthTextureQuality:'2k',earthMapStyle:'physical',
  skyProjection:'polar',skyLight:'daylight',orbitMode:'inner',discView:'moon',
  magLimit:3.5,stellarColors:true,usePrecession:true,
  checkboxes:null,layout:null,rememberView:false,view:null
@@ -1503,7 +1515,7 @@ function capturePrefs(){
  for(const key of PREF_CHECKBOXES)checks[key]=$(key).checked;
  return {
   version:1,observer:{lat:state.lat,lon:state.lon},
-  earthProjection:state.earthProjection,earthTextureQuality:state.earthTextureQuality,
+  earthProjection:state.earthProjection,earthTextureQuality:state.earthTextureQuality,earthMapStyle:state.earthMapStyle||'physical',
   skyProjection:state.skyProjection,
   skyLight:state.skyLight,orbitMode:state.orbitMode,discView:state.discView,
   magLimit:state.magLimit,stellarColors:state.stellarColors,usePrecession:state.usePrecession,
@@ -1537,6 +1549,7 @@ function applyPrefs(saved,{restoreLayout=true}={}){
  }
  for(const key of Object.keys(PREF_CHOICES))useChoice(key,saved[key]);
  $('earth-texture-quality').value=state.earthTextureQuality;
+ $('earth-map-style').value=state.earthMapStyle||'physical';
  if(validNumber(saved.magLimit,0,7))state.magLimit=saved.magLimit;
  if(typeof saved.stellarColors==='boolean')state.stellarColors=saved.stellarColors;
  if(typeof saved.usePrecession==='boolean')state.usePrecession=saved.usePrecession;
@@ -1631,7 +1644,7 @@ $('prefs-file').addEventListener('change',async e=>{
   if(!validNumber(value.magLimit,0,7))throw Error('Invalid magnitude limit');
   for(const key of PREF_CHECKBOXES)
    if(typeof value.checkboxes[key]!=='boolean'&&
-      !(value.checkboxes[key]===undefined&&['show-planets','show-altaz-grid','show-radec-grid','earth-city-lights','earth-aurora','earth-clouds'].includes(key)))
+      !(value.checkboxes[key]===undefined&&['show-planets','show-altaz-grid','show-radec-grid','earth-city-lights','earth-aurora','earth-clouds','earth-country-borders','earth-region-borders','earth-city-labels'].includes(key)))
     throw Error('Invalid '+key);
   for(const key of Object.keys(defaultLayout))
    if(typeof value.layout[key]!=='boolean')throw Error('Invalid layout');
