@@ -1751,6 +1751,40 @@ for(const id of ['earth-map','sky','disc-stage','orrery']){
  const el=$(id);
  if(el){el.addEventListener('pointerup',persistPrefs);el.addEventListener('wheel',()=>setTimeout(persistPrefs,0),{passive:true})}
 }
+// Render every preference-backed control from the application model. Browsers
+// may restore form history independently of JavaScript, especially on pageshow.
+function synchronizePreferenceControls(){
+ for(const [id,key] of [['earth-map-style','earthMapStyle'],
+  ['earth-texture-quality','earthTextureQuality'],['star-magnitude','magLimit'],
+  ['earth-zoom','earthZoom'],['sky-zoom','skyZoom'],['sky-heading','skyHeading'],
+  ['orrery-zoom','orreryZoom'],['orrery-tilt','orreryTilt'],
+  ['orrery-rotation','orreryRotation'],['moon-zoom','moonZoom']]){
+  const el=$(id);if(el)el.value=String(state[key]);
+ }
+ $('latitude').value=String(state.lat);
+ $('longitude').value=String(state.lon);
+ $('show-stellar-colors').checked=state.stellarColors;
+ $('use-precession').checked=state.usePrecession;
+ $('orrery-3d').checked=state.orrery3D;
+ document.querySelectorAll('.orrery-3d-setting').forEach(el=>el.hidden=!state.orrery3D);
+ $('below-horizon-setting').hidden=state.skyProjection!=='rect';
+ for(const [attribute,selected] of [
+  ['data-projection',state.earthProjection],
+  ['data-sky-projection',state.skyProjection],
+  ['data-sky-light',state.skyLight],
+  ['data-orbit-mode',state.orbitMode],
+  ['data-disc-view',state.discView]]){
+  for(const button of document.querySelectorAll('['+attribute+']')){
+   const active=button.getAttribute(attribute)===selected;
+   button.classList.toggle(attribute==='data-projection'?'is-active':'selected',active);
+   button.setAttribute('aria-pressed',String(active));
+  }
+ }
+ for(const key of Object.keys(defaultLayout)){
+  const input=document.querySelector('[data-panel-visibility="'+key+'"]');
+  if(input)input.checked=activeLayout[key];
+ }
+}
 function initializePreferences(){
  // Firefox can restore stale form values independently of localStorage.
  // Reset all preference-backed controls to their declared factory defaults
@@ -1765,6 +1799,7 @@ function initializePreferences(){
  $('earth-texture-quality').value=state.earthTextureQuality;
  $('latitude').value=String(state.lat);
  $('longitude').value=String(state.lon);
+ synchronizePreferenceControls();
  prefReady=true;
  persistPrefs();
  render();
@@ -1773,14 +1808,15 @@ initializePreferences();
 // Firefox can restore form history after module initialization. Reassert
 // preferences after page-show so coordinates and the model never disagree.
 window.addEventListener('pageshow',()=>{
- $('latitude').value=String(state.lat);
- $('longitude').value=String(state.lon);
+ // Reassert model-owned choices and saved checkbox preferences after Firefox
+ // or mobile browser session restoration; never derive the model from stale UI.
  const saved=readPrefs();
- for(const key of PREF_CHECKBOXES)
+ for(const key of PREF_CHECKBOXES){
+  if(key==='orrery-3d'||key==='show-stellar-colors'||key==='use-precession')continue;
   $(key).checked=saved&&typeof saved.checkboxes?.[key]==='boolean'
    ?saved.checkboxes[key]:$(key).defaultChecked;
+ }
  $('prefs-remember-view').checked=saved?.rememberView===true;
- state.orrery3D=$('orrery-3d').checked;
- document.querySelectorAll('.orrery-3d-setting').forEach(el=>el.hidden=!state.orrery3D);
+ synchronizePreferenceControls();
  render();
 });
