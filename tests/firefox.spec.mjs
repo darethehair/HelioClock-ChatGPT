@@ -2151,6 +2151,19 @@ test('1979 eclipse casts a visible Earth shadow in all map projections',async({p
   expect(probe?.active,projection).toBe(true);
   expect(probe?.center,projection).toBeTruthy();
   expect(probe?.centerSample?.penumbra,projection).toBeGreaterThan(.8);
+  // Prove that the overlay changes actual canvas pixels at the projected centre.
+  const at=()=>page.locator('#earth-map').evaluate(el=>{
+   const probe=JSON.parse(el.dataset.eclipseProbe);
+   const [x,y]=probe.screen;
+   const cx=Math.max(0,Math.min(el.width-1,Math.round(x)));
+   const cy=Math.max(0,Math.min(el.height-1,Math.round(y)));
+   return Array.from(el.getContext('2d').getImageData(cx,cy,1,1).data);
+  });
+  const withShadow=await at();
+  await page.locator('#earth-eclipse-shadow').uncheck();
+  const withoutShadow=await at();
+  expect(withShadow.slice(0,3),projection+' center pixel').not.toEqual(withoutShadow.slice(0,3));
+  await page.locator('#earth-eclipse-shadow').check();
   expect(probe.center[0],projection).toBeGreaterThan(-125);
   expect(probe.center[0],projection).toBeLessThan(-80);
   expect(probe.center[1],projection).toBeGreaterThan(35);
