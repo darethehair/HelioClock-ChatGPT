@@ -2182,6 +2182,9 @@ test('v68 political Earth: map styles and boundary/city controls survive all pro
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#earth-map-style')).toHaveValue('physical');
  await page.locator('#earth-map-style').selectOption('hybrid');
+ let result=await page.locator('#earth-map').evaluate(el=>JSON.parse(el.dataset.politicalProbe));
+ expect(result.style).toBe('hybrid');
+ expect(result.labels).toBeGreaterThan(0);
  for(const projection of ['equal','mercator','globe']){
   await page.locator('[data-projection="'+projection+'"]').click();
   const probe=await page.locator('#earth-map').evaluate(el=>JSON.parse(el.dataset.projectionProbe));
@@ -2191,7 +2194,11 @@ test('v68 political Earth: map styles and boundary/city controls survive all pro
   await expect(page.locator('#earth-city-labels')).toBeChecked();
  }
  await page.locator('#earth-zoom-in').click();
+ result=await page.locator('#earth-map').evaluate(el=>JSON.parse(el.dataset.politicalProbe));
+ expect(result.regionLines).toBeGreaterThan(500);
  await page.locator('#earth-map-style').selectOption('political');
+ result=await page.locator('#earth-map').evaluate(el=>JSON.parse(el.dataset.politicalProbe));
+ expect(result.style).toBe('political');
  await page.locator('#earth-city-labels').uncheck();
  await page.reload();
  await expect(page.locator('#earth-map-style')).toHaveValue('political');
