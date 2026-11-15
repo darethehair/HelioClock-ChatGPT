@@ -317,7 +317,7 @@ export function renderEarth(context,width,height,date,state){
  const observerScreen=map([lon,lat]);
  const eastScreen=map([lon+5,lat]);
  const northScreen=map([lon,Math.min(lat+5,89)]);
- return {sunLon,sunDecl:d.decl,nadirLon,nadirLat,eclipseShadowActive:!!shadow?.active,eclipseShadowCenter:shadow?.center||null,eclipseMoonSunAngle:shadow?.moonSunAngle??null,eclipseCenterSample:shadow?.center?shadow.sample(...shadow.center):null,eclipseFootprintType:eclipseFootprint?.type||null,eclipseFootprint:eclipseFootprint?.coordinates||null,eclipseCenterScreen:shadow?.center?map(shadow.center):null,
+ return {sunLon,sunDecl:d.decl,nadirLon,nadirLat,eclipseShadowActive:!!shadow?.active,eclipseShadowCenter:shadow?.center||null,eclipseMoonSunAngle:shadow?.moonSunAngle??null,eclipseCenterSample:shadow?.center?shadow.sample(...shadow.center):null,eclipseFootprintType:eclipseFootprint?.type||null,eclipseFootprint:eclipseFootprint?.coordinates||null,eclipseObserverSample:shadow?shadow.sample(lon,lat):null,eclipseCenterScreen:shadow?.center?map(shadow.center):null,
   textureStatus:earthTextureStatus(earthTextureQuality).status,
   projectionProbe:{projection:earthProjection,observer:observerScreen,
    east:eastScreen,north:northScreen,viewCenter:[width/2,height/2],
