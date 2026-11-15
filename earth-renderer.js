@@ -3,7 +3,7 @@ import {feature,mesh} from 'topojson-client';
 import atlas from 'world-atlas/countries-110m.json';
 import {RAD,wrap,solar,clamp} from './astronomy.js';
 import {cloudOpacityAt} from './clouds.js';
-import {solarShadowAt,solarShadowTrack} from './eclipse-earth-shadow.js';
+import {solarShadowAt,solarShadowTrack,solarCentralFootprint} from './eclipse-earth-shadow.js';
 
 const land=feature(atlas,atlas.objects.land);
 const borders=mesh(atlas,atlas.objects.countries,(a,b)=>a!==b);
@@ -113,6 +113,7 @@ export function renderEarth(context,width,height,date,state){
  // The same projection factory is used by regression tests.
  const map=createEarthProjection(width,height,state);
  const shadow=state.showEclipseShadow===true?solarShadowAt(date):null;
+ const eclipseFootprint=shadow?.active?solarCentralFootprint(shadow):null;
  const d=solar(date);
  const utcMinutes=date.getUTCHours()*60+date.getUTCMinutes()+date.getUTCSeconds()/60;
  const sunLon=normLon((720-utcMinutes-d.eq)/4),sunLat=d.decl*RAD;
@@ -235,6 +236,19 @@ export function renderEarth(context,width,height,date,state){
    context.beginPath();path(borders);context.lineWidth=.35;
    context.strokeStyle='#b1e8d64f';context.stroke();
  }
+ // A closed cone-intersection footprint reveals the full totality area.
+ // The darker fill and double rim remain readable over both oceans and land.
+ // geoPath applies the same projection, horizon clipping and zoom as Earth.
+ if(eclipseFootprint){
+  const footprint={type:'Polygon',coordinates:[eclipseFootprint.coordinates]};
+  context.save();context.beginPath();path(footprint);
+  context.fillStyle=eclipseFootprint.type==='totality'?'#050913b8':'#1811209a';
+  context.fill();
+  context.strokeStyle=eclipseFootprint.type==='totality'?'#ffbc64':'#f1a6b8';
+  context.lineWidth=2.25;
+  context.shadowColor='#ffcc78';context.shadowBlur=9;context.stroke();
+  context.restore();
+ }
  // Ground track is in geographic coordinates; d3 handles zoom and map clipping.
  // A bright marker makes the tiny umbra independently identifiable at 1x zoom.
  if(shadow?.active){
@@ -303,7 +317,7 @@ export function renderEarth(context,width,height,date,state){
  const observerScreen=map([lon,lat]);
  const eastScreen=map([lon+5,lat]);
  const northScreen=map([lon,Math.min(lat+5,89)]);
- return {sunLon,sunDecl:d.decl,nadirLon,nadirLat,eclipseShadowActive:!!shadow?.active,eclipseShadowCenter:shadow?.center||null,eclipseMoonSunAngle:shadow?.moonSunAngle??null,eclipseCenterSample:shadow?.center?shadow.sample(...shadow.center):null,eclipseCenterScreen:shadow?.center?map(shadow.center):null,
+ return {sunLon,sunDecl:d.decl,nadirLon,nadirLat,eclipseShadowActive:!!shadow?.active,eclipseShadowCenter:shadow?.center||null,eclipseMoonSunAngle:shadow?.moonSunAngle??null,eclipseCenterSample:shadow?.center?shadow.sample(...shadow.center):null,eclipseFootprintType:eclipseFootprint?.type||null,eclipseFootprint:eclipseFootprint?.coordinates||null,eclipseCenterScreen:shadow?.center?map(shadow.center):null,
   textureStatus:earthTextureStatus(earthTextureQuality).status,
   projectionProbe:{projection:earthProjection,observer:observerScreen,
    east:eastScreen,north:northScreen,viewCenter:[width/2,height/2],
