@@ -21,7 +21,7 @@ import {spaceWeather,auroraFresh,startSpaceWeather,refreshSpaceWeather} from './
 import {starsAbove} from './sky-catalog.js';
 import {RAD,PI,wrap,clamp,solar,sunHorizontal,sunEvents,moon,orbitPositions,sidereal,equatorialFromHorizontal,utcTime,durationText} from './astronomy.js';
 const $=id=>document.getElementById(id);
-const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyPanX:0,skyPanY:0,skyHeading:0,earthZoom:1,earthLon:-98.10,earthLat:49.19,earthProjection:'equal',earthMapStyle:'physical',earthTextureQuality:'2k',orreryZoom:1,moonZoom:1,discView:'moon',sunZoom:1,moonPanX:0,moonPanY:0,sunPanX:0,sunPanY:0,orbitMode:'inner',skyLight:'daylight',skyProjection:'polar',magLimit:3.5,stellarColors:true,usePrecession:true,playing:false};
+const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyPanX:0,skyPanY:0,skyHeading:0,earthZoom:1,earthLon:-98.10,earthLat:49.19,earthProjection:'equal',earthMapStyle:'physical',earthTextureQuality:'2k',orreryZoom:1,moonZoom:1,discView:'moon',sunZoom:1,moonPanX:0,moonPanY:0,sunPanX:0,sunPanY:0,orbitMode:'inner',orrery3D:false,orreryTilt:55,orreryRotation:0,skyLight:'daylight',skyProjection:'polar',magLimit:3.5,stellarColors:true,usePrecession:true,playing:false};
 const fmt=d=>d.toISOString().slice(0,10);
 let highlightedOrreryEvent=null;
 function updateOrreryEventChoices(){
@@ -457,64 +457,62 @@ function drawMoon(){
 }
 function orrery(){
  const o=canvas($('orrery'));if(!o)return;
- const {c,w,h}=o,X=w/2,Y=h/2,outer=state.orbitMode==='outer';
- // The background is permanently black: solar daylight cannot illuminate space.
- c.fillStyle='#000000';c.fillRect(0,0,w,h);
+ const {c,w,h}=o,X=w/2,Y=h/2,outer=state.orbitMode==='outer',threeD=state.orrery3D;
+ c.fillStyle='#000';c.fillRect(0,0,w,h);
  const all=orbitPositions(state.date),planets=outer?all:all.slice(0,4);
  const maximum=outer?30.07:1.524;
  const scale=Math.min(w*.44,h*.43)/maximum*state.orreryZoom;
- // Faint orbital trajectories remain visible independently of AU guide rings.
- planets.forEach(p=>{
-  const r=p.radius*scale;
-  c.beginPath();c.arc(X,Y,r,0,2*PI);
-  c.strokeStyle='#40526b70';c.lineWidth=.8;c.stroke();
- });
+ const tilt=(threeD?state.orreryTilt:0)*RAD,rotation=(threeD?state.orreryRotation:0)*RAD;
+ // Rotate the ecliptic around its pole, then tip it toward the observer.
+ // Longitude zero is screen-up, longitude 90° screen-left in the top-down view.
+ const project=(x,y,z=0)=>{
+  const u=x*Math.cos(rotation)-y*Math.sin(rotation);
+  const v=x*Math.sin(rotation)+y*Math.cos(rotation);
+  return [X-u*scale,Y-(v*Math.cos(tilt)-z*Math.sin(tilt))*scale,
+          v*Math.sin(tilt)+z*Math.cos(tilt)];
+ };
+ const position=p=>project(p.radius*Math.sin(p.angle*RAD),p.radius*Math.cos(p.angle*RAD),threeD?p.eclipticZ:0);
+ // Project circular AU guides in the ecliptic plane.
+ const ring=(radius,color,dash=[])=>{
+  c.save();c.strokeStyle=color;c.lineWidth=.8;c.setLineDash(dash);c.beginPath();
+  for(let i=0;i<=96;i++){
+   const t=i*2*PI/96,[x,y]=project(radius*Math.sin(t),radius*Math.cos(t));
+   if(!i)c.moveTo(x,y);else c.lineTo(x,y);
+  }
+  c.stroke();c.restore();
+ };
+ // Orbit guides use each body's instantaneous heliocentric radius, as before;
+ // actual planetary markers use their measured ecliptic heights.
+ planets.forEach(p=>ring(p.radius,'#40526b70'));
  if($('show-au-rings').checked){
   const values=outer?[5,10,15,20,25,30]:[.25,.5,.75,1,1.25,1.5];
-  c.save();
-  c.setLineDash([3,5]);c.lineWidth=.8;
   for(const au of values){
-   const radius=au*scale;
-   if(radius<8||radius>Math.max(w,h))continue;
-   c.beginPath();c.arc(X,Y,radius,0,2*PI);
-   c.strokeStyle='#72bddd77';c.stroke();
-   // Labels sit at 315° instead of on the planetary orbital path at the right.
-   const xx=X+Math.cos(-Math.PI/4)*radius,yy=Y+Math.sin(-Math.PI/4)*radius;
-   if(xx>10&&xx<w-22&&yy>12&&yy<h-10){
-    c.setLineDash([]);
-    c.font='10px sans-serif';
-    c.textAlign='left';
-    c.fillStyle='#aeddf4';
-    c.fillText((Number.isInteger(au)?au:au.toFixed(2).replace(/0$/,''))+' AU',xx+4,yy-4);
-    c.setLineDash([3,5]);
+   if(au*scale<8||au*scale>Math.max(w,h))continue;
+   ring(au,'#72bddd77',[3,5]);
+   const [x,y]=project(au*Math.sin(-PI/4),au*Math.cos(-PI/4));
+   if(x>10&&x<w-32&&y>12&&y<h-10){
+    c.fillStyle='#aeddf4';c.font='10px sans-serif';c.textAlign='left';
+    c.fillText((Number.isInteger(au)?au:au.toFixed(2).replace(/0$/,''))+' AU',x+4,y-4);
    }
   }
-  c.restore();
  }
- // Highlight Sun/Earth/selected planet when viewing an event date.
  if(highlightedOrreryEvent&&Math.abs(state.date.getTime()-highlightedOrreryEvent.date.getTime())<43200000){
-  const earth=all.find(p=>p.name==='Earth');
-  const target=all.find(p=>p.name===highlightedOrreryEvent.planet);
+  const earth=all.find(p=>p.name==='Earth'),target=all.find(p=>p.name===highlightedOrreryEvent.planet);
   if(earth&&target){
-   const point=p=>[X-p.radius*scale*Math.sin(p.angle*RAD),Y-p.radius*scale*Math.cos(p.angle*RAD)];
-   const [ex,ey]=point(earth),[px,py]=point(target);
+   const [ex,ey]=position(earth),[px,py]=position(target);
    c.save();c.strokeStyle='#f0c477';c.lineWidth=1.8;c.setLineDash([6,5]);
-   c.beginPath();c.moveTo(X,Y);c.lineTo(ex,ey);c.lineTo(px,py);c.stroke();
-   c.setLineDash([]);c.restore();
+   c.beginPath();c.moveTo(X,Y);c.lineTo(ex,ey);c.lineTo(px,py);c.stroke();c.restore();
   }
  }
- // No decorative fake stars in the orrery: an uncluttered black backdrop.
+ // Draw farther bodies first in the tilted view.
+ const markers=planets.map(p=>({p,screen:position(p)})).sort((a,b)=>b.screen[2]-a.screen[2]);
  dot(c,X,Y,outer?5:12,'#ffcd7d',18);
- planets.forEach(p=>{
-  // Seen from north of the ecliptic, orbital longitude increases counterclockwise.
-// Longitude zero remains at the top; 90 degrees projects left, not right.
-// Screen Y points downward, so use (-sin(longitude), -cos(longitude)).
-  const a=p.angle*RAD,x=X-p.radius*scale*Math.sin(a),y=Y-p.radius*scale*Math.cos(a);
+ markers.forEach(({p,screen:[x,y]})=>{
   dot(c,x,y,outer?Math.max(2.6,p.r*.75):p.r,p.color,9);
   if(outer||p.radius*scale>20)label(c,p.name,x+8,y-7,p.color,10);
  });
  $('planet-legend').innerHTML=planets.map(p=>'<span style="color:'+p.color+'">● '+p.name+'</span>').join('');
- $('au-scale-description').textContent=outer?'Outer view · 5 AU intervals':'Inner view · 0.25 AU intervals';
+ $('au-scale-description').textContent=(outer?'Outer view · 5 AU intervals':'Inner view · 0.25 AU intervals')+(threeD?' · ecliptic perspective':'');
 }
 function formatCoord(n,positive,negative){return Math.abs(n).toFixed(2)+'° '+(n>=0?positive:negative)}
 let almanacCurrent=null;
@@ -651,6 +649,13 @@ $('sky-zoom').addEventListener('input',e=>setPolarSkyZoom(Number(e.target.value)
 $('sky-zoom-out').addEventListener('click',()=>setPolarSkyZoom(Math.round(clamp(state.skyZoom/1.25,1,3)*100)/100));
 $('sky-zoom-in').addEventListener('click',()=>setPolarSkyZoom(Math.round(clamp(state.skyZoom*1.25,1,3)*100)/100));
 viewRange('earth-zoom','earthZoom');viewRange('orrery-zoom','orreryZoom');
+$('orrery-3d').addEventListener('change',e=>{
+ state.orrery3D=e.target.checked;
+ document.querySelectorAll('.orrery-3d-setting').forEach(el=>el.hidden=!state.orrery3D);
+ render();
+});
+viewRange('orrery-tilt','orreryTilt');
+viewRange('orrery-rotation','orreryRotation');
 // Shared disc viewer handles the Moon slider and pan/zoom interaction.
 $('show-au-rings').addEventListener('change',render);
 for(const button of document.querySelectorAll('[data-orbit-mode]')){
