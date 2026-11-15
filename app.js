@@ -1116,7 +1116,11 @@ $('earth-reset').addEventListener('click',()=>{
  state.earthZoom=1;state.earthLon=state.lon;state.earthLat=state.lat;
  $('earth-zoom').value=1;render();
 });
-reset('orrery-reset',{orreryZoom:1});
+$('orrery-reset').addEventListener('click',()=>{
+ state.orreryZoom=1;state.orreryTilt=55;state.orreryRotation=0;
+ $('orrery-zoom').value=1;$('orrery-tilt').value=55;$('orrery-rotation').value=0;
+ orrery();
+});
 function wheelZoom(canvasId,controlId,key,lo,hi){
  $(canvasId).addEventListener('wheel',e=>{e.preventDefault();state[key]=clamp(state[key]*(e.deltaY>0?.88:1.14),lo,hi);$(controlId).value=state[key];if(canvasId==='orrery')orrery();else render()},{passive:false});
 }
@@ -1194,7 +1198,7 @@ function dragCanvas(id,onMove){
   if(pointers.size>1)return;
   const dx=e.clientX-previous.x,dy=e.clientY-previous.y;
   start={x:e.clientX,y:e.clientY};
-  onMove(dx,dy,el,e);render();
+  onMove(dx,dy,el,e);if(id==='orrery')orrery();else render();
  });
  const end=e=>{
   pointers.delete(e.pointerId);
@@ -1218,7 +1222,15 @@ dragCanvas('sky',(dx,dy,el,e)=>{
   $('sky-heading').value=state.skyHeading;
  }
 });
-dragCanvas('orrery',()=>{});
+dragCanvas('orrery',(dx,dy,el)=>{
+ if(!state.orrery3D)return;
+ // A full-width horizontal drag rotates 360 degrees; a full-height
+ // vertical drag changes the camera elevation by 90 degrees.
+ state.orreryRotation=((state.orreryRotation+dx/el.clientWidth*360+180)%360+360)%360-180;
+ state.orreryTilt=clamp(state.orreryTilt+dy/el.clientHeight*90,0,80);
+ $('orrery-rotation').value=state.orreryRotation;
+ $('orrery-tilt').value=state.orreryTilt;
+});
 dragCanvas('earth-map',(dx,dy,el)=>{
  state.earthLon=wrap(state.earthLon-dx/el.clientWidth*360/state.earthZoom+180,360)-180;
  const delta=dy/el.clientHeight*180/state.earthZoom;
