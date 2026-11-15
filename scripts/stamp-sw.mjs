@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+import crypto from 'node:crypto';
+const path='dist/sw.js';
+const source=fs.readFileSync(path,'utf8');
+const info=JSON.parse(fs.readFileSync('dist/build-info.json','utf8'));
+const digest=crypto.createHash('sha256').update(fs.readFileSync('dist/app.js')).digest('hex').slice(0,12);
+const cache='helioclock-chatgpt-v'+info.version+'-'+digest;
+const output=source.replace(/const CACHE='[^']+';/, "const CACHE='"+cache+"';");
+if(output===source)throw new Error('Service worker cache declaration missing');
+fs.writeFileSync(path,output);
+console.log('Stamped service worker cache:',cache);
