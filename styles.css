@@ -660,3 +660,17 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 .earth-political-tools input{accent-color:#91deae}
 .earth-political-tools small{color:#92adc2;font-size:10px}
 @media(max-width:750px){.earth-map-style{width:100%;justify-content:space-between}.earth-map-style select{max-width:75%}.earth-political-tools{gap:7px 10px}.earth-political-tools small{width:100%}}
+
+
+/* Progressive disclosure of optional sky layers without hiding the essentials. */
+.sky-extra-controls{display:inline-block;position:relative;min-width:0}
+.sky-extra-controls>summary,.sky-debug-tools>summary{list-style:none;cursor:pointer;border:1px solid #456785;border-radius:6px;padding:7px 10px;background:#132d48;color:#c8e0f4;font-size:11px;font-weight:650}
+.sky-extra-controls>summary::-webkit-details-marker,.sky-debug-tools>summary::-webkit-details-marker{display:none}
+.sky-extra-controls>summary:after,.sky-debug-tools>summary:after{content:' ▾';opacity:.7}
+.sky-extra-controls[open]>summary:after,.sky-debug-tools[open]>summary:after{content:' ▴'}
+.sky-extra-controls-body{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:9px 0}
+.sky-observatory-toolbar .sky-extra-controls[open],.sky-options .sky-extra-controls[open]{flex-basis:100%}
+.sky-debug-tools{display:block;padding:2px 0 6px}
+.sky-debug-tools>summary{display:inline-block;opacity:.7;font-weight:400}
+.sky-debug-content{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding-top:8px}
+.sky-extra-controls>summary:focus-visible,.sky-debug-tools>summary:focus-visible{outline:2px solid #9cdcff;outline-offset:3px}
