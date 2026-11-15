@@ -674,3 +674,8 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 .sky-debug-tools>summary{display:inline-block;opacity:.7;font-weight:400}
 .sky-debug-content{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding-top:8px}
 .sky-extra-controls>summary:focus-visible,.sky-debug-tools>summary:focus-visible{outline:2px solid #9cdcff;outline-offset:3px}
+
+/* v74 optional tilted orrery controls */
+.orrery-3d-setting{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#c5daed}
+.orrery-3d-setting[hidden]{display:none!important}
+.orrery-3d-setting input{width:92px;accent-color:#f3c178}
