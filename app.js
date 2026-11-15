@@ -1554,7 +1554,7 @@ applyLayout(activeLayout);
  * Simulation date/time and temporary pan/zoom are excluded by default.
  */
 const PREF_KEY='helioclock-preferences-v1',LEGACY_LAYOUT_KEY='helioclock-layout-v21';
-const PREF_CHECKBOXES=['show-au-rings','show-earthshine','show-constellations',
+const PREF_CHECKBOXES=['orrery-3d','show-au-rings','show-earthshine','show-constellations',
  'show-milkyway-shade','show-milkyway-outline','show-galactic-center',
  'show-stars','show-labels','show-sky-paths','show-below-horizon',
  'show-dso-galaxies','show-dso-nebulae','show-dso-clusters','show-dso-labels','show-constellation-names',
@@ -1627,6 +1627,10 @@ function applyPrefs(saved,{restoreLayout=true}={}){
   for(const key of PREF_CHECKBOXES)
    if(typeof saved.checkboxes[key]==='boolean')$(key).checked=saved.checkboxes[key];
  }
+ // Restore the camera model and dependent controls together, not merely
+ // the checkbox appearance. A browser may restore checkbox history separately.
+ state.orrery3D=$('orrery-3d').checked;
+ document.querySelectorAll('.orrery-3d-setting').forEach(el=>el.hidden=!state.orrery3D);
  // Two checkbox-backed model fields must always agree with the controls.
  $('show-stellar-colors').checked=state.stellarColors;
  $('use-precession').checked=state.usePrecession;
@@ -1753,6 +1757,9 @@ function initializePreferences(){
  // before importing settings; a clean reset must not show the previous state.
  for(const key of PREF_CHECKBOXES)$(key).checked=$(key).defaultChecked;
  $('prefs-remember-view').checked=false;
+ $('orrery-3d').checked=$('orrery-3d').defaultChecked;
+ state.orrery3D=$('orrery-3d').checked;
+ document.querySelectorAll('.orrery-3d-setting').forEach(el=>el.hidden=!state.orrery3D);
  const saved=readPrefs();
  if(saved)applyPrefs(saved);
  $('earth-texture-quality').value=state.earthTextureQuality;
@@ -1773,5 +1780,7 @@ window.addEventListener('pageshow',()=>{
   $(key).checked=saved&&typeof saved.checkboxes?.[key]==='boolean'
    ?saved.checkboxes[key]:$(key).defaultChecked;
  $('prefs-remember-view').checked=saved?.rememberView===true;
+ state.orrery3D=$('orrery-3d').checked;
+ document.querySelectorAll('.orrery-3d-setting').forEach(el=>el.hidden=!state.orrery3D);
  render();
 });

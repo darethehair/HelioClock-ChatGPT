@@ -318,8 +318,8 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#sunrise')).not.toHaveText('—');
  // Release identity and provenance are visible even offline.
- await expect(page.locator('#app-version')).toHaveText('v78');
- await expect(page.locator('#dock-version')).toHaveText('v78');
+ await expect(page.locator('#app-version')).toHaveText('v79');
+ await expect(page.locator('#dock-version')).toHaveText('v79');
  await expect(page.locator('.credits-footer')).toContainText('Created by Darethehair with assistance from ChatGPT');
  await expect(page.locator('.credits-footer a')).toHaveAttribute('href','https://github.com/darethehair/HelioClock-ChatGPT');
  await expect(page.locator('#build-meta')).toContainText('commit');
@@ -665,7 +665,7 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
  const errors=[];
  page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v78');
+ await expect(page.locator('#app-version')).toHaveText('v79');
  await expect(page.locator('.almanac-panel')).toBeVisible();
  await page.locator('#layout-sky').click();
  await expect(page.locator('.sky-panel')).toBeVisible();
@@ -974,7 +974,7 @@ test('Version 36 stores, restores, imports, exports and resets preferences',asyn
 test('Version 25 Sun and Moon use the same zoomable pannable fullscreen stage',async({page})=>{
  const errors=[];page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v78');
+ await expect(page.locator('#app-version')).toHaveText('v79');
  await expect(page.locator('#moon')).toBeVisible();
  await expect(page.locator('#solar-photo')).toBeHidden();
  await page.locator('[data-disc-view="sun"]').click();
@@ -2330,4 +2330,19 @@ test('v78 camera allows crossing the orbital plane',async({page})=>{
  await expect(page.locator('#orrery-tilt')).toHaveValue('-90');
  await page.locator('#orrery-tilt').fill('90');
  await expect(page.locator('#orrery-tilt')).toHaveValue('90');
+});
+
+test('v79 restored 3D checkbox and camera model remain synchronized',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('#orrery-3d').check();
+ await page.reload();
+ await expect(page.locator('#orrery-3d')).toBeChecked();
+ await expect(page.locator('.orrery-3d-setting:visible')).toHaveCount(2);
+ await page.locator('#orrery').scrollIntoViewIfNeeded();
+ const box=await page.locator('#orrery').boundingBox();
+ await page.mouse.move(box.x+box.width/2,box.y+box.height/2);
+ await page.mouse.down();
+ await page.mouse.move(box.x+box.width*.65,box.y+box.height*.65,{steps:5});
+ await page.mouse.up();
+ expect(Math.abs(Number(await page.locator('#orrery-rotation').inputValue()))).toBeGreaterThan(1);
 });
