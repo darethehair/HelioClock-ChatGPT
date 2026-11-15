@@ -5,7 +5,8 @@ import {RAD,wrap,solar,clamp} from './astronomy.js';
 import {cloudOpacityAt} from './clouds.js';
 import {solarShadowAt,solarShadowTrack,solarCentralFootprint} from './eclipse-earth-shadow.js';
 import {admin1Lines} from './earth-admin1-data.js';
-import {cities,regions,countries} from './earth-gazetteer.js';
+import {regions,countries} from './earth-gazetteer.js';
+import {extendedCities} from './earth-cities-data.js';
 
 const land=feature(atlas,atlas.objects.land);
 const borders=mesh(atlas,atlas.objects.countries,(a,b)=>a!==b);
@@ -333,10 +334,13 @@ export function renderEarth(context,width,height,date,state){
  if(political){
   const occupied=[];
   const renderedNames=new Set();
+  const renderedCities=[];
   const nearSide=point=>!globe||geoDistance(point,[earthLon,earthLat])<Math.PI/2-.005;
   const candidate=(text,longitude,latitude,kind)=>{
    // A label must appear at most once even if its source has multiple anchors.
-   const nameKey=kind+':'+text.toLocaleLowerCase();
+   // Only suppress duplicate label anchors in the same locality: distinct
+   // cities in different states legitimately share names.
+   const nameKey=kind+':'+text.toLocaleLowerCase()+(kind==='city'?':'+Math.round(longitude*2)+':'+Math.round(latitude*2):'');
    if(renderedNames.has(nameKey))return;
    const point=[longitude,latitude];
    if(!nearSide(point))return;
@@ -361,7 +365,7 @@ export function renderEarth(context,width,height,date,state){
     context.fillStyle='#dbe7ef';
    }
    context.strokeText(text,tx,ty);context.fillText(text,tx,ty);
-   context.restore();renderedNames.add(nameKey);labelCount++;
+   context.restore();renderedNames.add(nameKey);if(city)renderedCities.push(text);labelCount++;
   };
   // Country/region names are at deliberately sparse anchor points and
   // city ranks are filtered by zoom, with nearby local cities prioritized.
@@ -370,15 +374,30 @@ export function renderEarth(context,width,height,date,state){
    if(rank<=2||earthZoom>=2.7)candidate(name,longitude,latitude,'region');
   }
   if(showCities){
-   const ordered=cities.filter(row=>row[3]===1||(row[3]===2&&earthZoom>=1.6)||(row[3]===3&&earthZoom>=2.6))
+   // Progressively reveal more settlements. At broad zoom show world
+   // cities; around continents include state capitals and regional centers;
+   // zoomed maps expose all bundled towns (subject to label collision).
+   const minRank=earthZoom>=2.55?3:earthZoom>=1.4?2:1;
+   const visible=extendedCities.filter(row=>row[3]<=minRank)
+    .map(row=>{
+     const distance=geoDistance([row[1],row[2]],[earthLon,earthLat]);
+     const local=geoDistance([row[1],row[2]],[lon,lat]);
+     return {row,distance,local};
+    })
     .sort((a,b)=>{
-     if(earthZoom>=2.6){
-      const da=geoDistance([a[1],a[2]],[lon,lat]),db=geoDistance([b[1],b[2]],[lon,lat]);
-      if(da<.15||db<.15)return da-db;
+     // On close-up maps prioritize towns near the observer and state
+     // capitals before global population rank; collisions still control
+     // final density so labels do not become unreadable.
+     if(earthZoom>=2.55){
+      const aNear=a.local<.17,bNear=b.local<.17;
+      if(aNear!==bNear)return aNear?-1:1;
      }
-     return a[3]-b[3];
+     if(a.row[3]!==b.row[3])return a.row[3]-b.row[3];
+     if(a.row[4]==='state-capital'&&b.row[4]!=='state-capital')return -1;
+     if(b.row[4]==='state-capital'&&a.row[4]!=='state-capital')return 1;
+     return a.distance-b.distance;
     });
-   for(const [name,longitude,latitude] of ordered)candidate(name,longitude,latitude,'city');
+   for(const {row:[name,longitude,latitude]} of visible)candidate(name,longitude,latitude,'city');
   }
  }
  const user=isVisible([lon,lat])?map([lon,lat]):null;
@@ -393,7 +412,7 @@ export function renderEarth(context,width,height,date,state){
  const observerScreen=map([lon,lat]);
  const eastScreen=map([lon+5,lat]);
  const northScreen=map([lon,Math.min(lat+5,89)]);
- return {politicalLabels:labelCount,mapStyle,adminBoundaryCount:political&&showRegions&&earthZoom>=1.25?admin1Lines.length:0,sunLon,sunDecl:d.decl,nadirLon,nadirLat,eclipseShadowActive:!!shadow?.active,eclipseShadowCenter:shadow?.center||null,eclipseMoonSunAngle:shadow?.moonSunAngle??null,eclipseCenterSample:shadow?.center?shadow.sample(...shadow.center):null,eclipseFootprintType:eclipseFootprint?.type||null,eclipseFootprint:eclipseFootprint?.coordinates||null,eclipseObserverSample:shadow?shadow.sample(lon,lat):null,eclipseCenterScreen:shadow?.center?map(shadow.center):null,
+ return {politicalLabels:labelCount,politicalCityLabels:renderedCities,cityCatalogCount:extendedCities.length,mapStyle,adminBoundaryCount:political&&showRegions&&earthZoom>=1.25?admin1Lines.length:0,sunLon,sunDecl:d.decl,nadirLon,nadirLat,eclipseShadowActive:!!shadow?.active,eclipseShadowCenter:shadow?.center||null,eclipseMoonSunAngle:shadow?.moonSunAngle??null,eclipseCenterSample:shadow?.center?shadow.sample(...shadow.center):null,eclipseFootprintType:eclipseFootprint?.type||null,eclipseFootprint:eclipseFootprint?.coordinates||null,eclipseObserverSample:shadow?shadow.sample(lon,lat):null,eclipseCenterScreen:shadow?.center?map(shadow.center):null,
   textureStatus:earthTextureStatus(earthTextureQuality).status,
   projectionProbe:{projection:earthProjection,observer:observerScreen,
    east:eastScreen,north:northScreen,viewCenter:[width/2,height/2],
