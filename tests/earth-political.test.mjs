@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {admin1Lines} from '../earth-admin1-data.js';
 import {cities,regions,countries} from '../earth-gazetteer.js';
+import {extendedCities,usStateCapitals} from '../earth-cities-data.js';
 
 // The offline bundle must retain enough genuine geography to be useful.
 assert.ok(admin1Lines.length>=500,'expected bundled Natural Earth admin-1 linework');
@@ -24,4 +25,13 @@ for(const [kind,items] of [['city',cities],['region',regions],['country',countri
  assert.equal(new Set(names).size,names.length,'duplicate '+kind+' names are not allowed');
 }
 assert.equal(regions.filter(row=>row[0]==='Ontario').length,1);
+assert.ok(extendedCities.length>=1200,'global offline gazetteer is too small');
+assert.equal(new Set(usStateCapitals.map(row=>row[0])).size,50,'all 50 US states need a capital');
+for(const [state,city,longitude,latitude] of usStateCapitals){
+ assert.ok(extendedCities.some(row=>row[0]===city&&Math.abs(row[1]-longitude)<.05&&Math.abs(row[2]-latitude)<.05),'missing capital: '+state);
+}
+for(const name of ['Morden','Winkler','Winnipeg','Fargo','Regina'])
+ assert.ok(extendedCities.some(row=>row[0]===name),'missing locally curated place '+name);
+const ranks=[1,2,3].map(rank=>extendedCities.filter(row=>row[3]<=rank).length);
+assert.ok(ranks[0]<ranks[1]&&ranks[1]<ranks[2],'cities must increase across zoom ranks');
 console.log('Offline political geography tests passed:',admin1Lines.length,'lines,',cities.length,'cities');

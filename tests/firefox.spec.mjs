@@ -309,8 +309,8 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#sunrise')).not.toHaveText('—');
  // Release identity and provenance are visible even offline.
- await expect(page.locator('#app-version')).toHaveText('v69');
- await expect(page.locator('#dock-version')).toHaveText('v69');
+ await expect(page.locator('#app-version')).toHaveText('v70');
+ await expect(page.locator('#dock-version')).toHaveText('v70');
  await expect(page.locator('.credits-footer')).toContainText('Created by Darethehair with assistance from ChatGPT');
  await expect(page.locator('.credits-footer a')).toHaveAttribute('href','https://github.com/darethehair/HelioClock-ChatGPT');
  await expect(page.locator('#build-meta')).toContainText('commit');
@@ -656,7 +656,7 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
  const errors=[];
  page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v69');
+ await expect(page.locator('#app-version')).toHaveText('v70');
  await expect(page.locator('.almanac-panel')).toBeVisible();
  await page.locator('#layout-sky').click();
  await expect(page.locator('.sky-panel')).toBeVisible();
@@ -965,7 +965,7 @@ test('Version 36 stores, restores, imports, exports and resets preferences',asyn
 test('Version 25 Sun and Moon use the same zoomable pannable fullscreen stage',async({page})=>{
  const errors=[];page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v69');
+ await expect(page.locator('#app-version')).toHaveText('v70');
  await expect(page.locator('#moon')).toBeVisible();
  await expect(page.locator('#solar-photo')).toBeHidden();
  await page.locator('[data-disc-view="sun"]').click();
@@ -2204,4 +2204,24 @@ test('v68 political Earth: map styles and boundary/city controls survive all pro
  await expect(page.locator('#earth-map-style')).toHaveValue('political');
  await expect(page.locator('#earth-city-labels')).not.toBeChecked();
  await page.locator('#earth-map-style').selectOption('physical');
+});
+
+test('v70 offline city coverage expands with zoom and includes state capitals',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('#earth-map-style').selectOption('hybrid');
+ await page.locator('[data-projection="globe"]').click();
+ const probe=()=>page.locator('#earth-map').evaluate(el=>JSON.parse(el.dataset.politicalProbe));
+ let first=await probe();
+ expect(first.catalogCount).toBeGreaterThan(1200);
+ expect(first.cities.length).toBeGreaterThan(0);
+ for(let i=0;i<5;i++)await page.locator('#earth-zoom-in').click();
+ const close=await probe();
+ expect(close.catalogCount).toBe(first.catalogCount);
+ expect(close.eligibleCount).toBeGreaterThan(first.eligibleCount);
+ expect(close.cities.length).toBeGreaterThan(0);
+ await page.locator('#earth-city-labels').uncheck();
+ const hidden=await probe();
+ expect(hidden.cities).toHaveLength(0);
+ await page.locator('#earth-city-labels').check();
+ await expect.poll(async()=> (await probe()).cities.length).toBeGreaterThan(0);
 });
