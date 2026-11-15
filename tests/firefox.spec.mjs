@@ -309,8 +309,8 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#sunrise')).not.toHaveText('—');
  // Release identity and provenance are visible even offline.
- await expect(page.locator('#app-version')).toHaveText('v67');
- await expect(page.locator('#dock-version')).toHaveText('v67');
+ await expect(page.locator('#app-version')).toHaveText('v68');
+ await expect(page.locator('#dock-version')).toHaveText('v68');
  await expect(page.locator('.credits-footer')).toContainText('Created by Darethehair with assistance from ChatGPT');
  await expect(page.locator('.credits-footer a')).toHaveAttribute('href','https://github.com/darethehair/HelioClock-ChatGPT');
  await expect(page.locator('#build-meta')).toContainText('commit');
@@ -656,7 +656,7 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
  const errors=[];
  page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v67');
+ await expect(page.locator('#app-version')).toHaveText('v68');
  await expect(page.locator('.almanac-panel')).toBeVisible();
  await page.locator('#layout-sky').click();
  await expect(page.locator('.sky-panel')).toBeVisible();
@@ -965,7 +965,7 @@ test('Version 36 stores, restores, imports, exports and resets preferences',asyn
 test('Version 25 Sun and Moon use the same zoomable pannable fullscreen stage',async({page})=>{
  const errors=[];page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v67');
+ await expect(page.locator('#app-version')).toHaveText('v68');
  await expect(page.locator('#moon')).toBeVisible();
  await expect(page.locator('#solar-photo')).toBeHidden();
  await page.locator('[data-disc-view="sun"]').click();
@@ -2176,4 +2176,25 @@ test('1979 eclipse casts a visible Earth shadow in all map projections',async({p
   expect(probe.center[1],projection).toBeLessThan(60);
  }
  await expect(page.locator('#earth-eclipse-status')).toContainText('Eclipse central shadow');
+});
+
+test('v68 political Earth: map styles and boundary/city controls survive all projections',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await expect(page.locator('#earth-map-style')).toHaveValue('physical');
+ await page.locator('#earth-map-style').selectOption('hybrid');
+ for(const projection of ['equal','mercator','globe']){
+  await page.locator('[data-projection="'+projection+'"]').click();
+  const probe=await page.locator('#earth-map').evaluate(el=>JSON.parse(el.dataset.projectionProbe));
+  expect(probe.projection).toBe(projection);
+  await expect(page.locator('#earth-country-borders')).toBeChecked();
+  await expect(page.locator('#earth-region-borders')).toBeChecked();
+  await expect(page.locator('#earth-city-labels')).toBeChecked();
+ }
+ await page.locator('#earth-zoom-in').click();
+ await page.locator('#earth-map-style').selectOption('political');
+ await page.locator('#earth-city-labels').uncheck();
+ await page.reload();
+ await expect(page.locator('#earth-map-style')).toHaveValue('political');
+ await expect(page.locator('#earth-city-labels')).not.toBeChecked();
+ await page.locator('#earth-map-style').selectOption('physical');
 });
