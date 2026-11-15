@@ -18,4 +18,10 @@ for(const group of [cities,regions,countries]){
 for(const name of ['Morden','Winkler','Winnipeg','Fargo','Regina'])
  assert.ok(cities.some(row=>row[0]===name),'missing locally significant city: '+name);
 assert.ok(cities.some(row=>row[0]==='Morden'&&Math.abs(row[1]+98.1)<.1&&Math.abs(row[2]-49.19)<.1));
+// Duplicate entries make regional names appear twice even when collision checks pass.
+for(const [kind,items] of [['city',cities],['region',regions],['country',countries]]){
+ const names=items.map(([name])=>name.toLocaleLowerCase());
+ assert.equal(new Set(names).size,names.length,'duplicate '+kind+' names are not allowed');
+}
+assert.equal(regions.filter(row=>row[0]==='Ontario').length,1);
 console.log('Offline political geography tests passed:',admin1Lines.length,'lines,',cities.length,'cities');

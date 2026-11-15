@@ -265,9 +265,9 @@ export function renderEarth(context,width,height,date,state){
   context.save();context.beginPath();path(footprint);
   context.fillStyle=eclipseFootprint.type==='totality'?'#050913b8':'#1811209a';
   context.fill();
-  context.strokeStyle=eclipseFootprint.type==='totality'?'#ffbc64':'#f1a6b8';
-  context.lineWidth=2.25;
-  context.shadowColor='#ffcc78';context.shadowBlur=9;context.stroke();
+  context.strokeStyle=eclipseFootprint.type==='totality'?'#d7a15c':'#cf98ad';
+  context.lineWidth=1.35;
+  context.shadowColor='#e3b26b';context.shadowBlur=3;context.stroke();
   context.restore();
  }
  // Ground track is in geographic coordinates; d3 handles zoom and map clipping.
@@ -282,21 +282,21 @@ export function renderEarth(context,width,height,date,state){
     else last.push(p);
     return segments;
    },[])});
-   context.strokeStyle='#ffe69c';context.lineWidth=3;
-   context.shadowColor='#f8a53c';context.shadowBlur=7;context.setLineDash([8,5]);
+   context.strokeStyle='#dcbf81';context.lineWidth=1.65;
+   context.globalAlpha=.83;context.shadowColor='#e4bd7c';context.shadowBlur=2;context.setLineDash([5,5]);
    context.stroke();context.restore();
   }
   if(shadow.center&&(!globe||isNearSide(shadow.center,earthLon,earthLat))){
    const p=map(shadow.center);
    if(p){
     context.save();
-    context.strokeStyle='#ffec9d';context.fillStyle='#160e0a';context.lineWidth=2.4;
-    context.shadowColor='#ffd165';context.shadowBlur=12;
-    context.beginPath();context.arc(p[0],p[1],9,0,Math.PI*2);context.fill();context.stroke();
-    context.beginPath();context.moveTo(p[0]-15,p[1]);context.lineTo(p[0]-10,p[1]);
-    context.moveTo(p[0]+10,p[1]);context.lineTo(p[0]+15,p[1]);
-    context.moveTo(p[0],p[1]-15);context.lineTo(p[0],p[1]-10);
-    context.moveTo(p[0],p[1]+10);context.lineTo(p[0],p[1]+15);context.stroke();
+    context.strokeStyle='#e5c88b';context.fillStyle='#160e0a77';context.lineWidth=1.5;
+    context.shadowColor='#e5c88b';context.shadowBlur=3;
+    context.beginPath();context.arc(p[0],p[1],6,0,Math.PI*2);context.fill();context.stroke();
+    context.beginPath();context.moveTo(p[0]-10,p[1]);context.lineTo(p[0]-7,p[1]);
+    context.moveTo(p[0]+7,p[1]);context.lineTo(p[0]+10,p[1]);
+    context.moveTo(p[0],p[1]-10);context.lineTo(p[0],p[1]-7);
+    context.moveTo(p[0],p[1]+7);context.lineTo(p[0],p[1]+10);context.stroke();
     context.restore();
    }
   }
@@ -332,8 +332,12 @@ export function renderEarth(context,width,height,date,state){
  let labelCount=0;
  if(political){
   const occupied=[];
+  const renderedNames=new Set();
   const nearSide=point=>!globe||geoDistance(point,[earthLon,earthLat])<Math.PI/2-.005;
   const candidate=(text,longitude,latitude,kind)=>{
+   // A label must appear at most once even if its source has multiple anchors.
+   const nameKey=kind+':'+text.toLocaleLowerCase();
+   if(renderedNames.has(nameKey))return;
    const point=[longitude,latitude];
    if(!nearSide(point))return;
    const screen=map(point);
@@ -341,8 +345,8 @@ export function renderEarth(context,width,height,date,state){
    const [x,y]=screen;
    if(x<12||x>width-12||y<12||y>height-12)return;
    const city=kind==='city';
-   const fontSize=city?(earthZoom>=3?12:11):kind==='region'?11:12;
-   context.font=(kind==='country'?'700 ':'600 ')+fontSize+'px sans-serif';
+   const fontSize=city?(earthZoom>=3?10.5:9.5):kind==='region'?9.5:10.5;
+   context.font=(kind==='country'?'600 ':'400 ')+fontSize+'px sans-serif';
    const textWidth=context.measureText(text).width;
    const tx=city?x+8:x-textWidth/2,ty=city?y-7:y+4;
    const box=[tx-4,ty-fontSize-3,tx+textWidth+4,ty+5];
@@ -350,14 +354,14 @@ export function renderEarth(context,width,height,date,state){
    if(occupied.some(a=>box[0]<a[2]&&box[2]>a[0]&&box[1]<a[3]&&box[3]>a[1]))return;
    occupied.push(box);
    context.save();
-   context.lineJoin='round';context.lineWidth=3.1;
-   context.strokeStyle='#071629e8';context.fillStyle=kind==='country'?'#f7dfb0':'#f4f8ff';
+   context.lineJoin='round';context.lineWidth=2.15;
+   context.strokeStyle='#071629d6';context.fillStyle=kind==='country'?'#e8d9ba':'#dbe7ef';
    if(city){
-    context.fillStyle='#f8edc4';context.beginPath();context.arc(x,y,earthZoom>=3?2.8:2.2,0,Math.PI*2);context.fill();
-    context.fillStyle='#f4f8ff';
+    context.fillStyle='#e9dbc2';context.beginPath();context.arc(x,y,earthZoom>=3?2.0:1.7,0,Math.PI*2);context.fill();
+    context.fillStyle='#dbe7ef';
    }
    context.strokeText(text,tx,ty);context.fillText(text,tx,ty);
-   context.restore();labelCount++;
+   context.restore();renderedNames.add(nameKey);labelCount++;
   };
   // Country/region names are at deliberately sparse anchor points and
   // city ranks are filtered by zoom, with nearby local cities prioritized.
