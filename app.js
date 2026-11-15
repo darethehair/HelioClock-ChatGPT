@@ -48,7 +48,11 @@ function notice(msg){$('message').hidden=!msg;$('message').textContent=msg||''}
 function canvas(el){
  const w=el.clientWidth,h=el.clientHeight,dpr=Math.min(devicePixelRatio||1,2);
  if(!w||!h)return null;
- el.width=Math.round(w*dpr);el.height=Math.round(h*dpr);
+ const pixelW=Math.round(w*dpr),pixelH=Math.round(h*dpr);
+ // Resizing a canvas reallocates its backing store and resets its context.
+ // Avoid that on every camera-drag frame, especially on mobile GPUs.
+ if(el.width!==pixelW)el.width=pixelW;
+ if(el.height!==pixelH)el.height=pixelH;
  const c=el.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);return{c,w,h};
 }
 function line(c,x,y,X,Y,color='#344661',width=1){

@@ -318,8 +318,8 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#sunrise')).not.toHaveText('—');
  // Release identity and provenance are visible even offline.
- await expect(page.locator('#app-version')).toHaveText('v76');
- await expect(page.locator('#dock-version')).toHaveText('v76');
+ await expect(page.locator('#app-version')).toHaveText('v77');
+ await expect(page.locator('#dock-version')).toHaveText('v77');
  await expect(page.locator('.credits-footer')).toContainText('Created by Darethehair with assistance from ChatGPT');
  await expect(page.locator('.credits-footer a')).toHaveAttribute('href','https://github.com/darethehair/HelioClock-ChatGPT');
  await expect(page.locator('#build-meta')).toContainText('commit');
@@ -665,7 +665,7 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
  const errors=[];
  page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v76');
+ await expect(page.locator('#app-version')).toHaveText('v77');
  await expect(page.locator('.almanac-panel')).toBeVisible();
  await page.locator('#layout-sky').click();
  await expect(page.locator('.sky-panel')).toBeVisible();
@@ -974,7 +974,7 @@ test('Version 36 stores, restores, imports, exports and resets preferences',asyn
 test('Version 25 Sun and Moon use the same zoomable pannable fullscreen stage',async({page})=>{
  const errors=[];page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v76');
+ await expect(page.locator('#app-version')).toHaveText('v77');
  await expect(page.locator('#moon')).toBeVisible();
  await expect(page.locator('#solar-photo')).toBeHidden();
  await page.locator('[data-disc-view="sun"]').click();
@@ -2301,4 +2301,24 @@ test('v74 3D orrery preserves top-down default and offers independent perspectiv
  await expect(page.locator('#au-scale-description')).toContainText('ecliptic perspective');
  await toggle.uncheck();
  await expect(page.locator('.orrery-3d-setting:visible')).toHaveCount(0);
+});
+
+test('v77 3D orrery responds to direct pointer dragging and preserves pinch controls',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('#orrery-3d').check();
+ const canvas=page.locator('#orrery');
+ await canvas.scrollIntoViewIfNeeded();
+ const box=await canvas.boundingBox();
+ const x=box.x+box.width/2,y=box.y+box.height/2;
+ await page.mouse.move(x,y);
+ await page.mouse.down();
+ await page.mouse.move(x+box.width*.18,y+box.height*.12,{steps:6});
+ await page.mouse.up();
+ const rotation=Number(await page.locator('#orrery-rotation').inputValue());
+ const tilt=Number(await page.locator('#orrery-tilt').inputValue());
+ expect(Math.abs(rotation)).toBeGreaterThan(10);
+ expect(tilt).toBeGreaterThan(55);
+ await page.locator('#orrery-reset').click();
+ await expect(page.locator('#orrery-rotation')).toHaveValue('0');
+ await expect(page.locator('#orrery-tilt')).toHaveValue('55');
 });
