@@ -309,8 +309,8 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await expect(page.locator('#sunrise')).not.toHaveText('—');
  // Release identity and provenance are visible even offline.
- await expect(page.locator('#app-version')).toHaveText('v66');
- await expect(page.locator('#dock-version')).toHaveText('v66');
+ await expect(page.locator('#app-version')).toHaveText('v67');
+ await expect(page.locator('#dock-version')).toHaveText('v67');
  await expect(page.locator('.credits-footer')).toContainText('Created by Darethehair with assistance from ChatGPT');
  await expect(page.locator('.credits-footer a')).toHaveAttribute('href','https://github.com/darethehair/HelioClock-ChatGPT');
  await expect(page.locator('#build-meta')).toContainText('commit');
@@ -656,7 +656,7 @@ test('Version 21 layout, colour, and almanac controls survive reload',async({pag
  const errors=[];
  page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v66');
+ await expect(page.locator('#app-version')).toHaveText('v67');
  await expect(page.locator('.almanac-panel')).toBeVisible();
  await page.locator('#layout-sky').click();
  await expect(page.locator('.sky-panel')).toBeVisible();
@@ -965,7 +965,7 @@ test('Version 36 stores, restores, imports, exports and resets preferences',asyn
 test('Version 25 Sun and Moon use the same zoomable pannable fullscreen stage',async({page})=>{
  const errors=[];page.on('pageerror',err=>errors.push(err.message));
  await page.goto('http://127.0.0.1:8765/');
- await expect(page.locator('#app-version')).toHaveText('v66');
+ await expect(page.locator('#app-version')).toHaveText('v67');
  await expect(page.locator('#moon')).toBeVisible();
  await expect(page.locator('#solar-photo')).toBeHidden();
  await page.locator('[data-disc-view="sun"]').click();
@@ -2151,6 +2151,9 @@ test('1979 eclipse casts a visible Earth shadow in all map projections',async({p
   expect(probe?.active,projection).toBe(true);
   expect(probe?.center,projection).toBeTruthy();
   expect(probe?.centerSample?.penumbra,projection).toBeGreaterThan(.8);
+  expect(probe.footprintType,projection+' footprint type').toBe('totality');
+  expect(probe.footprint?.length,projection+' footprint polygon').toBe(73);
+  expect(probe.footprint.every(p=>p.every(Number.isFinite))).toBe(true);
   // Sample a neighbourhood, not one pixel: the observer's white location
   // marker can exactly overlap the shadow centre and mask the test pixel.
   const at=()=>page.locator('#earth-map').evaluate((el,screen)=>{
