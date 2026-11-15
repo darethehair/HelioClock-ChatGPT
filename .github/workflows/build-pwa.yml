@@ -24,7 +24,7 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Syntax checks
         run: |
-          for file in astronomy.js app.js solar-chart.js moon-renderer.js sky-atlas.js milky-way.js sky-projection.js ecliptic.js almanac.js eclipse-events.js eclipse-geometry.js eclipse-earth-shadow.js earth-renderer.js earth-admin1-data.js earth-gazetteer.js earth-cities-data.js solar-eclipse-renderer.js; do
+          for file in astronomy.js app.js solar-chart.js moon-renderer.js sky-atlas.js milky-way.js sky-projection.js ecliptic.js almanac.js eclipse-events.js eclipse-geometry.js eclipse-earth-shadow.js earth-renderer.js earth-admin1-data.js earth-gazetteer.js earth-cities-data.js earth-nearest-settlement.js solar-eclipse-renderer.js; do
             node --check "$file"
           done
           node --check sw.js
@@ -42,6 +42,10 @@ jobs:
         run: |
           npx esbuild tests/earth-political.test.mjs --bundle --platform=node --format=esm --outfile=/tmp/helioclock-earth-political-test.mjs
           node /tmp/helioclock-earth-political-test.mjs
+      - name: Nearest settlement unit checks
+        run: |
+          npx esbuild tests/earth-nearest-settlement.test.mjs --bundle --platform=node --format=esm --outfile=/tmp/helioclock-nearest-settlement-test.mjs
+          node /tmp/helioclock-nearest-settlement-test.mjs
       - name: Bundle application
         run: npm run build
   package:
