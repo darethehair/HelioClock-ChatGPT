@@ -12,7 +12,7 @@ This is the **independent ChatGPT edition**, created by **Darethehair with assis
 
 - **Live observatory banner:** prominent local date and time, current solar altitude, a time-versus-altitude plot of the Sun's journey, sunrise/noon/sunset, daylight duration, Moon phase, and an illustrated landscape. The Sun is shown as a dotted marker below the horizon.
 - **Annual daylight chart:** a year of sunrise, sunset, civil/nautical/astronomical twilight and darkness, plotted in local mean solar time, with interactive date selection.
-- **Illuminated Earth:** optional NASA NOAA-20/NOAA-21 VIIRS daily true-colour satellite clouds (qualitative white-pixel extraction, not a cloud-cover percentage or forecast, network required; up to several days stale), strength slider, and NASA Black Marble 2016 city lights and current NOAA OVATION auroral forecast (network required, no historical rewind); a planetary Kp indicator in the header; NASA Blue Marble cloud-free imagery; mathematical day/night terminator and selectable twilight bands; solar zenith/nadir markers; Equal Earth, Mercator and interactive globe projections; panning and zooming.
+- **Illuminated Earth:** NASA Blue Marble imagery, calculated day/night and twilight, solar zenith/nadir markers, three zoomable and pannable projections (Equal Earth, Mercator, interactive globe), and optional NASA Black Marble 2016 city lights, live NOAA OVATION aurora, and daily VIIRS cloud approximations (network required; not historical). Choose **Physical**, **Hybrid**, or **Political** map styles with offline country and selected state/province boundaries and progressively denser world-city labels. Simulated solar eclipses show the central track, penumbral darkening, the central-shadow footprint, and local total/partial/annular status; these are exploratory geometric estimates, not precision eclipse predictions.
 - **Sky Compass:** north-polar and full rectangular horizon projections, with stars, solar/lunar paths, planets, constellation lines and names, the ecliptic, celestial grids, and an interactive RA/Dec/Az/Alt pointer readout.
 - **Milky Way and deep sky:** shaded irregular Milky Way contour regions and outlines, galactic-centre marker, Messier galaxies, nebulae and clusters, with independently controlled labels and zoom-aware decluttering.
 - **Sun and Moon:** simulated lunar phase and orientation displayed on a NASA LRO surface mosaic; optional recent NASA SDO/HMI solar imagery, including an offline fallback. Each image supports zoom and pan.
@@ -21,7 +21,7 @@ This is the **independent ChatGPT edition**, created by **Darethehair with assis
 
 ### Explore time and space
 
-The **fixed bottom time dock** remains visible while using the graphical displays, including fullscreen views. It provides local date/time controls, a time scrubber, ±hour and ±day steps, a live-clock return, and local sidereal time. The Sky Compass also offers ±**sidereal day** steps (approximately 23h 56m 4.091s). You can choose observing latitude and longitude independently of the device's timezone.
+The **fixed bottom time dock** remains visible while using the graphical displays, including fullscreen views. It provides local date/time controls, a time scrubber, ±minute, ±hour and ±day steps, a live-clock return, and local sidereal time. The Sky Compass also offers ±**sidereal day** steps (approximately 23h 56m 4.091s). You can choose observing latitude and longitude independently of the device's timezone.
 
 The dashboard has independently switchable sections and **Show all**, **Default layout**, **Sky Only**, and **Text Only** presets. Settings are stored locally, can be exported/imported as JSON, and may optionally include zoom and view positions. There is no user account or required application backend.
 
@@ -80,7 +80,7 @@ HelioClock is an **educational and exploratory** application, **not** a navigati
 | Moon and planetary sky positions | Selected computations use [Astronomy Engine](https://github.com/cosinekitty/astronomy) by Donald Cross (MIT license). The lunar photograph is a textured, horizon-aligned simulated phase view; the latest NASA Sun image is a **real observation**, not a historical image selected by simulation time. |
 | Stars and constellations | Offline J2000-based catalogue derived from [D3-Celestial](https://github.com/ofrohn/d3-celestial); optional precession to the selected date, star colours and magnitude limits. Positions do not model every high-precision apparent-place correction. |
 | Sky overlays | Coordinate grids, ecliptic, named constellations, 107 classified Messier deep-sky objects, and Vieira Milky Way contour fills. Contour shading is an illustrative area treatment, not calibrated surface brightness. |
-| Earth | NASA Blue Marble texture and mathematically calculated solar illumination; no real-time clouds, satellite weather data or exact atmospheric radiative transfer. |
+| Earth | NASA Blue Marble texture and calculated solar illumination, qualitative live satellite-cloud overlay and NOAA space weather when connected. Simulated eclipse shadows and tracks are approximate: historical central paths and totality boundaries are not calibrated to high-precision NASA Besselian elements. Political boundaries and place names are bundled, simplified geographic references rather than current authoritative jurisdictional records. |
 | Orrery | Planet positions and alignment dates use Astronomy Engine. Planet sizes and circular orbit guides are schematic; calculated geometric heliocentric conjunction/opposition dates may differ slightly from apparent alignments as seen on Earth. |
 | Timezones | Civil time and DST follow the browser/device's IANA timezone rules. The observer coordinates alone do not establish the corresponding legal timezone. The annual daylight chart uses local **mean solar** time; sunrise/solar noon/sunset in the hero summary are labelled **UTC**. |
 
@@ -92,6 +92,7 @@ HelioClock is an **educational and exploratory** application, **not** a navigati
 - **Sky catalogues, constellation geometry and Messier objects:** [D3-Celestial](https://github.com/ofrohn/d3-celestial), distributed under its BSD licensing terms; original upstream data provenance also applies.
 - **Milky Way irregular contours:** Jose R. Vieira's Milky Way Outline Catalog as distributed in D3-Celestial.
 - **Astronomy Engine:** Donald Cross, MIT-licensed computational astronomy library.
+- **Political geographic data:** [Natural Earth](https://www.naturalearthdata.com/) public-domain 1:50m populated places and selected state/province boundaries; additional offline city positions and all 50 U.S. state capitals are included for geographic coverage. Labels are selectively suppressed when crowded, so catalog coverage does not imply every city is visible simultaneously.
 - **Astronomical information design:** inspired by Darren Enns's MChronos; earlier astronomical graph ideas also draw on the author's SChronos project. This JavaScript app is not a source-code translation of those historical programs.
 
 Upstream scientific datasets and libraries retain their own license and attribution requirements.
@@ -100,13 +101,27 @@ Upstream scientific datasets and libraries retain their own license and attribut
 
 | Release | Highlights |
 | --- | --- |
+| **v70** | Expand the offline city catalog to approximately 1,283 world locations using Natural Earth 1:50m populated places, all 50 U.S. state capitals and retained curated entries. City-label eligibility increases with zoom while overlap avoidance limits visible density. The automatic nearest-settlement label is not yet implemented. |
+| **v69** | Remove duplicate Ontario label, prevent duplicate on-screen place labels, and refine font sizes/weights plus eclipse track and center-marker styling. |
+| **v68** | Introduce Physical, Hybrid and Political Earth styles, offline country and selected state/province boundaries, and zoom-sensitive city labels for all three projections. |
+| **v67** | Draw the geographic central-shadow footprint for solar eclipses, distinguishing totality from annularity and reporting observer eclipse status. |
+| **v66** | Improve eclipse track/center visibility and geographic readouts; add Firefox checks for shadow rendering in three Earth projections. |
+| **v65** | Introduce a simulated solar-eclipse penumbra and central ground track on the Earth map and ±1-minute time stepping. |
 | **v64** | Eclipse searches now expand over a selected 100–5,000-year horizon instead of fixed 30-year/200-event caps; progressive feedback and cancellation keep the browser usable. Extreme dates are ephemeris-dependent. |
-| **v63** | Eclipse Explorer with location-aware past/future solar and lunar events, partial/total/penumbral renderings, UTC contacts and event navigator. Solar eclipse images are simulated independently of latest NASA photos; detailed Earth-map eclipse paths are not yet implemented. |
-| **v62** | Interactive daylight-year explorer: dated equinox/solstice markers, hover/touch day inspection and daylight gained/lost per day. |\n| **v61** | Fullscreen keyboard focus fix and 24-hour time displays. |\n| **v60** | Fullscreen panel browsing with Left/Right keyboard keys and on-screen previous/next buttons; no swipe conflicts. |\n| **v59** | Solar disc latitude-of-view B₀ projection and P-angle readout; grid anchored to approximate photo retrieval epoch, independent of simulation time. Assumes solar-north-up SDO imagery pending registration. |\n| **v58** | Keep coordinate overlay physically locked to Sun/Moon images during pan, zoom and reset; remove CSS transform override and add dual-disc Firefox tests. |\n| **v57** | Align lunar canvas and solar grid with actual visible discs; thinner dark solar lines, adaptive 15-degree grids and denser coordinate labels. |\n| **v56** | Introduce optional projected reference coordinate grids and pointer/touch readouts for the Sun and Moon. These are educational reference coordinates: exact lunar libration and solar image registration are not yet supported. |\n| **v55** | Add previous/next planetary opposition, conjunction, quadrature, and Mercury/Venus greatest-elongation navigation; date/time jumps, event details and dashed geometry, with Astronomy Engine orbital coordinates. |
+| **v63** | Eclipse Explorer with location-aware past/future solar and lunar events, partial/total/penumbral renderings, UTC contacts and event navigator. Solar eclipse images are simulated independently of latest NASA photos; Earth-map paths were added later in v65. |
+| **v62** | Interactive daylight-year explorer: dated equinox/solstice markers, hover/touch day inspection and daylight gained/lost per day. |
+| **v61** | Fullscreen keyboard focus fix and 24-hour time displays. |
+| **v60** | Fullscreen panel browsing with Left/Right keyboard keys and on-screen previous/next buttons; no swipe conflicts. |
+| **v59** | Solar disc latitude-of-view B₀ projection and P-angle readout; grid anchored to approximate photo retrieval epoch, independent of simulation time. Assumes solar-north-up SDO imagery pending registration. |
+| **v58** | Keep coordinate overlay physically locked to Sun/Moon images during pan, zoom and reset; remove CSS transform override and add dual-disc Firefox tests. |
+| **v57** | Align lunar canvas and solar grid with actual visible discs; thinner dark solar lines, adaptive 15-degree grids and denser coordinate labels. |
+| **v56** | Introduce optional projected reference coordinate grids and pointer/touch readouts for the Sun and Moon. These are educational reference coordinates: exact lunar libration and solar image registration are not yet supported. |
+| **v55** | Add previous/next planetary opposition, conjunction, quadrature, and Mercury/Venus greatest-elongation navigation; date/time jumps, event details and dashed geometry, with Astronomy Engine orbital coordinates. |
 | **v54** | Repair final build metadata showing v51, prefer network for PWA navigation/version checks and update existing tabs. Fill genuine black satellite swath gaps with the previous day's NOAA-20/21 observations, labelled as multi-day imagery. |
 | **v53** | Combine available same-day NOAA-20 and NOAA-21 VIIRS cloud observations per map position to reduce unobserved Pacific swath gaps without fabricating clouds. |
 | **v52** | Restore cloud imagery after Suomi-NPP's November 2026 retirement, using active NOAA-20 VIIRS with NOAA-21 fallback and explicit satellite identification. |
-| **v51** | Replace MODIS daily imagery with wider-swath VIIRS/Suomi-NPP imagery to avoid orbital-scan gaps in the cloud overlay. |\n| **v50** | Optional NASA VIIRS satellite cloud approximation on all Earth map projections; strength control, imagery date, refresh and unavailable status. Daily observed imagery is independent of the simulation clock; not a forecast or measured cloud fraction. |
+| **v51** | Replace MODIS daily imagery with wider-swath VIIRS/Suomi-NPP imagery to avoid orbital-scan gaps in the cloud overlay. |
+| **v50** | Optional NASA VIIRS satellite cloud approximation on all Earth map projections; strength control, imagery date, refresh and unavailable status. Daily observed imagery is independent of the simulation clock; not a forecast or measured cloud fraction. |
 | **v49** | Fix planetary Kp parsing for NOAA's March 2026 JSON format change while preserving legacy responses. |
 | **v48** | Use grayscale NASA city-light emissions instead of the coloured terrain composite to preserve Earth's natural dark-side appearance. |
 | **v47** | NOAA OVATION near-real-time auroral forecast overlay and planetary Kp, with night-side NASA Black Marble 2016 city lights. All three Earth projections; timestamps and offline messaging. |
@@ -130,4 +145,4 @@ This repository and its Cloudflare Pages site are **separate from** [the origina
 
 ---
 
-*Created by Darethehair with assistance from ChatGPT · README refreshed for HelioClock v55 (November 2026).*
+*Created by Darethehair with assistance from ChatGPT · README refreshed for HelioClock v70 (November 2026).*
