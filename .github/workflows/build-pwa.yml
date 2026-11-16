@@ -77,6 +77,7 @@ jobs:
           done
           node --check sw.js
           node --check comet-catalog.js
+          node --check comet-orbits.js
           node --check scripts/update-comets.mjs
           node --check sky-moon-phase.js
           node --check tests/firefox.spec.mjs
@@ -99,6 +100,8 @@ jobs:
           node /tmp/helioclock-nearest-settlement-test.mjs
       - name: MPC comet catalogue parser regression
         run: node --test tests/comet-catalog.test.mjs
+      - name: Comet orbital position and finder regression
+        run: npx esbuild tests/comet-orbits.test.mjs --bundle --platform=node --format=esm --outfile=/tmp/helioclock-comet-orbits-test.mjs && node /tmp/helioclock-comet-orbits-test.mjs
       - name: Lunar sky marker regression
         run: node --test tests/sky-moon-phase.test.mjs
       - name: Bundle application

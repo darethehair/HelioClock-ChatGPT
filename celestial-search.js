@@ -3,6 +3,7 @@ import {MESSIER_DSOS} from './dso-catalog.js';
 import {CONSTELLATION_NAMES} from './sky-constellation-names.js';
 import {horizontal,precessJ2000} from './astronomy.js';
 import {skyPlanets} from './sky-planets.js';
+import {cometTopocentricPosition} from './comet-orbits.js';
 
 const PLANET_NAMES=['Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune'];
 export const SEARCH_OBJECTS=[
@@ -11,15 +12,32 @@ export const SEARCH_OBJECTS=[
  ...MESSIER_DSOS.map(([id,ra,dec,family,,mag,name])=>({name:id,type:family,ra,dec,mag,alias:name||''})),
  ...CONSTELLATION_NAMES.map(([abbr,name,ra,dec])=>({name,type:'Constellation',ra,dec,alias:abbr,approximate:true}))
 ];
+let cometSearchObjects=[];
+export function setCometSearchObjects(records){
+ const unique=new Map();
+ for(const e of records){
+  if(!e||typeof e.name!=='string'||!e.name.trim()||
+     !(e.qAU>0)||!(e.eccentricity>=0)||!e.perihelion)continue;
+  const key=e.name.toLocaleLowerCase().trim(),prev=unique.get(key);
+  const score=o=>o.epochTT?o.epochTT.year*10000+o.epochTT.month*100+o.epochTT.day:0;
+  if(!prev||score(e)>score(prev.elements))
+   unique.set(key,{name:e.name,type:'Comet',dynamic:true,approximate:true,
+    alias:e.designation||'',elements:e});
+ }
+ cometSearchObjects=[...unique.values()];
+ return cometSearchObjects.length;
+}
 export function findCelestialObjects(query,limit=12){
  const q=String(query||'').trim().toLocaleLowerCase();
  if(!q)return [];
- return SEARCH_OBJECTS.filter(o=>[o.name,o.alias].some(n=>n&&n.toLocaleLowerCase().includes(q)))
+ const candidates=q.length>=2?[...SEARCH_OBJECTS,...cometSearchObjects]:SEARCH_OBJECTS;
+ return candidates.filter(o=>[o.name,o.alias].some(n=>n&&n.toLocaleLowerCase().includes(q)))
   .sort((a,b)=>Number(a.name.toLocaleLowerCase()===q)-Number(b.name.toLocaleLowerCase()===q)||
     Number(a.name.toLocaleLowerCase().startsWith(q))-Number(b.name.toLocaleLowerCase().startsWith(q))||
     a.name.localeCompare(b.name)).reverse().slice(0,limit);
 }
 export function celestialObjectPosition(object,date,lat,lon,precession=true){
+ if(object.type==='Comet')return cometTopocentricPosition(object.elements,date,lat,lon);
  if(object.type==='Planet'&&object.dynamic){
   const planet=skyPlanets(date,lat,lon).find(p=>p.name===object.name);
   return planet?{ra:planet.ra,decl:planet.decl,az:planet.az,alt:planet.alt}:null;

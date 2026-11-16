@@ -1,4 +1,4 @@
-import {findCelestialObjects,celestialObjectPosition,celestialDailyEvents} from './celestial-search.js';
+import {findCelestialObjects,celestialObjectPosition,celestialDailyEvents,setCometSearchObjects} from './celestial-search.js';
 import {drawSkyMoon,moonBrightDirection} from './sky-moon-phase.js';
 import {renderAlmanac} from './almanac.js';
 import {drawEcliptic} from './ecliptic.js';
@@ -47,7 +47,7 @@ function selectDate(){
  pausePlayback();state.date=next;state.live=false;render();
 }
 function notice(msg){$('message').hidden=!msg;$('message').textContent=msg||''}
-// Orbital-element catalogue is downloaded during packaging, not propagated yet.
+// Load bundled MPC data into the finder, without any live runtime MPC dependency.
 async function loadCometCatalogStatus(){
  const el=$('comet-catalog-status');
  if(!el)return;
@@ -56,10 +56,12 @@ async function loadCometCatalogStatus(){
   if(!response.ok)throw Error('not present');
   const data=await response.json();
   if(data.schema!==1||!Array.isArray(data.records)||data.records.length!==data.count)throw Error('invalid snapshot');
-  if(data.count===0){el.textContent='Comet catalogue unavailable · no comet positions yet';return;}
+  if(data.count===0){el.textContent='MPC comet catalogue unavailable · try next build';return;}
+  const searchable=setCometSearchObjects(data.records);
   const when=data.retrievedUtc?data.retrievedUtc.slice(0,10):'date unknown';
-  el.textContent=data.count+' MPC comet elements · '+(data.status==='cached'?'cached snapshot':'downloaded')+' '+when+' · sky positions coming later';
- }catch{el.textContent='Comet catalogue not packaged · sky positions coming later';}
+  el.textContent=searchable+' searchable comets · MPC '+(data.status==='cached'?'cached':'snapshot')+' '+when+' · approximate two-body positions';
+  renderCelestialFinder();
+ }catch{el.textContent='Comet catalogue not available · check latest build';}
 }
 loadCometCatalogStatus();
 let selectedCelestialObject=null;
@@ -67,7 +69,7 @@ let followCelestialObject=false;
 let finderEventsCache={key:null,result:null};
 function selectedObjectEvents(object){
  const day=state.date.toISOString().slice(0,10);
- const key=[object.name,object.type,day,state.lat,state.lon,state.usePrecession].join('|');
+ const key=[object.name,object.type,object.elements?.perihelion?.year||'',object.elements?.perihelion?.dayTT||'',day,state.lat,state.lon,state.usePrecession].join('|');
  if(finderEventsCache.key!==key){
   finderEventsCache={key,result:celestialDailyEvents(object,state.date,state.lat,state.lon,state.usePrecession)};
  }
@@ -97,8 +99,17 @@ function renderCelestialFinder(){
   ' · RA '+(pos.ra/15).toFixed(3)+' h · Dec '+pos.decl.toFixed(2)+'°'+
   ' · Az '+pos.az.toFixed(2)+'° · Alt '+pos.alt.toFixed(2)+'°'+
   (pos.alt>=0?' · Above horizon':' · Below horizon')+
-  (o.approximate?' · Approximate constellation centre':'');
+  (o.type==='Constellation'?' · Approximate constellation centre':'')+
+   (o.type==='Comet'?' · Approximate comet orbit (no planetary perturbations)':'');
  detail.append(title,info);
+ if(o.type==='Comet'){
+  const extra=document.createElement('p'),e=o.elements;
+  extra.textContent='Earth distance '+pos.distanceAU.toFixed(3)+' AU · Sun distance '+pos.sunDistanceAU.toFixed(3)+' AU · q '+e.qAU+' AU · eccentricity '+e.eccentricity+
+   (Number.isFinite(pos.epochAgeDays)?' · Element epoch '+Math.round(pos.epochAgeDays)+' days from simulated date':' · Orbit epoch unavailable');
+  const warning=document.createElement('p');
+  warning.textContent='⚠ Approximate unperturbed orbit. Position can be significantly wrong far from the element epoch, near planetary encounters or for outgassing comets. Not a JPL Horizons prediction.';
+  detail.append(extra,warning);
+ }
  const events=selectedObjectEvents(o);
  if(events){
   const formatEvent=d=>d?d.toISOString().slice(11,16)+' UTC':'—';
@@ -518,7 +529,7 @@ function sky(){
  // other overlays; rectangular zoom uses a fixed-size screen-space glyph.
  if(selectedCelestialObject){
   const target=celestialObjectPosition(selectedCelestialObject,state.date,state.lat,state.lon,state.usePrecession);
-  if(Number.isFinite(target.az)&&Number.isFinite(target.alt)&&(target.alt>=0||belowHorizon)){
+  if(target&&Number.isFinite(target.az)&&Number.isFinite(target.alt)&&(target.alt>=0||belowHorizon)){
    const [tx,ty]=rectSky?projectRect(target.az,target.alt,w,h,state.skyHeading):
     [X+rad*(1-target.alt/90)*Math.cos((target.az-90-state.skyHeading)*RAD),
      Y+rad*(1-target.alt/90)*Math.sin((target.az-90-state.skyHeading)*RAD)];

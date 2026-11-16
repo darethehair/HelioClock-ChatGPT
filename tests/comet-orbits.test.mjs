@@ -23,3 +23,14 @@ const raDifference=Math.abs(((actual.ra-eq.ra*15+540)%360)-180);
 assert.ok(raDifference<.1,'near-perihelion ecliptic x axis matches EQJ x');
 assert.ok(cometTopocentricPosition({...elements,qAU:0},at,49,-98)===null,'invalid orbit rejected');
 console.log('Comet two-body orbit and sky-position checks passed.');
+
+const {findCelestialObjects,setCometSearchObjects,celestialObjectPosition,celestialDailyEvents}=await import('../celestial-search.js');
+assert.equal(setCometSearchObjects([{...elements,name:'C/Test 2026 X',designation:'2026 X1'}]),1);
+const chosen=findCelestialObjects('Test 2026')[0];
+assert.equal(chosen.type,'Comet');
+assert.equal(chosen.name,'C/Test 2026 X');
+const fromFinder=celestialObjectPosition(chosen,at,49.19,-98.1);
+assert.ok(Math.abs(fromFinder.ra-actual.ra)<1e-9);
+assert.ok(Math.abs(fromFinder.alt-actual.alt)<1e-9);
+const daily=celestialDailyEvents(chosen,at,49.19,-98.1);
+assert.ok(daily&&daily.transit&&Number.isFinite(daily.transit.alt),'comet finder rise/transit calculations');

@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v96",
+      "summary": "Make MPC comets searchable in Sky Compass, with approximate two-body heliocentric propagation, topocentric RA/Dec and Alt/Az, selection marker, Center and Follow, and orbital-accuracy warnings."
+    },
+    {
       "version": "v95",
       "summary": "Add the official MPC CometEls.txt import foundation, validated offline orbital-element snapshots with source/freshness metadata, and a catalogue status in Sky Compass; comet positions are not yet calculated."
     },

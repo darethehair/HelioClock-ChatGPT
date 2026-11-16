@@ -10,7 +10,7 @@ This is a planning backlog, not a claim that the features are implemented. Inspi
 
 ## Orbital catalogues
 - MPC CometEls.txt import, numeric validation and offline PWA packaging added in v95; next validate real downloaded snapshots and build comet orbital propagation. Asteroids and near-Earth objects remain future work.
-- Shared orbit propagation for Sky Compass and Orrery, including highly inclined, retrograde and open comet orbits; verify against independent ephemerides and disclose accuracy limits.
+- v96 adds unperturbed two-body comet propagation (elliptic/parabolic/hyperbolic, inclined and retrograde), Sky Compass search/Center/Follow and explicit accuracy cautions. **Independent JPL Horizons comparison, perturbed propagation and Orrery visualization remain outstanding.**
 - Offline cache, source/freshness metadata, optional user-supplied element files and a safe refresh workflow.
 - Search, orbit display and past/future navigation for small bodies.
 
