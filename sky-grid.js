@@ -17,7 +17,7 @@ export function drawSkyGrid(ctx,opts){
  const {width:w,height:h,date,lat,lon,mode='polar',zoom=1,heading=0,
   showAltAz=true,showRaDec=false,showBelowHorizon=false,panX=0,panY=0,skyLight='black'}=opts;
  const step=skyGridIntervals(zoom);
- const radius=(Math.min(w-35,h-20)/2-14)*zoom*(zoom<1?.88:1);
+ const radius=(Math.min(w-35,h-20)/2-14)*zoom;
  const rect=rectGeometry(w,h),rectSpan=rect.right-rect.left;
  const plot=(az,alt)=>{
   if(mode==='rect')return projectRect(az,alt,w,h,heading);
