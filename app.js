@@ -59,7 +59,7 @@ function renderCelestialFinder(){
   const button=document.createElement('button');button.type='button';
   button.className='celestial-search-result';
   button.textContent=object.name+(object.alias?' — '+object.alias:'')+' · '+object.type;
-  button.addEventListener('click',()=>{selectedCelestialObject=object;renderCelestialFinder();});
+  button.addEventListener('click',()=>{selectedCelestialObject=object;renderCelestialFinder();sky();});
   results.append(button);
  }
  detail.replaceChildren();
@@ -405,6 +405,27 @@ function sky(){
   plottedPlanets.push({...planet,x,y});
  }
  $('sky').dataset.planets=JSON.stringify(plottedPlanets);
+ // The selection ring is drawn in the same celestial coordinate system as the
+ // other overlays; rectangular zoom uses a fixed-size screen-space glyph.
+ if(selectedCelestialObject){
+  const target=celestialObjectPosition(selectedCelestialObject,state.date,state.lat,state.lon,state.usePrecession);
+  if(Number.isFinite(target.az)&&Number.isFinite(target.alt)&&(target.alt>=0||belowHorizon)){
+   const [tx,ty]=rectSky?projectRect(target.az,target.alt,w,h,state.skyHeading):
+    [X+rad*(1-target.alt/90)*Math.cos((target.az-90-state.skyHeading)*RAD),
+     Y+rad*(1-target.alt/90)*Math.sin((target.az-90-state.skyHeading)*RAD)];
+   const screenX=rectSky?w/2+(tx-w/2)*state.skyZoom+state.skyPanX:tx+state.skyPanX;
+   const screenY=rectSky?h/2+(ty-h/2)*state.skyZoom+state.skyPanY:ty+state.skyPanY;
+   if(screenX>=0&&screenX<=w&&screenY>=0&&screenY<=h){
+    c.save();c.translate(tx,ty);if(rectSky)c.scale(1/state.skyZoom,1/state.skyZoom);
+    c.strokeStyle='#ffe16b';c.lineWidth=2.5;c.shadowColor='#000';c.shadowBlur=4;
+    c.beginPath();c.arc(0,0,15,0,2*Math.PI);c.stroke();
+    c.beginPath();c.moveTo(-23,0);c.lineTo(-12,0);c.moveTo(12,0);c.lineTo(23,0);
+    c.moveTo(0,-23);c.lineTo(0,-12);c.moveTo(0,12);c.lineTo(0,23);c.stroke();
+    c.fillStyle='#ffeaa2';c.font='bold 12px sans-serif';c.textAlign='center';
+    c.fillText(selectedCelestialObject.name,0,-28);c.restore();
+   }
+  }
+ }
  c.restore();
  c.restore();
  c.__skyGlyphScale=1; // rectangular viewport scaling (identity in polar mode)
