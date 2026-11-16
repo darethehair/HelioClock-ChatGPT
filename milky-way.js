@@ -36,7 +36,7 @@ function projection({mode,width,height,zoom,heading,showBelowHorizon}){
  const X=width/2,Y=height/2,radius=(Math.min(width-35,height-20)/2-14)*zoom;
  return h=>{
   if(!Number.isFinite(h.alt)||!Number.isFinite(h.az))return null;
-  if(h.alt<0&&(mode!=='rect'||!showBelowHorizon))return null;
+  if(h.alt<0&&!showBelowHorizon)return null;
   if(mode==='rect')return projectRect(h.az,h.alt,width,height,heading);
   const theta=(h.az-90-heading)*RAD,r=radius*(1-h.alt/90);
   return [X+Math.cos(theta)*r,Y+Math.sin(theta)*r];
@@ -418,7 +418,7 @@ function paintRectContours(c,levels,opts,visibility,shade,outline){
  * Only inverse-projection sampling changes with zoom; no projected polygon
  * can reverse its inside/outside meaning when the view is magnified.
  */
-function paintPolarMask(c,{date,lat,lon,width,height,zoom,heading,precession,debugMaskMode='planar',panX=0,panY=0},visibility){
+function paintPolarMask(c,{date,lat,lon,width,height,zoom,heading,precession,showBelowHorizon=false,debugMaskMode='planar',panX=0,panY=0},visibility){
  // Corrected pole-aware closure, shared with rectangular shading.
  const mask=fixedEquatorialMask(debugMaskMode);
  const R=(Math.min(width-35,height-20)/2-14)*zoom;
@@ -432,7 +432,7 @@ function paintPolarMask(c,{date,lat,lon,width,height,zoom,heading,precession,deb
   for(let x=0;x<cols;x++){
    const xx=(x+.5)*width/cols-width/2-panX;
    const dist=Math.hypot(xx,yy);
-   if(dist>R)continue;
+   if(dist>R*(showBelowHorizon?2:1))continue;
    const alt=(90*(1-dist/R))*RAD;
    const az=wrap(Math.atan2(yy,xx)*DEG+90+heading)*RAD;
    const sa=Math.sin(alt),ca=Math.cos(alt);
@@ -460,9 +460,9 @@ function paintPolarMask(c,{date,lat,lon,width,height,zoom,heading,precession,deb
 function paintPolarContours(c,levels,opts,visibility,shade,outline){
  if(shade)paintPolarMask(c,opts,visibility);
  if(!outline)return;
- const {date,lat,lon,width,height,zoom,heading,precession}=opts;
+ const {date,lat,lon,width,height,zoom,heading,precession,showBelowHorizon=false}=opts;
  const R=(Math.min(width-35,height-20)/2-14)*zoom;
- const proj=geoAzimuthalEquidistant().rotate([0,-90]).clipAngle(90)
+ const proj=geoAzimuthalEquidistant().rotate([0,-90]).clipAngle(showBelowHorizon?179.9:90)
   .scale(R/(Math.PI/2)).translate([width/2,height/2]).precision(.2);
  const path=geoPath(proj,c);
  for(let k=0;k<levels.length;k++)for(const polygon of (levels[k].polygons||[])){
@@ -493,7 +493,7 @@ export function drawMilkyWay(c,opts){
   c.beginPath();c.rect(g.left,g.top,g.right-g.left,(showBelowHorizon?g.bottom:(g.top+g.bottom)/2)-g.top);c.clip();
  }else{
   const R=(Math.min(width-35,height-20)/2-14)*zoom;
-  c.beginPath();c.arc(width/2,height/2,R,0,2*Math.PI);c.clip();
+  c.beginPath();c.arc(width/2,height/2,R*(showBelowHorizon?2:1),0,2*Math.PI);c.clip();
  }
  // Clip both shaded regions and outline strokes to the appropriate view.
  // The polar sky always stops at the horizon; rectangular may show -90°.
@@ -510,7 +510,7 @@ export function drawMilkyWay(c,opts){
    paintRectContours(c,levels,{date,lat,lon,width,height,heading,precession,debugMaskMode},
     visibility,showShade,showOutline);
   }else{
-   paintPolarContours(c,levels,{date,lat,lon,width,height,zoom,heading,precession,debugMaskMode,panX,panY},
+   paintPolarContours(c,levels,{date,lat,lon,width,height,zoom,heading,precession,showBelowHorizon,debugMaskMode,panX,panY},
     visibility,showShade,showOutline);
   }
  }
