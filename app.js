@@ -170,6 +170,8 @@ function sky(){
  const o=canvas($('sky'));if(!o)return;const{c,w,h}=o;
  const X=w/2,Y=h/2,rad=(Math.min(w-35,h-20)/2-14)*state.skyZoom;
  const skySun=sunHorizontal(state.date,state.lat,state.lon);
+ const extendedPolar=state.skyProjection==='polar'&&state.skyZoom<1;
+ const belowHorizon=extendedPolar||(state.skyProjection==='rect'&&$('show-below-horizon').checked);
  // Rectangular zoom uses one canvas transform shared by the atmosphere,
  // galactic mask, stars, ecliptic, planets, coordinate grids and labels.
  // Scaling the entire chart keeps these layers in exact alignment.
@@ -200,7 +202,11 @@ function sky(){
   }
  }
  if(state.skyProjection==='polar'){
-  c.strokeStyle='#395270';c.lineWidth=1.3;c.beginPath();c.arc(X,Y,rad,0,2*PI);c.stroke();
+  if(extendedPolar){
+   c.fillStyle='rgba(28,38,56,.50)';c.beginPath();c.arc(X,Y,rad*2,0,2*PI);c.arc(X,Y,rad,0,2*PI,true);c.fill('evenodd');
+   c.strokeStyle='#76869b';c.setLineDash([5,5]);c.beginPath();c.arc(X,Y,rad*2,0,2*PI);c.stroke();c.setLineDash([]);
+  }
+  c.strokeStyle=extendedPolar?'#e6f2ff':'#395270';c.lineWidth=extendedPolar?2:1.3;c.beginPath();c.arc(X,Y,rad,0,2*PI);c.stroke();
  if($('show-altaz-grid').checked)for(let a=0;a<360;a+=10){
   const p=(a-90-state.skyHeading)*RAD;line(c,X+Math.cos(p)*(rad-5),Y+Math.sin(p)*(rad-5),X+Math.cos(p)*rad,Y+Math.sin(p)*rad,'#59708e',a%30?0.6:1.3);
  }
@@ -228,7 +234,7 @@ function sky(){
  }
  const sun=sunHorizontal(state.date,state.lat,state.lon),m=moon(state.date,state.lat,state.lon);
  const place=(obj,col,name)=>{
-  if(obj.alt<0&&(state.skyProjection!=='rect'||!$('show-below-horizon').checked))return;
+  if(obj.alt<0&&(!belowHorizon))return;
   let x,y;
   if(state.skyProjection==='rect'){
    [x,y]=projectRect(obj.az,obj.alt,w,h,state.skyHeading);
@@ -252,7 +258,7 @@ function sky(){
    for(let hour=-12;hour<=12;hour+=.25){
     const time=new Date(state.date.getTime()+hour*3600000);
     const obj=body==='sun'?sunHorizontal(time,state.lat,state.lon):moon(time,state.lat,state.lon);
-    if(obj.alt<0&&(state.skyProjection!=='rect'||!$('show-below-horizon').checked)){first=true;continue}
+    if(obj.alt<0&&(!belowHorizon)){first=true;continue}
     let xx,yy;
     if(state.skyProjection==='rect'){
      [xx,yy]=projectRect(obj.az,obj.alt,w,h,state.skyHeading);
@@ -270,14 +276,14 @@ function sky(){
  if($('show-ecliptic').checked)drawEcliptic(c,{
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
   mode:state.skyProjection,heading:state.skyHeading,zoom:state.skyZoom,
-  showBelowHorizon:state.skyProjection==='rect'&&$('show-below-horizon').checked
+  showBelowHorizon:belowHorizon
  });
  drawMilkyWay(c,{
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
   mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
   panX:state.skyPanX,panY:state.skyPanY,
   precession:state.usePrecession,skyLight:state.skyLight,sunAltitude:skySun.alt,
-  showBelowHorizon:state.skyProjection==='rect'&&$('show-below-horizon').checked,
+  showBelowHorizon:belowHorizon,
   showShade:$('show-milkyway-shade').checked,
   showOutline:$('show-milkyway-outline').checked,
   showCenter:$('show-galactic-center').checked,
@@ -290,7 +296,7 @@ function sky(){
   mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
   panX:state.skyPanX,panY:state.skyPanY,skyLight:state.skyLight,
   showAltAz:$('show-altaz-grid').checked,showRaDec:$('show-radec-grid').checked,
-  showBelowHorizon:state.skyProjection==='rect'&&$('show-below-horizon').checked
+  showBelowHorizon:belowHorizon
  });
  $('sky').dataset.gridInfo=JSON.stringify(gridResult);
  const milky=milkyWayStatus();
@@ -305,7 +311,7 @@ function sky(){
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
   mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
   panX:state.skyPanX,panY:state.skyPanY,precession:state.usePrecession,
-  showBelowHorizon:state.skyProjection==='rect'&&$('show-below-horizon').checked,
+  showBelowHorizon:belowHorizon,
   enabled:$('show-constellation-names').checked
  });
  $('sky').dataset.constellationNames=JSON.stringify(constellationNames);
@@ -317,7 +323,7 @@ function sky(){
   showLabels:$('show-labels').checked,
   showConstellations:$('show-constellations').checked,
   precession:state.usePrecession,
-  showBelowHorizon:state.skyProjection==='rect'&&$('show-below-horizon').checked,
+  showBelowHorizon:belowHorizon,
   stellarColors:state.stellarColors,
   brightSky:state.skyLight==='daylight' && skySun.alt>=-6
  });
@@ -325,7 +331,7 @@ function sky(){
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
   mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
   panX:state.skyPanX,panY:state.skyPanY,precession:state.usePrecession,
-  showBelowHorizon:state.skyProjection==='rect'&&$('show-below-horizon').checked,
+  showBelowHorizon:belowHorizon,
   showGalaxies:$('show-dso-galaxies').checked,
   showNebulae:$('show-dso-nebulae').checked,
   showClusters:$('show-dso-clusters').checked,
@@ -349,7 +355,7 @@ function sky(){
  const bodies=$('show-planets').checked?skyPlanets(state.date,state.lat,state.lon):[];
  const plottedPlanets=[];
  for(const planet of bodies){
-  if(planet.alt<0&&(state.skyProjection!=='rect'||!$('show-below-horizon').checked))continue;
+  if(planet.alt<0&&(!belowHorizon))continue;
   const [x,y]=state.skyProjection==='rect'
    ?projectRect(planet.az,planet.alt,w,h,state.skyHeading)
    :[X+rad*(1-planet.alt/90)*Math.cos((planet.az-90-state.skyHeading)*RAD),
@@ -377,7 +383,7 @@ function skyCursorCoordinates(x,y,width,height,opts={}){
   if(radius<=0)return null;
   const dx=x-width/2-panX,dy=y-height/2-panY;
   const r=Math.hypot(dx,dy);
-  if(r>radius)return null;
+  if(r>radius*(zoom<1?2:1))return null;
   alt=90*(1-r/radius);
   az=wrap(Math.atan2(dy,dx)/RAD+90+heading);
  }else{
@@ -680,7 +686,7 @@ function viewRange(id,key){$(id).addEventListener('input',e=>{state[key]=Number(
 viewRange('sky-heading','skyHeading');
 // Slider zoom is centred; wheel zoom targets the pointer position.
 $('sky-zoom').addEventListener('input',e=>setPolarSkyZoom(Number(e.target.value)));
-$('sky-zoom-out').addEventListener('click',()=>setPolarSkyZoom(Math.round(clamp(state.skyZoom/1.25,1,3)*100)/100));
+$('sky-zoom-out').addEventListener('click',()=>setPolarSkyZoom(Math.round(clamp(state.skyZoom/1.25,state.skyProjection==='polar'?.5:1,3)*100)/100));
 $('sky-zoom-in').addEventListener('click',()=>setPolarSkyZoom(Math.round(clamp(state.skyZoom*1.25,1,3)*100)/100));
 viewRange('earth-zoom','earthZoom');
 // Camera-only changes redraw the orrery, not the Earth, sky, Moon and almanac.
@@ -1164,7 +1170,7 @@ function wheelZoom(canvasId,controlId,key,lo,hi){
 function setPolarSkyZoom(next,clientX=null,clientY=null){
  const canvas=$('sky'),rect=canvas.getBoundingClientRect();
  const old=state.skyZoom;
- next=clamp(next,1,3);
+ next=clamp(next,state.skyProjection==='polar'?.5:1,3);
  if(next===old)return;
  const px=clientX===null?rect.width/2:clientX-rect.left;
  const py=clientY===null?rect.height/2:clientY-rect.top;
@@ -1192,7 +1198,7 @@ function setPolarSkyZoom(next,clientX=null,clientY=null){
 }
 $('sky').addEventListener('wheel',e=>{
  e.preventDefault();
- setPolarSkyZoom(Math.round(clamp(state.skyZoom*(e.deltaY>0?.88:1.14),1,3)*100)/100,e.clientX,e.clientY);
+ setPolarSkyZoom(Math.round(clamp(state.skyZoom*(e.deltaY>0?.88:1.14),state.skyProjection==='polar'?.5:1,3)*100)/100,e.clientX,e.clientY);
 },{passive:false});
 wheelZoom('earth-map','earth-zoom','earthZoom',1,4);
 wheelZoom('orrery','orrery-zoom','orreryZoom',.7,3);
