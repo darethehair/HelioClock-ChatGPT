@@ -283,7 +283,7 @@ function sky(){
  drawMilkyWay(c,{
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
   mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
-  panX:state.skyPanX,panY:state.skyPanY,
+  panX:state.skyPanX,panY:state.skyPanY+polarOffset,
   precession:state.usePrecession,skyLight:state.skyLight,sunAltitude:skySun.alt,
   showBelowHorizon:belowHorizon,
   showShade:$('show-milkyway-shade').checked,
@@ -296,7 +296,7 @@ function sky(){
  const gridResult=drawSkyGrid(c,{
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
   mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
-  panX:state.skyPanX,panY:state.skyPanY,skyLight:state.skyLight,
+  panX:state.skyPanX,panY:state.skyPanY+polarOffset,skyLight:state.skyLight,
   showAltAz:$('show-altaz-grid').checked,showRaDec:$('show-radec-grid').checked,
   showBelowHorizon:belowHorizon
  });
@@ -312,7 +312,7 @@ function sky(){
  const constellationNames=drawConstellationNames(c,{
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
   mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
-  panX:state.skyPanX,panY:state.skyPanY,precession:state.usePrecession,
+  panX:state.skyPanX,panY:state.skyPanY+polarOffset,precession:state.usePrecession,
   showBelowHorizon:belowHorizon,
   enabled:$('show-constellation-names').checked
  });
@@ -320,7 +320,7 @@ function sky(){
  const plotted=drawSkyAtlas(c,{
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
   mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
-  panX:state.skyPanX,panY:state.skyPanY,
+  panX:state.skyPanX,panY:state.skyPanY+polarOffset,
   magLimit:state.magLimit,showStars:$('show-stars').checked,
   showLabels:$('show-labels').checked,
   showConstellations:$('show-constellations').checked,
@@ -332,7 +332,7 @@ function sky(){
  const dso=drawSkyDSOs(c,{
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
   mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
-  panX:state.skyPanX,panY:state.skyPanY,precession:state.usePrecession,
+  panX:state.skyPanX,panY:state.skyPanY+polarOffset,precession:state.usePrecession,
   showBelowHorizon:belowHorizon,
   showGalaxies:$('show-dso-galaxies').checked,
   showNebulae:$('show-dso-nebulae').checked,
