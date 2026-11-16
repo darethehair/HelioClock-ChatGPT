@@ -680,14 +680,20 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 .orrery-3d-setting[hidden]{display:none!important}
 .orrery-3d-setting input{width:92px;accent-color:#f3c178}
 
-/* Offline celestial object finder */
-.celestial-finder{margin:16px 0;padding:16px 20px;border:1px solid #34475e;border-radius:14px;background:#111d30;color:#e8eff9}
-.celestial-finder-heading{display:flex;gap:12px;flex-wrap:wrap;align-items:baseline;justify-content:space-between;margin-bottom:10px}
-.celestial-finder-heading span{color:#a9bfd3;font-size:.85rem}
-.celestial-finder label{display:block;font-size:.84rem;color:#bfd0e4;margin-bottom:6px}
-.celestial-finder input{width:100%;max-width:440px;box-sizing:border-box;padding:9px 12px;background:#091424;border:1px solid #536a85;border-radius:8px;color:white}
-.celestial-search-results{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px;font-size:.85rem;color:#b5c6d8}
-.celestial-search-result{padding:6px 10px;border:1px solid #46607b;border-radius:7px;background:#1a3048;color:#eaf4ff;cursor:pointer}
-.celestial-search-result:hover,.celestial-search-result:focus-visible{border-color:#9ad8ff;background:#274967}
-.celestial-search-detail{margin-top:10px;font-size:.9rem}
-.celestial-search-detail p{margin:4px 0 0;color:#c5d8e9;line-height:1.5}
+/* Compact sky-integrated object finder: collapsed until needed. */
+.sky-panel .celestial-finder{display:block;margin:0 0 12px;border:1px solid #405f7c;border-radius:8px;background:#10263d;color:#e8eff9;min-width:0}
+.sky-panel .celestial-finder>summary{cursor:pointer;padding:9px 12px;font-size:12px;font-weight:700;list-style:none}
+.sky-panel .celestial-finder>summary::-webkit-details-marker{display:none}
+.sky-panel .celestial-finder>summary:after{content:' ▾';opacity:.8}
+.sky-panel .celestial-finder[open]>summary:after{content:' ▴'}
+.sky-panel .celestial-finder>summary span{font-weight:400;color:#abc5db;font-size:11px;margin-left:10px}
+.sky-panel .celestial-finder>summary:focus-visible{outline:2px solid #a5dfff;outline-offset:2px}
+.sky-panel .celestial-finder-body{padding:0 12px 12px}
+.sky-panel .celestial-finder label{display:block;font-size:11px;color:#bfd0e4;margin-bottom:6px}
+.sky-panel .celestial-finder input{display:block;width:100%;box-sizing:border-box;padding:8px 10px;background:#091424;border:1px solid #536a85;border-radius:7px;color:white}
+.sky-panel .celestial-search-results{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;font-size:11px;color:#b5c6d8;max-height:140px;overflow-y:auto}
+.sky-panel .celestial-search-result{padding:6px 9px;border:1px solid #46607b;border-radius:6px;background:#1a3048;color:#eaf4ff;cursor:pointer;font-size:11px}
+.sky-panel .celestial-search-result:hover,.sky-panel .celestial-search-result:focus-visible{border-color:#9ad8ff;background:#274967}
+.sky-panel .celestial-search-detail{margin-top:8px;font-size:12px}
+.sky-panel .celestial-search-detail p{margin:5px 0 8px;color:#c5d8e9;line-height:1.45}
+@media(max-width:750px){.sky-panel .celestial-finder>summary span{display:none}}

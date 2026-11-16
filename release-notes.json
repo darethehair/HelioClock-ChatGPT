@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v90",
+      "summary": "Move celestial object search into a compact collapsible section within Sky Compass, retaining search, Center and Follow controls and mobile fullscreen access."
+    },
+    {
       "version": "v89",
       "summary": "Add optional Follow through time tracking for the selected celestial object, with continuous Sky Compass recentering and manual pan/rotation/zoom to exit tracking."
     },
