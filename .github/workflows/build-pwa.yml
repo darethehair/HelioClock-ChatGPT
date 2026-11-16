@@ -30,7 +30,10 @@ jobs:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           set -euo pipefail
-          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+          if [[ "$EVENT_NAME" == "workflow_dispatch" || "$EVENT_NAME" == "push" ]]; then
+            # A later docs-only push may cancel an earlier application build.
+            # Always build main pushes so the latest source revision deploys.
+            echo "Full build for push/dispatch (prevents cancelled release)"
             echo "full_build=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
