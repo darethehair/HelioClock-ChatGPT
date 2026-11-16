@@ -1219,6 +1219,9 @@ $('earth-map').addEventListener('pointerup',e=>{
   notice('Choose a point on the Earth surface, not outside the globe.');
   return;
  }
+ // Preserve the current map camera: flat-map tilt is relative to
+ // observer latitude, whereas globe rotation is an absolute orientation.
+ if(state.earthProjection!=='globe')state.earthLat+=coords.lat-state.lat;
  state.lat=coords.lat;state.lon=coords.lon;
  $('latitude').value=coords.lat.toFixed(4);
  $('longitude').value=coords.lon.toFixed(4);
