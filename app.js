@@ -168,7 +168,7 @@ function fillSkyBackground(c,w,h,altitude){
 }
 function sky(){
  const o=canvas($('sky'));if(!o)return;const{c,w,h}=o;
- const X=w/2,Y=h/2,rad=(Math.min(w-35,h-20)/2-14)*state.skyZoom;
+ const X=w/2,Y=h/2,rad=(Math.min(w-35,h-20)/2-14)*state.skyZoom*(state.skyZoom<1?.88:1);
  const skySun=sunHorizontal(state.date,state.lat,state.lon);
  const extendedPolar=state.skyProjection==='polar'&&state.skyZoom<1;
  const belowHorizon=extendedPolar||(state.skyProjection==='rect'&&$('show-below-horizon').checked);
@@ -379,7 +379,7 @@ function skyCursorCoordinates(x,y,width,height,opts={}){
  const {mode='polar',zoom=1,heading=0,panX=0,panY=0}=opts;
  let az,alt;
  if(mode==='polar'){
-  const radius=(Math.min(width-35,height-20)/2-14)*zoom;
+  const radius=(Math.min(width-35,height-20)/2-14)*zoom*(zoom<1?.88:1);
   if(radius<=0)return null;
   const dx=x-width/2-panX,dy=y-height/2-panY;
   const r=Math.hypot(dx,dy);
