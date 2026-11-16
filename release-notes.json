@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v86",
+      "summary": "Introduce an offline celestial object finder for named stars, Messier objects and constellations, with date- and observer-aware RA/Dec, azimuth, altitude and horizon status."
+    },
+    {
       "version": "v85",
       "summary": "Make below-horizon polar zoom transition smoothly from 1× to 0.5×, progressively revealing the hidden sky while keeping the disc centred and fitting the viewport."
     },
