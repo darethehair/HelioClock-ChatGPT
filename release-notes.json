@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v85",
+      "summary": "Make below-horizon polar zoom transition smoothly from 1× to 0.5×, progressively revealing the hidden sky while keeping the disc centred and fitting the viewport."
+    },
+    {
       "version": "v84",
       "summary": "Fit the full below-horizon polar sky to the available canvas in regular and fullscreen layouts, preserving the largest possible view and keeping cursor mapping aligned."
     },
