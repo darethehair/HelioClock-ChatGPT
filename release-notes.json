@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v97",
+      "summary": "Fix Earth map observer and zoom controls overflowing narrow tablet dashboard cards; wrap by available panel width and verify button-label bounds in Firefox."
+    },
+    {
       "version": "v96",
       "summary": "Make MPC comets searchable in Sky Compass, with approximate two-body heliocentric propagation, topocentric RA/Dec and Alt/Az, selection marker, Center and Follow, and orbital-accuracy warnings."
     },

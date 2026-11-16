@@ -2370,3 +2370,37 @@ test('v82 polar zoom reveals below-horizon sky while preserving the normal horiz
  await page.locator('#sky-reset').click();
  await expect(page.locator('#sky-zoom')).toHaveValue('1');
 });
+
+test('Tablet Earth observer controls wrap inside their dashboard card',async({page})=>{
+ await page.setViewportSize({width:960,height:1100});
+ await page.goto('http://127.0.0.1:8765/');
+ await expect(page.locator('.earth-panel')).toBeVisible();
+ const result=await page.locator('.earth-panel').evaluate(panel=>{
+  const group=panel.querySelector('.earth-zoom-buttons');
+  const parent=panel.getBoundingClientRect();
+  const groupRect=group.getBoundingClientRect();
+  const buttons=[...group.querySelectorAll('button')].map(button=>{
+   const outer=button.getBoundingClientRect();
+   const range=document.createRange();
+   range.selectNodeContents(button);
+   const content=range.getBoundingClientRect();
+   return {id:button.id,left:outer.left,right:outer.right,top:outer.top,bottom:outer.bottom,
+    textRight:content.right,textBottom:content.bottom};
+  });
+  return {parent:{left:parent.left,right:parent.right},group:{left:groupRect.left,right:groupRect.right},
+   buttons,scrollOverflow:group.scrollWidth-group.clientWidth};
+ });
+ expect(result.group.left).toBeGreaterThanOrEqual(result.parent.left-1);
+ expect(result.group.right).toBeLessThanOrEqual(result.parent.right+1);
+ expect(result.scrollOverflow).toBeLessThanOrEqual(1);
+ for(const button of result.buttons){
+  expect(button.left,button.id+' left edge').toBeGreaterThanOrEqual(result.group.left-1);
+  expect(button.right,button.id+' right edge').toBeLessThanOrEqual(result.group.right+1);
+  expect(button.textRight,button.id+' label right edge').toBeLessThanOrEqual(button.right+1);
+  expect(button.textBottom,button.id+' label bottom edge').toBeLessThanOrEqual(button.bottom+1);
+ }
+ await page.locator('#earth-pick-observer').click();
+ await expect(page.locator('#earth-pick-observer')).toHaveAttribute('aria-pressed','true');
+ await page.locator('#earth-pick-observer').click();
+ await expect(page.locator('#earth-pick-observer')).toHaveAttribute('aria-pressed','false');
+});

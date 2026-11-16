@@ -706,3 +706,29 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 /* v94: observer-location actions stay visible beside the Earth camera controls. */
 #earth-locate-me{white-space:nowrap;font-size:12px}
 @media(max-width:750px){.earth-zoom-buttons{flex-wrap:wrap}.earth-zoom-buttons #earth-pick-observer,.earth-zoom-buttons #earth-locate-me{font-size:12px}}
+
+/* v97 — Earth controls follow panel width, not only device width.
+   Tablet dashboards keep two columns, so a half-width Earth card can be
+   considerably narrower than the browser's mobile media breakpoint. */
+.earth-panel{container-type:inline-size}
+.earth-panel .earth-tools,
+.earth-panel .earth-zoom-buttons{min-width:0;max-width:100%}
+.earth-panel .earth-zoom-buttons{width:100%;flex-wrap:wrap;justify-content:flex-start;align-items:center;gap:7px}
+.earth-panel .earth-zoom-buttons button{flex:0 0 auto;min-height:34px;height:auto;max-width:100%;white-space:nowrap;line-height:1.3;padding:7px 11px}
+.earth-panel #earth-pick-observer,
+.earth-panel #earth-locate-me{font-size:12px}
+.earth-panel .earth-map-style,
+.earth-panel .earth-quality-setting{min-width:0;max-width:100%}
+.earth-panel .earth-map-style select,
+.earth-panel .earth-quality-setting select{max-width:100%}
+@container (max-width:570px){
+ .earth-panel .earth-projections{width:100%;min-width:0;justify-content:space-between}
+ .earth-panel .earth-projection{flex:1 1 0;min-width:0;padding:8px 5px;white-space:normal}
+ .earth-panel .earth-zoom-buttons{gap:7px}
+ .earth-panel .earth-zoom-buttons #earth-pick-observer{flex:1 1 150px}
+ .earth-panel .earth-zoom-buttons #earth-locate-me{flex:1 1 100px}
+ .earth-panel .earth-political-tools,
+ .earth-panel .earth-twilight-controls,
+ .earth-panel .earth-overlay-tools{min-width:0}
+ .earth-panel .earth-twilight-controls label{white-space:normal}
+}

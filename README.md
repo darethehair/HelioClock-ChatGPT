@@ -105,6 +105,7 @@ Release highlights are curated in [`release-notes.json`](release-notes.json). Wh
 
 | Release | Highlights |
 | --- | --- |
+| **v97** | Fix Earth map observer and zoom controls overflowing narrow tablet dashboard cards; wrap by available panel width and verify button-label bounds in Firefox. |
 | **v96** | Make MPC comets searchable in Sky Compass, with approximate two-body heliocentric propagation, topocentric RA/Dec and Alt/Az, selection marker, Center and Follow, and orbital-accuracy warnings. |
 | **v95** | Add the official MPC CometEls.txt import foundation, validated offline orbital-element snapshots with source/freshness metadata, and a catalogue status in Sky Compass; comet positions are not yet calculated. |
 | **v94** | Add Locate me beside Set observer on map, reusing the existing permission-aware browser geolocation to restore current observer coordinates. |
