@@ -18,7 +18,7 @@ export function moonBrightDirection(moon,sun,project){
 }
 export function drawSkyMoon(c,x,y,r,illumination,waxing,angle){
  const f=Math.max(0,Math.min(1,illumination));
- c.save();c.translate(x,y);c.rotate(angle);
+ c.save();c.translate(x,y);c.scale(c.__skyGlyphScale||1,c.__skyGlyphScale||1);c.rotate(angle);
  c.fillStyle='#17243a';c.strokeStyle='#d2deef';c.lineWidth=1;
  c.beginPath();c.arc(0,0,r,0,Math.PI*2);c.fill();
  // Scan the exact projected elliptical terminator: at quarter phase it is
