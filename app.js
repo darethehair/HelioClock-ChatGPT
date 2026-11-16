@@ -1,3 +1,4 @@
+import {drawSkyMoon,moonBrightDirection} from './sky-moon-phase.js';
 import {renderAlmanac} from './almanac.js';
 import {drawEcliptic} from './ecliptic.js';
 import {drawMilkyWay,milkyWayStatus,milkyWayDebugStatus,milkyWaySample} from './milky-way.js';
@@ -235,7 +236,14 @@ function sky(){
    const distance=rad*(1-obj.alt/90),angle=(obj.az-90-state.skyHeading)*RAD;
    x=X+distance*Math.cos(angle);y=Y+distance*Math.sin(angle);
   }
-  dot(c,x,y,name==='Sun'?8:6,col,15);
+  if(name==='Moon'){
+   const project=(az,alt)=>state.skyProjection==='rect'
+    ?projectRect(az,alt,w,h,state.skyHeading)
+    :[X+rad*(1-alt/90)*Math.cos((az-90-state.skyHeading)*RAD),
+      Y+rad*(1-alt/90)*Math.sin((az-90-state.skyHeading)*RAD)];
+   const angle=moonBrightDirection(m,sun,project);
+   drawSkyMoon(c,x,y,7,m.illuminated,true,angle);
+  }else dot(c,x,y,8,col,15);
   label(c,name,x+11,y-8,col,11);
  };
  if($('show-sky-paths').checked){
