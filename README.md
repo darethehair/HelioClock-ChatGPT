@@ -105,6 +105,7 @@ Release highlights are curated in [`release-notes.json`](release-notes.json). Wh
 
 | Release | Highlights |
 | --- | --- |
+| **v87** | Highlight the selected celestial search result in both Sky Compass projections with a date-aware position marker, including zoom-aware sizing. |
 | **v86** | Introduce an offline celestial object finder for named stars, Messier objects and constellations, with date- and observer-aware RA/Dec, azimuth, altitude and horizon status. |
 | **v85** | Make below-horizon polar zoom transition smoothly from 1× to 0.5×, progressively revealing the hidden sky while keeping the disc centred and fitting the viewport. |
 | **v84** | Fit the full below-horizon polar sky to the available canvas in regular and fullscreen layouts, preserving the largest possible view and keeping cursor mapping aligned. |
