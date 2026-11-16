@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v88",
+      "summary": "Add a Center in Sky Compass action for selected finder results, repositioning either projection and revealing below-horizon targets in the rectangular view."
+    },
+    {
       "version": "v87",
       "summary": "Highlight the selected celestial search result in both Sky Compass projections with a date-aware position marker, including zoom-aware sizing."
     },

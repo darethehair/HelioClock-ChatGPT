@@ -73,6 +73,50 @@ function renderCelestialFinder(){
   (pos.alt>=0?' · Above horizon':' · Below horizon')+
   (o.approximate?' · Approximate constellation centre':'');
  detail.append(title,info);
+ const center=document.createElement('button');center.type='button';
+ center.className='celestial-search-result';
+ center.textContent='Center in Sky Compass';
+ center.addEventListener('click',centerSelectedCelestialObject);
+ detail.append(center);
+}
+// Locate only when requested; simply selecting a result preserves the user's sky view.
+function centerSelectedCelestialObject(){
+ if(!selectedCelestialObject)return;
+ const target=celestialObjectPosition(selectedCelestialObject,state.date,state.lat,state.lon,state.usePrecession);
+ if(!Number.isFinite(target.az)||!Number.isFinite(target.alt))return;
+ const skyCanvas=$('sky'),w=skyCanvas.clientWidth,h=skyCanvas.clientHeight;
+ if(!w||!h){notice('Sky Compass is not visible. Enable its panel and try again.');return;}
+ // Below the horizon is best located in the rectangular full-sphere view.
+ // The normal polar projection intentionally hides that hemisphere.
+ if(target.alt<0&&state.skyProjection==='polar'){
+  state.skyProjection='rect';
+  $('below-horizon-setting').hidden=false;
+  for(const button of document.querySelectorAll('[data-sky-projection]')){
+   const active=button.dataset.skyProjection==='rect';
+   button.classList.toggle('selected',active);
+   button.setAttribute('aria-pressed',String(active));
+  }
+ }
+ if(target.alt<0)$('show-below-horizon').checked=true;
+ state.skyHeading=state.skyProjection==='rect'?wrap(target.az-180,360):target.az;
+ $('sky-heading').value=String(state.skyHeading);
+ if(state.skyProjection==='rect'){
+  state.skyZoom=Math.max(state.skyZoom,1.6);
+  const [x,y]=projectRect(target.az,target.alt,w,h,state.skyHeading);
+  state.skyPanX=clamp((w/2-x)*state.skyZoom,-w*(state.skyZoom-1)/2,w*(state.skyZoom-1)/2);
+  state.skyPanY=clamp((h/2-y)*state.skyZoom,-h*(state.skyZoom-1)/2,h*(state.skyZoom-1)/2);
+ }else{
+  state.skyZoom=Math.max(state.skyZoom,1.5);
+  const radius=(Math.min(w-35,h-20)/2-14)*state.skyZoom;
+  const angle=(target.az-90-state.skyHeading)*RAD;
+  const distance=radius*(1-target.alt/90);
+  state.skyPanX=-distance*Math.cos(angle);
+  state.skyPanY=-distance*Math.sin(angle);
+ }
+ $('sky-zoom').value=String(state.skyZoom);
+ render();
+ skyCanvas.closest('.sky-panel')?.scrollIntoView({block:'nearest',behavior:'smooth'});
+ notice(target.alt<0?selectedCelestialObject.name+' is below the horizon; showing its position in the full-sphere sky.':'Centered '+selectedCelestialObject.name+' in Sky Compass.');
 }
 $('celestial-search-input').addEventListener('input',renderCelestialFinder);
 function canvas(el){
