@@ -15,7 +15,7 @@ export function drawSkyDSOs(c,{date,lat,lon,width,height,mode='polar',zoom=1,hea
   const equatorial=precession?precessJ2000(ra,dec,date):{ra,decl:dec};
   const h=horizontal(equatorial.ra,equatorial.decl,date,lat,lon);
   if(!Number.isFinite(h.az)||!Number.isFinite(h.alt))continue;
-  if(h.alt<0&&(mode!=='rect'||!showBelowHorizon))continue;
+  if(h.alt<0&&!showBelowHorizon)continue;
   const angle=(h.az-90-heading)*RAD;
   const [x,y]=mode==='rect'?projectRect(h.az,h.alt,width,height,heading):
    [width/2+radius*(1-h.alt/90)*Math.cos(angle),
