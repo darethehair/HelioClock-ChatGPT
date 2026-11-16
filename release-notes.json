@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v95",
+      "summary": "Add the official MPC CometEls.txt import foundation, validated offline orbital-element snapshots with source/freshness metadata, and a catalogue status in Sky Compass; comet positions are not yet calculated."
+    },
+    {
       "version": "v94",
       "summary": "Add Locate me beside Set observer on map, reusing the existing permission-aware browser geolocation to restore current observer coordinates."
     },

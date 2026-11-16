@@ -306,6 +306,30 @@ jobs:
           assert p.stat().st_size>50000 and p.read_bytes()[:2]==bytes.fromhex('ffd8'), 'Black Marble JPEG missing'
           print('Bundled NASA Black Marble:',p.stat().st_size)
           PY
+      # Retain the last valid MPC snapshot for builds without MPC access.
+      - name: Restore last successful comet catalogue
+        uses: actions/cache/restore@v4
+        with:
+          path: /tmp/helioclock-comets.json
+          key: helioclock-mpc-comets-v1-${{ github.run_id }}
+          restore-keys: |
+            helioclock-mpc-comets-v1-
+      - name: Refresh MPC CometEls catalogue for offline distribution
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/update-comets.mjs --output dist/comets.json --fallback /tmp/helioclock-comets.json
+          node -e "const c=require('./dist/comets.json');if(!Array.isArray(c.records)||c.count!==c.records.length)process.exit(1);console.log('MPC comet snapshot',c.status,c.count)"
+          if node -e "process.exit(require('./dist/comets.json').status==='ready'?0:1)"; then
+            cp dist/comets.json /tmp/helioclock-comets.json
+            echo "COMET_REFRESHED=true" >> "$GITHUB_ENV"
+          fi
+      - name: Save current MPC comet catalogue cache
+        if: env.COMET_REFRESHED == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: /tmp/helioclock-comets.json
+          key: helioclock-mpc-comets-v1-${{ github.run_id }}
       - name: Stage static files for browser test
         run: cp index.html styles.css astronomy.js manifest.webmanifest sw.js icon.svg hero-landscape-natural.webp dist/ && ver="$(node -p 'require("./package.json").version.split(".")[0]')" && printf '{"version":%s,"test":true,"commit":"%s","built_utc":"%s"}\n' "$ver" "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > dist/build-info.json
       - name: Stamp cache identity for browser tests

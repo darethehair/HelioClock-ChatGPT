@@ -47,6 +47,21 @@ function selectDate(){
  pausePlayback();state.date=next;state.live=false;render();
 }
 function notice(msg){$('message').hidden=!msg;$('message').textContent=msg||''}
+// Orbital-element catalogue is downloaded during packaging, not propagated yet.
+async function loadCometCatalogStatus(){
+ const el=$('comet-catalog-status');
+ if(!el)return;
+ try{
+  const response=await fetch('./comets.json');
+  if(!response.ok)throw Error('not present');
+  const data=await response.json();
+  if(data.schema!==1||!Array.isArray(data.records)||data.records.length!==data.count)throw Error('invalid snapshot');
+  if(data.count===0){el.textContent='Comet catalogue unavailable · no comet positions yet';return;}
+  const when=data.retrievedUtc?data.retrievedUtc.slice(0,10):'date unknown';
+  el.textContent=data.count+' MPC comet elements · '+(data.status==='cached'?'cached snapshot':'downloaded')+' '+when+' · sky positions coming later';
+ }catch{el.textContent='Comet catalogue not packaged · sky positions coming later';}
+}
+loadCometCatalogStatus();
 let selectedCelestialObject=null;
 let followCelestialObject=false;
 let finderEventsCache={key:null,result:null};

@@ -105,6 +105,7 @@ Release highlights are curated in [`release-notes.json`](release-notes.json). Wh
 
 | Release | Highlights |
 | --- | --- |
+| **v95** | Add the official MPC CometEls.txt import foundation, validated offline orbital-element snapshots with source/freshness metadata, and a catalogue status in Sky Compass; comet positions are not yet calculated. |
 | **v94** | Add Locate me beside Set observer on map, reusing the existing permission-aware browser geolocation to restore current observer coordinates. |
 | **v93** | Add an explicit Set observer on map crosshair mode; click or tap any visible Earth point to update observer coordinates without changing normal globe rotation behavior. |
 | **v92** | Show selected-object rise, upper-transit and set times for the simulation UTC date, including circumpolar visibility status and geometric-horizon cautions. |
