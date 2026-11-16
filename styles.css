@@ -702,3 +702,7 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 #earth-pick-observer[aria-pressed="true"]{background:#f0c57c;color:#10223a;border-color:#ffd998}
 .earth-pick-help{font-size:11px;color:#f6d79e;margin:5px 0 8px;line-height:1.5}
 .earth-map-stage #earth-map.earth-pick-active{cursor:crosshair!important;touch-action:none}
+
+/* v94: observer-location actions stay visible beside the Earth camera controls. */
+#earth-locate-me{white-space:nowrap;font-size:12px}
+@media(max-width:750px){.earth-zoom-buttons{flex-wrap:wrap}.earth-zoom-buttons #earth-pick-observer,.earth-zoom-buttons #earth-locate-me{font-size:12px}}

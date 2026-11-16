@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v94",
+      "summary": "Add Locate me beside Set observer on map, reusing the existing permission-aware browser geolocation to restore current observer coordinates."
+    },
+    {
       "version": "v93",
       "summary": "Add an explicit Set observer on map crosshair mode; click or tap any visible Earth point to update observer coordinates without changing normal globe rotation behavior."
     },

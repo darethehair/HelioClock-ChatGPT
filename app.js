@@ -1210,6 +1210,10 @@ $('earth-zoom-in').addEventListener('click',()=>adjustEarthZoom(1.25));
 $('earth-zoom-out').addEventListener('click',()=>adjustEarthZoom(.8));
 $('earth-map-home').addEventListener('click',()=>{$('earth-reset').click()});
 $('earth-pick-observer').addEventListener('click',()=>setEarthObserverPickMode(!pickingEarthObserver));
+$('earth-locate-me').addEventListener('click',()=>{
+ setEarthObserverPickMode(false);
+ $('locate').click(); // Reuse the existing browser-geolocation request and error handling.
+});
 $('earth-map').addEventListener('pointerup',e=>{
  if(!pickingEarthObserver||e.button!==0)return;
  const el=$('earth-map'),box=el.getBoundingClientRect();

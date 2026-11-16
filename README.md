@@ -105,6 +105,7 @@ Release highlights are curated in [`release-notes.json`](release-notes.json). Wh
 
 | Release | Highlights |
 | --- | --- |
+| **v94** | Add Locate me beside Set observer on map, reusing the existing permission-aware browser geolocation to restore current observer coordinates. |
 | **v93** | Add an explicit Set observer on map crosshair mode; click or tap any visible Earth point to update observer coordinates without changing normal globe rotation behavior. |
 | **v92** | Show selected-object rise, upper-transit and set times for the simulation UTC date, including circumpolar visibility status and geometric-horizon cautions. |
 | **v91** | Extend the celestial object finder to all seven visible planets using the same topocentric Astronomy Engine ephemerides as Sky Compass, with date-aware positioning and regression tests. |
