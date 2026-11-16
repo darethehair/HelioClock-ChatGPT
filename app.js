@@ -168,11 +168,14 @@ function fillSkyBackground(c,w,h,altitude){
 }
 function sky(){
  const o=canvas($('sky'));if(!o)return;const{c,w,h}=o;
- const X=w/2,Y=h/2,rad=(Math.min(w-35,h-20)/2-14)*state.skyZoom;
- const skySun=sunHorizontal(state.date,state.lat,state.lon);
+ const X=w/2,Y=h/2;
+ const polarBaseRadius=Math.min(w-35,h-20)/2-14;
  const extendedPolar=state.skyProjection==='polar'&&state.skyZoom<1;
- // Offset the whole polar chart rather than shrinking its angular scale.
- const polarOffset=extendedPolar?Math.round(h*.045):0;
+ // Fit the full below-horizon hemisphere in both fullscreen and panel layouts.
+ const fittedPolarZoom=extendedPolar?Math.min(state.skyZoom,(Math.min(w,h)-24)/(4*polarBaseRadius)):state.skyZoom;
+ const rad=polarBaseRadius*fittedPolarZoom;
+ const skySun=sunHorizontal(state.date,state.lat,state.lon);
+ const polarOffset=0;
  const belowHorizon=extendedPolar||(state.skyProjection==='rect'&&$('show-below-horizon').checked);
  // Rectangular zoom uses one canvas transform shared by the atmosphere,
  // galactic mask, stars, ecliptic, planets, coordinate grids and labels.
@@ -277,12 +280,12 @@ function sky(){
  }
  if($('show-ecliptic').checked)drawEcliptic(c,{
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
-  mode:state.skyProjection,heading:state.skyHeading,zoom:state.skyZoom,
+  mode:state.skyProjection,heading:state.skyHeading,zoom:fittedPolarZoom,
   showBelowHorizon:belowHorizon
  });
  drawMilkyWay(c,{
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
-  mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
+  mode:state.skyProjection,zoom:fittedPolarZoom,heading:state.skyHeading,
   panX:state.skyPanX,panY:state.skyPanY+polarOffset,
   precession:state.usePrecession,skyLight:state.skyLight,sunAltitude:skySun.alt,
   showBelowHorizon:belowHorizon,
@@ -295,7 +298,7 @@ function sky(){
  // remains visible. Stars, Sun, Moon and planets are drawn above the grid.
  const gridResult=drawSkyGrid(c,{
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
-  mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
+  mode:state.skyProjection,zoom:fittedPolarZoom,heading:state.skyHeading,
   panX:state.skyPanX,panY:state.skyPanY+polarOffset,skyLight:state.skyLight,
   showAltAz:$('show-altaz-grid').checked,showRaDec:$('show-radec-grid').checked,
   showBelowHorizon:belowHorizon
@@ -311,7 +314,7 @@ function sky(){
  c.__skyLabelRects=[];
  const constellationNames=drawConstellationNames(c,{
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
-  mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
+  mode:state.skyProjection,zoom:fittedPolarZoom,heading:state.skyHeading,
   panX:state.skyPanX,panY:state.skyPanY+polarOffset,precession:state.usePrecession,
   showBelowHorizon:belowHorizon,
   enabled:$('show-constellation-names').checked
@@ -319,7 +322,7 @@ function sky(){
  $('sky').dataset.constellationNames=JSON.stringify(constellationNames);
  const plotted=drawSkyAtlas(c,{
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
-  mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
+  mode:state.skyProjection,zoom:fittedPolarZoom,heading:state.skyHeading,
   panX:state.skyPanX,panY:state.skyPanY+polarOffset,
   magLimit:state.magLimit,showStars:$('show-stars').checked,
   showLabels:$('show-labels').checked,
@@ -331,7 +334,7 @@ function sky(){
  });
  const dso=drawSkyDSOs(c,{
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
-  mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
+  mode:state.skyProjection,zoom:fittedPolarZoom,heading:state.skyHeading,
   panX:state.skyPanX,panY:state.skyPanY+polarOffset,precession:state.usePrecession,
   showBelowHorizon:belowHorizon,
   showGalaxies:$('show-dso-galaxies').checked,
@@ -381,9 +384,11 @@ function skyCursorCoordinates(x,y,width,height,opts={}){
  const {mode='polar',zoom=1,heading=0,panX=0,panY=0}=opts;
  let az,alt;
  if(mode==='polar'){
-  const radius=(Math.min(width-35,height-20)/2-14)*zoom;
+  const baseRadius=Math.min(width-35,height-20)/2-14;
+  const effectiveZoom=zoom<1?Math.min(zoom,(Math.min(width,height)-24)/(4*baseRadius)):zoom;
+  const radius=baseRadius*effectiveZoom;
   if(radius<=0)return null;
-  const dx=x-width/2-panX,dy=y-height/2-panY-(zoom<1?Math.round(height*.045):0);
+  const dx=x-width/2-panX,dy=y-height/2-panY;
   const r=Math.hypot(dx,dy);
   if(r>radius*(zoom<1?2:1))return null;
   alt=90*(1-r/radius);
