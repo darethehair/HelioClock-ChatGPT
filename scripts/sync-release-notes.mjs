@@ -16,7 +16,7 @@ const end = '\nThe Git history and ';
 const a = text.indexOf(start), b = text.indexOf(end, a);
 if (a < 0 || b < 0) throw Error('README milestone section not found');
 const table = '\n| Release | Highlights |\n| --- | --- |\n' + releases.map(({version, summary}) => '| **' + version + '** | ' + summary + ' |').join('\n') + '\n';
-const next = text.slice(0, a + start.length) + table + text.slice(b);
+const next = text.slice(0, a) + table.trimStart() + text.slice(b);
 if (process.argv.includes('--check')) {
   if (next !== text) throw Error('README release table is out of sync; run npm run docs:sync');
   console.log('README release history is current');
