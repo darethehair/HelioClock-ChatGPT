@@ -172,10 +172,12 @@ function sky(){
  const polarBaseRadius=Math.min(w-35,h-20)/2-14;
  const extendedPolar=state.skyProjection==='polar'&&state.skyZoom<1;
  // Fit the full below-horizon hemisphere in both fullscreen and panel layouts.
- const fittedPolarZoom=extendedPolar?Math.min(state.skyZoom,(Math.min(w,h)-24)/(4*polarBaseRadius)):state.skyZoom;
+ const reveal=extendedPolar?2-state.skyZoom*2:0;
+ const visibleRadiusFactor=1+reveal;
+ const fittedPolarZoom=extendedPolar?Math.min(state.skyZoom,(Math.min(w,h)/2-12)/(polarBaseRadius*visibleRadiusFactor)):state.skyZoom;
  const rad=polarBaseRadius*fittedPolarZoom;
  const skySun=sunHorizontal(state.date,state.lat,state.lon);
- const polarOffset=0;
+ const polarOffset=0; // The polar projection stays centred at every zoom.
  const belowHorizon=extendedPolar||(state.skyProjection==='rect'&&$('show-below-horizon').checked);
  // Rectangular zoom uses one canvas transform shared by the atmosphere,
  // galactic mask, stars, ecliptic, planets, coordinate grids and labels.
@@ -208,8 +210,11 @@ function sky(){
  }
  if(state.skyProjection==='polar'){
   if(extendedPolar){
-   c.fillStyle='rgba(28,38,56,.50)';c.beginPath();c.arc(X,Y,rad*2,0,2*PI);c.arc(X,Y,rad,0,2*PI,true);c.fill('evenodd');
-   c.strokeStyle='#76869b';c.setLineDash([5,5]);c.beginPath();c.arc(X,Y,rad*2,0,2*PI);c.stroke();c.setLineDash([]);
+   // Reveal below-horizon sky gradually as zoom decreases from 1× to 0.5×.
+   // Clip every layer to the same smoothly growing circle.
+   c.beginPath();c.arc(X,Y,rad*visibleRadiusFactor,0,2*PI);c.clip();
+   c.fillStyle='rgba(28,38,56,.50)';c.beginPath();c.arc(X,Y,rad*visibleRadiusFactor,0,2*PI);c.arc(X,Y,rad,0,2*PI,true);c.fill('evenodd');
+   c.strokeStyle='#76869b';c.setLineDash([5,5]);c.beginPath();c.arc(X,Y,rad*visibleRadiusFactor,0,2*PI);c.stroke();c.setLineDash([]);
   }
   c.strokeStyle=extendedPolar?'#e6f2ff':'#395270';c.lineWidth=extendedPolar?2:1.3;c.beginPath();c.arc(X,Y,rad,0,2*PI);c.stroke();
  if($('show-altaz-grid').checked)for(let a=0;a<360;a+=10){
@@ -385,12 +390,12 @@ function skyCursorCoordinates(x,y,width,height,opts={}){
  let az,alt;
  if(mode==='polar'){
   const baseRadius=Math.min(width-35,height-20)/2-14;
-  const effectiveZoom=zoom<1?Math.min(zoom,(Math.min(width,height)-24)/(4*baseRadius)):zoom;
+  const effectiveZoom=zoom<1?Math.min(zoom,(Math.min(width,height)/2-12)/(baseRadius*(3-2*zoom))):zoom;
   const radius=baseRadius*effectiveZoom;
   if(radius<=0)return null;
   const dx=x-width/2-panX,dy=y-height/2-panY;
   const r=Math.hypot(dx,dy);
-  if(r>radius*(zoom<1?2:1))return null;
+  if(r>radius*(zoom<1?3-2*zoom:1))return null;
   alt=90*(1-r/radius);
   az=wrap(Math.atan2(dy,dx)/RAD+90+heading);
  }else{
@@ -1181,7 +1186,11 @@ function setPolarSkyZoom(next,clientX=null,clientY=null){
  if(next===old)return;
  const px=clientX===null?rect.width/2:clientX-rect.left;
  const py=clientY===null?rect.height/2:clientY-rect.top;
- if(state.skyProjection==='polar'||state.skyProjection==='rect'){
+ if(state.skyProjection==='polar'&&next<=1){
+  // Below the horizon threshold, zoom about the canvas centre, not the pointer.
+  // A previous cursor-anchored pan must not displace the shrinking sky disc.
+  state.skyPanX=0;state.skyPanY=0;
+ }else if(state.skyProjection==='polar'||state.skyProjection==='rect'){
   const ratio=next/old;
   state.skyPanX+=(1-ratio)*(px-rect.width/2-state.skyPanX);
   state.skyPanY+=(1-ratio)*(py-rect.height/2-state.skyPanY);
