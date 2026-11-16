@@ -76,6 +76,8 @@ jobs:
             node --check "$file"
           done
           node --check sw.js
+          node --check comet-catalog.js
+          node --check scripts/update-comets.mjs
           node --check sky-moon-phase.js
           node --check tests/firefox.spec.mjs
           python3 -m py_compile scripts/build-milky-way.py scripts/build-sky-data.py
@@ -95,6 +97,8 @@ jobs:
         run: |
           npx esbuild tests/earth-nearest-settlement.test.mjs --bundle --platform=node --format=esm --outfile=/tmp/helioclock-nearest-settlement-test.mjs
           node /tmp/helioclock-nearest-settlement-test.mjs
+      - name: MPC comet catalogue parser regression
+        run: node --test tests/comet-catalog.test.mjs
       - name: Lunar sky marker regression
         run: node --test tests/sky-moon-phase.test.mjs
       - name: Bundle application
