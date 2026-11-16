@@ -9,7 +9,8 @@ for(const e of [0,.5,.9999,1,1.5]){
  const p=cometHeliocentricEcliptic({...elements,eccentricity:e},at);
  assert.ok(p&&Math.abs(p.x-1)<.0001&&Math.abs(p.y)<.0001&&Math.abs(p.z)<.0001,'perihelion q for e='+e);
  const later=cometHeliocentricEcliptic({...elements,eccentricity:e},new Date(at.getTime()+86400000*40));
- assert.ok(later&&later.distanceAU>p.distanceAU,'radius grows after perihelion e='+e);
+ assert.ok(later&&(e===0?Math.abs(later.distanceAU-p.distanceAU)<1e-10:later.distanceAU>p.distanceAU),
+  e===0?'circular orbit maintains constant heliocentric radius':'radius grows after perihelion e='+e);
 }
 const retro=cometHeliocentricEcliptic({...elements,inclinationDeg:160,argPeriDeg:60},new Date(at.getTime()+86400000*60));
 assert.ok(Number.isFinite(retro.z)&&Math.abs(retro.z)>.01,'inclined retrograde orbit has nonzero z');
