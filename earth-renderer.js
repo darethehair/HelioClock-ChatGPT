@@ -37,6 +37,24 @@ export function createEarthProjection(width,height,state){
  return map;
 }
 
+/**
+ * Invert the exact active D3 Earth projection. Unlike globe rotation this
+ * explicitly returns an observer location only for a user-picked map point.
+ * Reject taps beyond the visible orthographic hemisphere.
+ */
+export function earthCoordinatesAt(x,y,width,height,state){
+ if(!Number.isFinite(x)||!Number.isFinite(y)||width<=0||height<=0||
+    x<0||x>width||y<0||y>height)return null;
+ const map=createEarthProjection(width,height,state);
+ if(state.earthProjection==='globe'){
+  const center=map([state.earthLon,state.earthLat]),radius=map.scale();
+  if((x-center[0])**2+(y-center[1])**2>radius**2)return null;
+ }
+ const value=map.invert([x,y]);
+ if(!value||!Number.isFinite(value[0])||!Number.isFinite(value[1])||Math.abs(value[1])>90.000001)return null;
+ return {lon:wrap(value[0]+180,360)-180,lat:clamp(value[1],-90,90)};
+}
+
 const normLon=(v)=>wrap(v+180,360)-180;
 const isNearSide=(point,longitude,latitude)=>geoDistance(point,[longitude,latitude])<=Math.PI/2;
 const earthImages={};

@@ -105,6 +105,7 @@ Release highlights are curated in [`release-notes.json`](release-notes.json). Wh
 
 | Release | Highlights |
 | --- | --- |
+| **v93** | Add an explicit Set observer on map crosshair mode; click or tap any visible Earth point to update observer coordinates without changing normal globe rotation behavior. |
 | **v92** | Show selected-object rise, upper-transit and set times for the simulation UTC date, including circumpolar visibility status and geometric-horizon cautions. |
 | **v91** | Extend the celestial object finder to all seven visible planets using the same topocentric Astronomy Engine ephemerides as Sky Compass, with date-aware positioning and regression tests. |
 | **v90** | Move celestial object search into a compact collapsible section within Sky Compass, retaining search, Center and Follow controls and mobile fullscreen access. |

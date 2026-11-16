@@ -15,7 +15,7 @@ import {solarDiscOrientation} from './solar-disc-orientation.js';
 import {drawSolarYear} from './solar-chart.js';
 import {drawSkyGrid} from './sky-grid.js';
 import {skyPlanets} from './sky-planets.js';
-import {renderEarth,earthTextureStatus} from './earth-renderer.js';
+import {renderEarth,earthTextureStatus,earthCoordinatesAt} from './earth-renderer.js';
 import {cloudStatus,refreshClouds} from './clouds.js';
 import {findPlanetaryEvent,eventPlanets,eventOptions} from './planetary-events.js';
 import {findEclipseAsync} from './eclipse-events.js';
@@ -196,6 +196,15 @@ function daylightChart(){
   }
  });
  $('chart-year').textContent=String(year);
+}
+let pickingEarthObserver=false;
+function setEarthObserverPickMode(enabled){
+ pickingEarthObserver=enabled;
+ const button=$('earth-pick-observer'),map=$('earth-map');
+ button.setAttribute('aria-pressed',String(enabled));
+ button.textContent=enabled?'✕ Cancel location pick':'⌖ Set observer on map';
+ map.classList.toggle('earth-pick-active',enabled);
+ $('earth-pick-help').hidden=!enabled;
 }
 function worldMap(){
  const o=canvas($('earth-map'));if(!o)return;
@@ -1200,6 +1209,27 @@ function adjustEarthZoom(factor){
 $('earth-zoom-in').addEventListener('click',()=>adjustEarthZoom(1.25));
 $('earth-zoom-out').addEventListener('click',()=>adjustEarthZoom(.8));
 $('earth-map-home').addEventListener('click',()=>{$('earth-reset').click()});
+$('earth-pick-observer').addEventListener('click',()=>setEarthObserverPickMode(!pickingEarthObserver));
+$('earth-map').addEventListener('pointerup',e=>{
+ if(!pickingEarthObserver||e.button!==0)return;
+ const el=$('earth-map'),box=el.getBoundingClientRect();
+ const x=e.clientX-box.left,y=e.clientY-box.top;
+ const coords=earthCoordinatesAt(x,y,el.clientWidth,el.clientHeight,state);
+ if(!coords){
+  notice('Choose a point on the Earth surface, not outside the globe.');
+  return;
+ }
+ state.lat=coords.lat;state.lon=coords.lon;
+ $('latitude').value=coords.lat.toFixed(4);
+ $('longitude').value=coords.lon.toFixed(4);
+ // The picked location is the observer, not a camera command: keep the
+ // current Earth view intact and update every other visualization.
+ setEarthObserverPickMode(false);
+ notice('Observer moved to '+coords.lat.toFixed(3)+'°, '+coords.lon.toFixed(3)+'°. Earth view unchanged.');
+ render();persistPrefs();
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&pickingEarthObserver)setEarthObserverPickMode(false)});
+
 $('earth-map-style').addEventListener('change',e=>{
  state.earthMapStyle=['physical','hybrid','political'].includes(e.target.value)?e.target.value:'physical';
  render();
@@ -1393,6 +1423,7 @@ function dragCanvas(id,onMove){
   }
   if(pointers.size>1)return;
   const dx=e.clientX-previous.x,dy=e.clientY-previous.y;
+  if(id==='earth-map'&&pickingEarthObserver)return;
   start={x:e.clientX,y:e.clientY};
   if(id==='orrery'&&e.pointerType==='touch')return;onMove(dx,dy,el,e);if(id==='orrery')orrery();else render();
  });

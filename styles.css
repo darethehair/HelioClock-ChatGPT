@@ -697,3 +697,8 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 .sky-panel .celestial-search-detail{margin-top:8px;font-size:12px}
 .sky-panel .celestial-search-detail p{margin:5px 0 8px;color:#c5d8e9;line-height:1.45}
 @media(max-width:750px){.sky-panel .celestial-finder>summary span{display:none}}
+
+/* v93: Observer picking is explicitly armed; normal globe dragging remains view-only. */
+#earth-pick-observer[aria-pressed="true"]{background:#f0c57c;color:#10223a;border-color:#ffd998}
+.earth-pick-help{font-size:11px;color:#f6d79e;margin:5px 0 8px;line-height:1.5}
+.earth-map-stage #earth-map.earth-pick-active{cursor:crosshair!important;touch-action:none}

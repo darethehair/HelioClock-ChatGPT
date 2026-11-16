@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v93",
+      "summary": "Add an explicit Set observer on map crosshair mode; click or tap any visible Earth point to update observer coordinates without changing normal globe rotation behavior."
+    },
+    {
       "version": "v92",
       "summary": "Show selected-object rise, upper-transit and set times for the simulation UTC date, including circumpolar visibility status and geometric-horizon cautions."
     },
