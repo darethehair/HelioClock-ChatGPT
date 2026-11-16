@@ -2358,3 +2358,13 @@ test('v80 restored map controls reflect saved model without a second click',asyn
  await expect(page.locator('[data-projection="mercator"]')).toHaveClass(/is-active/);
  await expect(page.locator('#earth-map-style')).toHaveValue('political');
 });
+
+test('v82 polar zoom reveals below-horizon sky while preserving the normal horizon', async ({page}) => {
+ await page.goto('http://127.0.0.1:8765/');
+ await expect(page.locator('#sky-zoom')).toHaveAttribute('min', '.5');
+ await page.locator('#sky-zoom').fill('0.5');
+ await page.locator('#sky-zoom').dispatchEvent('input');
+ await expect(page.locator('#sky-zoom')).toHaveValue('0.5');
+ await page.locator('#sky-reset').click();
+ await expect(page.locator('#sky-zoom')).toHaveValue('1');
+});
