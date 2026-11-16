@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v82",
+      "summary": "Extend the polar Sky Compass zoom to 0.5× to reveal the below-horizon hemisphere; distinguish it with a shaded annulus and prominent horizon ring, while retaining the normal 1× view and extending celestial overlays."
+    },
+    {
       "version": "v81",
       "summary": "Render the Moon in the Sky Compass as a phase-correct illuminated disc, with the bright limb directed toward the Sun in the active sky projection."
     },

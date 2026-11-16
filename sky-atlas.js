@@ -54,7 +54,7 @@ export function drawSkyAtlas(c,{
  c.__skyLabelRects=c.__skyLabelRects||[];
  const X=width/2,Y=height/2,radius=(Math.min(width-35,height-20)/2-14)*zoom;
  const project=(az,alt)=>{
-  if(alt<0&&(mode!=='rect'||!showBelowHorizon))return null;
+  if(alt<0&&!showBelowHorizon)return null;
   if(mode==='rect'){
    return projectRect(az,alt,width,height,heading);
   }

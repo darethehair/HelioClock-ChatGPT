@@ -24,7 +24,7 @@ export function drawSkyGrid(ctx,opts){
   const r=radius*(1-alt/90),angle=(az-90-heading)*RAD;
   return [w/2+r*Math.cos(angle),h/2+r*Math.sin(angle)];
  };
- const allowed=(alt)=>mode==='rect'?(showBelowHorizon||alt>=0):alt>=0;
+ const allowed=(alt)=>showBelowHorizon||alt>=0;
  function curve(points,color,width=0.8){
   ctx.beginPath();let started=false,prev=null,count=0;
   for(const point of points){
@@ -42,10 +42,10 @@ export function drawSkyGrid(ctx,opts){
  if(mode==='rect'){
   ctx.beginPath();ctx.rect(rect.left,rect.top,rectSpan,rect.bottom-rect.top);ctx.clip();
  }else{
-  ctx.beginPath();ctx.arc(w/2,h/2,radius,0,Math.PI*2);ctx.clip();
+  ctx.beginPath();ctx.arc(w/2,h/2,radius*(showBelowHorizon?2:1),0,Math.PI*2);ctx.clip();
  }
  if(showAltAz){
-  const firstAlt=mode==='rect'&&showBelowHorizon?-90:0;
+  const firstAlt=showBelowHorizon?-90:0;
   for(let alt=firstAlt;alt<=90;alt+=step.alt){
    const points=[];for(let az=0;az<=360;az+=3)points.push({az,alt});
    curve(points,alt===0?'#e8f3ffbb':'#9cbedb79',alt===0?1.2:.8);
@@ -92,7 +92,7 @@ export function drawSkyGrid(ctx,opts){
   if(!Number.isFinite(x)||!Number.isFinite(y))return false;
   if(x<46||x>w-68||y<30||y>h-48)return false;
   if(mode==='rect')return x>rect.left+16&&x<rect.right-20&&y>rect.top+12&&y<rect.bottom-20;
-  return Math.hypot(x-w/2-panX,y-h/2-panY)<radius-8;
+  return Math.hypot(x-w/2-panX,y-h/2-panY)<radius*(showBelowHorizon?2:1)-8;
  };
  const addLabel=(textValue,points,kind,color,desiredX,desiredY)=>{
   let best=null,score=Infinity;
