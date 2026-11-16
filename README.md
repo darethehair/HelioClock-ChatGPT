@@ -99,6 +99,9 @@ Upstream scientific datasets and libraries retain their own license and attribut
 
 ## Selected development milestones
 
+Release highlights are curated in [`release-notes.json`](release-notes.json). When increasing the major version in `package.json`, add its release note first, then run `npm run docs:sync` to regenerate the table. Full CI verifies the version and generated table with `npm run docs:check`, preventing undocumented releases from passing. This keeps the README synchronized without inventing release descriptions.
+
+
 | Release | Highlights |
 | --- | --- |
 | **v81** | Render the Moon in the Sky Compass as a phase-correct illuminated disc, with the bright limb directed toward the Sun in the active sky projection. |
@@ -156,4 +159,4 @@ This repository and its Cloudflare Pages site are **separate from** [the origina
 
 ---
 
-*Created by Darethehair with assistance from ChatGPT · README refreshed for HelioClock v73 (November 2026).*
+*Created by Darethehair with assistance from ChatGPT · Release milestones maintained from `release-notes.json`.*
