@@ -171,6 +171,8 @@ function sky(){
  const X=w/2,Y=h/2,rad=(Math.min(w-35,h-20)/2-14)*state.skyZoom;
  const skySun=sunHorizontal(state.date,state.lat,state.lon);
  const extendedPolar=state.skyProjection==='polar'&&state.skyZoom<1;
+ // Offset the whole polar chart rather than shrinking its angular scale.
+ const polarOffset=extendedPolar?Math.round(h*.045):0;
  const belowHorizon=extendedPolar||(state.skyProjection==='rect'&&$('show-below-horizon').checked);
  // Rectangular zoom uses one canvas transform shared by the atmosphere,
  // galactic mask, stars, ecliptic, planets, coordinate grids and labels.
@@ -193,7 +195,7 @@ function sky(){
  // The background remains fixed; all polar sky geometry, stars, ecliptic,
  // Milky Way and annotations share this one translated coordinate frame.
  if(state.skyProjection==='polar'){
-  c.translate(state.skyPanX,state.skyPanY);
+  c.translate(state.skyPanX,state.skyPanY+polarOffset);
   // Test probe reads the actual applied sky transform, not subsequent
   // translations used to draw individual text and star markers.
   if(window.__helioclockCaptureZoom){
@@ -281,7 +283,7 @@ function sky(){
  drawMilkyWay(c,{
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
   mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
-  panX:state.skyPanX,panY:state.skyPanY,
+  panX:state.skyPanX,panY:state.skyPanY+polarOffset,
   precession:state.usePrecession,skyLight:state.skyLight,sunAltitude:skySun.alt,
   showBelowHorizon:belowHorizon,
   showShade:$('show-milkyway-shade').checked,
@@ -294,7 +296,7 @@ function sky(){
  const gridResult=drawSkyGrid(c,{
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
   mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
-  panX:state.skyPanX,panY:state.skyPanY,skyLight:state.skyLight,
+  panX:state.skyPanX,panY:state.skyPanY+polarOffset,skyLight:state.skyLight,
   showAltAz:$('show-altaz-grid').checked,showRaDec:$('show-radec-grid').checked,
   showBelowHorizon:belowHorizon
  });
@@ -310,7 +312,7 @@ function sky(){
  const constellationNames=drawConstellationNames(c,{
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
   mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
-  panX:state.skyPanX,panY:state.skyPanY,precession:state.usePrecession,
+  panX:state.skyPanX,panY:state.skyPanY+polarOffset,precession:state.usePrecession,
   showBelowHorizon:belowHorizon,
   enabled:$('show-constellation-names').checked
  });
@@ -318,7 +320,7 @@ function sky(){
  const plotted=drawSkyAtlas(c,{
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
   mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
-  panX:state.skyPanX,panY:state.skyPanY,
+  panX:state.skyPanX,panY:state.skyPanY+polarOffset,
   magLimit:state.magLimit,showStars:$('show-stars').checked,
   showLabels:$('show-labels').checked,
   showConstellations:$('show-constellations').checked,
@@ -330,7 +332,7 @@ function sky(){
  const dso=drawSkyDSOs(c,{
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
   mode:state.skyProjection,zoom:state.skyZoom,heading:state.skyHeading,
-  panX:state.skyPanX,panY:state.skyPanY,precession:state.usePrecession,
+  panX:state.skyPanX,panY:state.skyPanY+polarOffset,precession:state.usePrecession,
   showBelowHorizon:belowHorizon,
   showGalaxies:$('show-dso-galaxies').checked,
   showNebulae:$('show-dso-nebulae').checked,
@@ -381,7 +383,7 @@ function skyCursorCoordinates(x,y,width,height,opts={}){
  if(mode==='polar'){
   const radius=(Math.min(width-35,height-20)/2-14)*zoom;
   if(radius<=0)return null;
-  const dx=x-width/2-panX,dy=y-height/2-panY;
+  const dx=x-width/2-panX,dy=y-height/2-panY-(zoom<1?Math.round(height*.045):0);
   const r=Math.hypot(dx,dy);
   if(r>radius*(zoom<1?2:1))return null;
   alt=90*(1-r/radius);

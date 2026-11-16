@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v83",
+      "summary": "Shift the sub-1× polar sky downward to avoid clipping at the top while preserving its angular scale; keep grids, Milky Way, ecliptic, objects and cursor mapping aligned without altering the normal 1× view."
+    },
+    {
       "version": "v82",
       "summary": "Extend the polar Sky Compass zoom to 0.5× to reveal the below-horizon hemisphere; distinguish it with a shaded annulus and prominent horizon ring, while retaining the normal 1× view and extending celestial overlays."
     },
