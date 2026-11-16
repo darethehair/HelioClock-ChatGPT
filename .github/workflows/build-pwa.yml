@@ -13,7 +13,50 @@ concurrency:
   group: helioclock-chatgpt-release-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  change-scope:
+    runs-on: ubuntu-24.04
+    outputs:
+      full_build: ${{ steps.scope.outputs.full_build }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Determine whether application files changed
+        id: scope
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            echo "full_build=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            base="$PR_BASE_SHA"
+          else
+            base="$BEFORE_SHA"
+          fi
+          if [[ -z "$base" || "$base" =~ ^0+$ ]] || ! git cat-file -e "$base^{commit}" 2>/dev/null; then
+            echo "Base commit unavailable: running the full suite"
+            echo "full_build=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          changed="$(git diff --name-only "$base" "$GITHUB_SHA")"
+          echo "$changed"
+          # Only README and Markdown documentation are safe to skip.
+          # Workflow, script, configuration, assets and source changes always run full CI.
+          if [[ -n "$changed" ]] && ! grep -Ev '(^README\.md$|^docs/.*\.md$|^.*\.md$)' <<< "$changed" | grep -q .; then
+            echo "Markdown-only change: skipping PWA build and browser tests"
+            echo "full_build=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "full_build=true" >> "$GITHUB_OUTPUT"
+          fi
   quick-check:
+    needs: change-scope
+    if: needs.change-scope.outputs.full_build == 'true'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -52,7 +95,8 @@ jobs:
       - name: Bundle application
         run: npm run build
   package:
-    needs: quick-check
+    needs: [change-scope, quick-check]
+    if: needs.change-scope.outputs.full_build == 'true'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
