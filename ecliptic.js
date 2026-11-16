@@ -14,7 +14,7 @@ export function eclipticEquatorial(lambda,obliquity){
 export function drawEcliptic(c,{date,lat,lon,width,height,mode='polar',heading=0,zoom=1,showBelowHorizon=true}){
  const eps=solar(date).obliq;
  const g=mode==='rect'?rectGeometry(width,height):null;
- const R=(Math.min(width-35,height-20)/2-14)*zoom;
+ const R=(Math.min(width-35,height-20)/2-14)*zoom*(zoom<1?.88:1);
  c.save();
  c.beginPath();
  if(g){
