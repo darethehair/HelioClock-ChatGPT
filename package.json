@@ -6,7 +6,9 @@
   "scripts": {
     "build": "esbuild app.js --bundle --minify --format=esm --target=es2022 --outfile=dist/app.js",
     "test": "node --test tests/*.test.mjs",
-    "test:browser": "playwright test"
+    "test:browser": "playwright test",
+    "docs:sync": "node scripts/sync-release-notes.mjs",
+    "docs:check": "node scripts/sync-release-notes.mjs --check"
   },
   "dependencies": {
     "d3-geo": "^3.1.1",
