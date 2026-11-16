@@ -13,10 +13,10 @@ This is the **independent ChatGPT edition**, created by **Darethehair with assis
 - **Live observatory banner:** prominent local date and time, current solar altitude, a time-versus-altitude plot of the Sun's journey, sunrise/noon/sunset, daylight duration, Moon phase, and an illustrated landscape. The Sun is shown as a dotted marker below the horizon.
 - **Annual daylight chart:** a year of sunrise, sunset, civil/nautical/astronomical twilight and darkness, plotted in local mean solar time, with interactive date selection.
 - **Illuminated Earth:** NASA Blue Marble imagery, calculated day/night and twilight, solar zenith/nadir markers, three zoomable and pannable projections (Equal Earth, Mercator, interactive globe), and optional NASA Black Marble 2016 city lights, live NOAA OVATION aurora, and daily VIIRS cloud approximations (network required; not historical). Choose **Physical**, **Hybrid**, or **Political** map styles with offline country and selected state/province boundaries and progressively denser world-city labels. Simulated solar eclipses show the central track, penumbral darkening, the central-shadow footprint, and local total/partial/annular status; these are exploratory geometric estimates, not precision eclipse predictions.
-- **Sky Compass:** north-polar and full rectangular horizon projections, with stars, solar/lunar paths, planets, constellation lines and names, the ecliptic, celestial grids, and an interactive RA/Dec/Az/Alt pointer readout.
+- **Sky Compass:** north-polar and full rectangular horizon projections, with stars, solar/lunar paths, planets, constellation lines and names, the ecliptic, celestial grids, and an interactive RA/Dec/Az/Alt pointer readout. The Moon marker shows its illuminated phase with its bright limb oriented toward the Sun in the displayed sky.
 - **Milky Way and deep sky:** shaded irregular Milky Way contour regions and outlines, galactic-centre marker, Messier galaxies, nebulae and clusters, with independently controlled labels and zoom-aware decluttering.
 - **Sun and Moon:** simulated lunar phase and orientation displayed on a NASA LRO surface mosaic; optional recent NASA SDO/HMI solar imagery, including an offline fallback. Each image supports zoom and pan.
-- **Solar system orrery:** Astronomy Engine heliocentric ecliptic positions of Mercury through Neptune, inner/outer viewing modes, AU rings and zoom. **Planetary event navigator** finds previous/next opposition, conjunction, quadrature, or inner-planet greatest elongation relative to the simulated date, updates the global date/time, and shows the selected event geometry and Earth distance.
+- **Solar system orrery:** Astronomy Engine heliocentric ecliptic positions of Mercury through Neptune, inner/outer viewing modes, AU rings and zoom. Optional 3D perspective supports tilt and rotation using sliders or drag gestures, including touch devices; orbital guide paths sample the planets' inclined heliocentric trajectories. **Planetary event navigator** finds previous/next opposition, conjunction, quadrature, or inner-planet greatest elongation relative to the simulated date, updates the global date/time, and shows the selected event geometry and Earth distance.
 - **Astronomical Information:** a detailed text almanac with Julian dates, sidereal time, Sun/Moon coordinates, rise/set and twilight events, major lunar phases, and upcoming events. Visible in the default dashboard, or usable as a stand-alone text-only view.
 
 ### Explore time and space
@@ -64,7 +64,7 @@ npm run test:browser
 
 For a packaged download or a deployment-ready `dist/`, **use the successful GitHub Actions artifact** rather than copying only the JavaScript bundle. The same tested `dist/` files are used for the Cloudflare Pages deployment.
 
-The workflow runs a separate quick-check job, compiles the app, prepares the imagery/catalogues, exercises a Firefox browser regression suite, and uploads the artifact. With the required repository secrets configured, the final step deploys to the separate `helioclock-chatgpt` Cloudflare Pages project. The deployment step checks that the run still represents the latest `main` commit before publishing.
+The workflow runs a separate quick-check job, compiles the app, prepares the imagery/catalogues, exercises Firefox browser and Chromium mobile-emulation regression suites, and uploads the artifact. During packaging, the service-worker cache identity is generated automatically from the release number and compiled JavaScript hash, preventing a forgotten manual cache bump. With the required repository secrets configured, the final step deploys to the separate `helioclock-chatgpt` Cloudflare Pages project. The deployment step checks that the run still represents the latest `main` commit before publishing.
 
 **Cloudflare secrets** (repository administrators only): `CLOUDFLARE_API_TOKEN` with suitable Pages permissions, and `CLOUDFLARE_ACCOUNT_ID`. Do not commit either value to source.
 
@@ -81,7 +81,7 @@ HelioClock is an **educational and exploratory** application, **not** a navigati
 | Stars and constellations | Offline J2000-based catalogue derived from [D3-Celestial](https://github.com/ofrohn/d3-celestial); optional precession to the selected date, star colours and magnitude limits. Positions do not model every high-precision apparent-place correction. |
 | Sky overlays | Coordinate grids, ecliptic, named constellations, 107 classified Messier deep-sky objects, and Vieira Milky Way contour fills. Contour shading is an illustrative area treatment, not calibrated surface brightness. |
 | Earth | NASA Blue Marble texture and calculated solar illumination, qualitative live satellite-cloud overlay and NOAA space weather when connected. Simulated eclipse shadows and tracks are approximate: historical central paths and totality boundaries are not calibrated to high-precision NASA Besselian elements. Political boundaries and place names are bundled, simplified geographic references rather than current authoritative jurisdictional records. |
-| Orrery | Planet positions and alignment dates use Astronomy Engine. Planet sizes and circular orbit guides are schematic; calculated geometric heliocentric conjunction/opposition dates may differ slightly from apparent alignments as seen on Earth. |
+| Orrery | Planet positions and alignment dates use Astronomy Engine. Planet sizes are schematic; 3D orbital guides sample heliocentric positions over approximate orbital periods rather than using precision osculating-orbit plots. Calculated geometric heliocentric conjunction/opposition dates may differ slightly from apparent alignments as seen on Earth. |
 | Timezones | Civil time and DST follow the browser/device's IANA timezone rules. The observer coordinates alone do not establish the corresponding legal timezone. The annual daylight chart uses local **mean solar** time; sunrise/solar noon/sunset in the hero summary are labelled **UTC**. |
 
 ## Data, imagery and acknowledgements
@@ -101,6 +101,14 @@ Upstream scientific datasets and libraries retain their own license and attribut
 
 | Release | Highlights |
 | --- | --- |
+| **v81** | Render the Moon in the Sky Compass as a phase-correct illuminated disc, with the bright limb directed toward the Sun in the active sky projection. |
+| **v80** | Reconcile Earth map projection/style, sky display choices, Orrery settings, sliders and other preference-backed controls with internal state on startup and browser page restoration; add reload regression coverage. |
+| **v79** | Persist the Orrery 3D checkbox and synchronize its displayed state with the actual camera setting after loading preferences and restoring pages. |
+| **v78** | Extend Orrery tilt to −90° through +90°, add native touch handling and inclined sampled planetary orbit guides; automatically stamp release-specific service-worker cache identities during packaging. |
+| **v77** | Reduce Orrery canvas redraw overhead and add mouse-drag regression coverage. |
+| **v76** | Add drag-to-rotate/tilt Orrery interaction, synchronized camera sliders and a reset-view control; correct the displayed version metadata. |
+| **v75** | Update Orrery controls to redraw the Orrery directly rather than refreshing the entire dashboard. |
+| **v74** | Introduce optional 3D Orrery perspective with tilt and rotation sliders. |
 | **v73** | Group optional Sky Compass layers into collapsible sections and move Milky Way developer diagnostics behind an expandable disclosure. The default sky visualization and controls remain available. |
 | **v72** | Remove inconsistent state/province text labels while preserving their boundary lines; country names remain for broad orientation and city names for local detail. |
 | **v71** | Display the nearest catalogued city or town at the selected observer marker with an approximate great-circle distance; the label is prioritised over ordinary map names on all three Earth projections. The worldwide catalog is incomplete, so this is not guaranteed to be the actual nearest settlement. |
