@@ -106,15 +106,18 @@ for(const [ra,dec] of [[0,0],[85,45],[173.5,-28],[290,80],[354,-62]]){
  // v92: UTC-date rise/transit/set finder, incl. circumpolar limits.
  const {celestialDailyEvents}=await import('../celestial-search.js');
  const observingDate=at('2026-11-16T15:00:00Z');
+ const sirius=findCelestialObjects('Sirius')[0];
+ const siriusEvents=celestialDailyEvents(sirius,observingDate,49.19,-98.10);
+ assert.equal(siriusEvents.date.toISOString(),'2026-11-16T00:00:00.000Z');
+ assert.ok(siriusEvents.transit&&siriusEvents.transit.alt>0,'Sirius upper culmination calculated');
+ assert.ok(siriusEvents.rises.length>=1&&siriusEvents.sets.length>=1,'Sirius crosses both horizons in UTC day');
+ for(const rise of siriusEvents.rises)
+  assert.ok(Math.abs(celestialObjectPosition(sirius,rise,49.19,-98.10).alt)<0.02,'rise near 0-degree horizon');
+ for(const set of siriusEvents.sets)
+  assert.ok(Math.abs(celestialObjectPosition(sirius,set,49.19,-98.10).alt)<0.02,'set near 0-degree horizon');
  const m31=findCelestialObjects('M31')[0];
  const m31Events=celestialDailyEvents(m31,observingDate,49.19,-98.10);
- assert.equal(m31Events.date.toISOString(),'2026-11-16T00:00:00.000Z');
- assert.ok(m31Events.transit&&m31Events.transit.alt>0,'M31 upper culmination calculated');
- assert.ok(m31Events.rises.length>=1&&m31Events.sets.length>=1,'M31 crosses both horizons in UTC day');
- for(const rise of m31Events.rises)
-  assert.ok(Math.abs(celestialObjectPosition(m31,rise,49.19,-98.10).alt)<0.02,'rise near 0-degree horizon');
- for(const set of m31Events.sets)
-  assert.ok(Math.abs(celestialObjectPosition(m31,set,49.19,-98.10).alt)<0.02,'set near 0-degree horizon');
+ assert.equal(m31Events.horizonStatus,'always-above','M31 is circumpolar at Manitoba latitude');
  const neverSets={name:'North polar target',type:'Star',ra:0,dec:85};
  const neverRises={name:'South polar target',type:'Star',ra:0,dec:-85};
  const aboveEvents=celestialDailyEvents(neverSets,observingDate,49.19,-98.1);
