@@ -52,7 +52,7 @@ export function drawSkyAtlas(c,{
 }){
  // Preserve reserved constellation-name boxes for star-label collision avoidance.
  c.__skyLabelRects=c.__skyLabelRects||[];
- const X=width/2,Y=height/2,radius=(Math.min(width-35,height-20)/2-14)*zoom;
+ const X=width/2,Y=height/2,radius=(Math.min(width-35,height-20)/2-14)*zoom*(zoom<1?.88:1);
  const project=(az,alt)=>{
   if(alt<0&&!showBelowHorizon)return null;
   if(mode==='rect'){
