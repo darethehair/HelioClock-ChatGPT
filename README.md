@@ -68,7 +68,7 @@ The workflow runs a separate quick-check job, compiles the app, prepares the ima
 
 **Cloudflare secrets** (repository administrators only): `CLOUDFLARE_API_TOKEN` with suitable Pages permissions, and `CLOUDFLARE_ACCOUNT_ID`. Do not commit either value to source.
 
-> A README-only change also triggers the normal GitHub Actions workflow. A spinning GitHub page can occasionally remain stale after the run has already completed; refreshing the Actions page retrieves the current recorded status.
+> A Markdown-only documentation change runs only the lightweight change-scope check; application source, asset, configuration and workflow changes still trigger the full PWA build and browser regression tests. A README-only change does not publish a new PWA artifact or redeploy the site. Previously, a README-only change also triggered the full workflow. A spinning GitHub page can occasionally remain stale after the run has already completed; refreshing the Actions page retrieves the current recorded status.
 
 ## Astronomical methods and important limitations
 
