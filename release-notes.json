@@ -1,0 +1,181 @@
+{
+  "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
+  "releases": [
+    {
+      "version": "v81",
+      "summary": "Render the Moon in the Sky Compass as a phase-correct illuminated disc, with the bright limb directed toward the Sun in the active sky projection."
+    },
+    {
+      "version": "v80",
+      "summary": "Reconcile Earth map projection/style, sky display choices, Orrery settings, sliders and other preference-backed controls with internal state on startup and browser page restoration; add reload regression coverage."
+    },
+    {
+      "version": "v79",
+      "summary": "Persist the Orrery 3D checkbox and synchronize its displayed state with the actual camera setting after loading preferences and restoring pages."
+    },
+    {
+      "version": "v78",
+      "summary": "Extend Orrery tilt to −90° through +90°, add native touch handling and inclined sampled planetary orbit guides; automatically stamp release-specific service-worker cache identities during packaging."
+    },
+    {
+      "version": "v77",
+      "summary": "Reduce Orrery canvas redraw overhead and add mouse-drag regression coverage."
+    },
+    {
+      "version": "v76",
+      "summary": "Add drag-to-rotate/tilt Orrery interaction, synchronized camera sliders and a reset-view control; correct the displayed version metadata."
+    },
+    {
+      "version": "v75",
+      "summary": "Update Orrery controls to redraw the Orrery directly rather than refreshing the entire dashboard."
+    },
+    {
+      "version": "v74",
+      "summary": "Introduce optional 3D Orrery perspective with tilt and rotation sliders."
+    },
+    {
+      "version": "v73",
+      "summary": "Group optional Sky Compass layers into collapsible sections and move Milky Way developer diagnostics behind an expandable disclosure. The default sky visualization and controls remain available."
+    },
+    {
+      "version": "v72",
+      "summary": "Remove inconsistent state/province text labels while preserving their boundary lines; country names remain for broad orientation and city names for local detail."
+    },
+    {
+      "version": "v71",
+      "summary": "Display the nearest catalogued city or town at the selected observer marker with an approximate great-circle distance; the label is prioritised over ordinary map names on all three Earth projections. The worldwide catalog is incomplete, so this is not guaranteed to be the actual nearest settlement."
+    },
+    {
+      "version": "v70",
+      "summary": "Expand the offline city catalog to approximately 1,283 world locations using Natural Earth 1:50m populated places, all 50 U.S. state capitals and retained curated entries. City-label eligibility increases with zoom while overlap avoidance limits visible density. The catalog-based observer settlement label arrived in v71."
+    },
+    {
+      "version": "v69",
+      "summary": "Remove duplicate Ontario label, prevent duplicate on-screen place labels, and refine font sizes/weights plus eclipse track and center-marker styling."
+    },
+    {
+      "version": "v68",
+      "summary": "Introduce Physical, Hybrid and Political Earth styles, offline country and selected state/province boundaries, and zoom-sensitive city labels for all three projections."
+    },
+    {
+      "version": "v67",
+      "summary": "Draw the geographic central-shadow footprint for solar eclipses, distinguishing totality from annularity and reporting observer eclipse status."
+    },
+    {
+      "version": "v66",
+      "summary": "Improve eclipse track/center visibility and geographic readouts; add Firefox checks for shadow rendering in three Earth projections."
+    },
+    {
+      "version": "v65",
+      "summary": "Introduce a simulated solar-eclipse penumbra and central ground track on the Earth map and ±1-minute time stepping."
+    },
+    {
+      "version": "v64",
+      "summary": "Eclipse searches now expand over a selected 100–5,000-year horizon instead of fixed 30-year/200-event caps; progressive feedback and cancellation keep the browser usable. Extreme dates are ephemeris-dependent."
+    },
+    {
+      "version": "v63",
+      "summary": "Eclipse Explorer with location-aware past/future solar and lunar events, partial/total/penumbral renderings, UTC contacts and event navigator. Solar eclipse images are simulated independently of latest NASA photos; Earth-map paths were added later in v65."
+    },
+    {
+      "version": "v62",
+      "summary": "Interactive daylight-year explorer: dated equinox/solstice markers, hover/touch day inspection and daylight gained/lost per day."
+    },
+    {
+      "version": "v61",
+      "summary": "Fullscreen keyboard focus fix and 24-hour time displays."
+    },
+    {
+      "version": "v60",
+      "summary": "Fullscreen panel browsing with Left/Right keyboard keys and on-screen previous/next buttons; no swipe conflicts."
+    },
+    {
+      "version": "v59",
+      "summary": "Solar disc latitude-of-view B₀ projection and P-angle readout; grid anchored to approximate photo retrieval epoch, independent of simulation time. Assumes solar-north-up SDO imagery pending registration."
+    },
+    {
+      "version": "v58",
+      "summary": "Keep coordinate overlay physically locked to Sun/Moon images during pan, zoom and reset; remove CSS transform override and add dual-disc Firefox tests."
+    },
+    {
+      "version": "v57",
+      "summary": "Align lunar canvas and solar grid with actual visible discs; thinner dark solar lines, adaptive 15-degree grids and denser coordinate labels."
+    },
+    {
+      "version": "v56",
+      "summary": "Introduce optional projected reference coordinate grids and pointer/touch readouts for the Sun and Moon. These are educational reference coordinates: exact lunar libration and solar image registration are not yet supported."
+    },
+    {
+      "version": "v55",
+      "summary": "Add previous/next planetary opposition, conjunction, quadrature, and Mercury/Venus greatest-elongation navigation; date/time jumps, event details and dashed geometry, with Astronomy Engine orbital coordinates."
+    },
+    {
+      "version": "v54",
+      "summary": "Repair final build metadata showing v51, prefer network for PWA navigation/version checks and update existing tabs. Fill genuine black satellite swath gaps with the previous day's NOAA-20/21 observations, labelled as multi-day imagery."
+    },
+    {
+      "version": "v53",
+      "summary": "Combine available same-day NOAA-20 and NOAA-21 VIIRS cloud observations per map position to reduce unobserved Pacific swath gaps without fabricating clouds."
+    },
+    {
+      "version": "v52",
+      "summary": "Restore cloud imagery after Suomi-NPP's November 2026 retirement, using active NOAA-20 VIIRS with NOAA-21 fallback and explicit satellite identification."
+    },
+    {
+      "version": "v51",
+      "summary": "Replace MODIS daily imagery with wider-swath VIIRS/Suomi-NPP imagery to avoid orbital-scan gaps in the cloud overlay."
+    },
+    {
+      "version": "v50",
+      "summary": "Optional NASA VIIRS satellite cloud approximation on all Earth map projections; strength control, imagery date, refresh and unavailable status. Daily observed imagery is independent of the simulation clock; not a forecast or measured cloud fraction."
+    },
+    {
+      "version": "v49",
+      "summary": "Fix planetary Kp parsing for NOAA's March 2026 JSON format change while preserving legacy responses."
+    },
+    {
+      "version": "v48",
+      "summary": "Use grayscale NASA city-light emissions instead of the coloured terrain composite to preserve Earth's natural dark-side appearance."
+    },
+    {
+      "version": "v47",
+      "summary": "NOAA OVATION near-real-time auroral forecast overlay and planetary Kp, with night-side NASA Black Marble 2016 city lights. All three Earth projections; timestamps and offline messaging."
+    },
+    {
+      "version": "v46",
+      "summary": "Sky Compass checkbox rows wrap within the standard two-column dashboard."
+    },
+    {
+      "version": "v45",
+      "summary": "Astronomical Information visible by default; dotted Sun when below the hero chart's horizon."
+    },
+    {
+      "version": "v44",
+      "summary": "Generated lakeside twilight panorama integrated into the local/offline PWA."
+    },
+    {
+      "version": "v41–v43",
+      "summary": "Observatory-first landing page, large local clock, live solar altitude journey and responsive landscape experiments."
+    },
+    {
+      "version": "v40",
+      "summary": "Independent, zoom-aware names for all 88 IAU constellations."
+    },
+    {
+      "version": "v39",
+      "summary": "Messier galaxies, nebulae, clusters and optional labels."
+    },
+    {
+      "version": "v36–v38",
+      "summary": "Earth projection refinements, coordinate grids, planets in the sky, mobile fullscreen improvements and polar Milky Way fixes."
+    },
+    {
+      "version": "v25–v35",
+      "summary": "Sun/Moon imaging and zoom, two sky projections, Milky Way contour accuracy, precession/labels, cursor coordinates, and astronomy-focused regression tests."
+    },
+    {
+      "version": "v17–v24",
+      "summary": "Below-horizon celestial chart, almanac, flexible dashboards and early constellation/Milky Way features."
+    }
+  ]
+}
