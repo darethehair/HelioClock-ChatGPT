@@ -28,6 +28,7 @@ jobs:
             node --check "$file"
           done
           node --check sw.js
+          node --check sky-moon-phase.js
           node --check tests/firefox.spec.mjs
           python3 -m py_compile scripts/build-milky-way.py scripts/build-sky-data.py
       - name: Astronomy unit checks
