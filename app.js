@@ -1,3 +1,4 @@
+import {findCelestialObjects,celestialObjectPosition} from './celestial-search.js';
 import {drawSkyMoon,moonBrightDirection} from './sky-moon-phase.js';
 import {renderAlmanac} from './almanac.js';
 import {drawEcliptic} from './ecliptic.js';
@@ -46,6 +47,34 @@ function selectDate(){
  pausePlayback();state.date=next;state.live=false;render();
 }
 function notice(msg){$('message').hidden=!msg;$('message').textContent=msg||''}
+let selectedCelestialObject=null;
+function renderCelestialFinder(){
+ const input=$('celestial-search-input'),results=$('celestial-search-results'),detail=$('celestial-search-detail');
+ if(!input||!results||!detail)return;
+ const matches=findCelestialObjects(input.value);
+ results.replaceChildren();
+ if(!input.value.trim()){results.textContent='Enter a name to search the offline catalogue.';}
+ else if(!matches.length){results.textContent='No matching objects in the current catalogue.';}
+ else for(const object of matches){
+  const button=document.createElement('button');button.type='button';
+  button.className='celestial-search-result';
+  button.textContent=object.name+(object.alias?' — '+object.alias:'')+' · '+object.type;
+  button.addEventListener('click',()=>{selectedCelestialObject=object;renderCelestialFinder();});
+  results.append(button);
+ }
+ detail.replaceChildren();
+ if(!selectedCelestialObject)return;
+ const o=selectedCelestialObject,pos=celestialObjectPosition(o,state.date,state.lat,state.lon,state.usePrecession);
+ const title=document.createElement('strong');title.textContent=o.name+(o.alias?' — '+o.alias:'');
+ const info=document.createElement('p');
+ info.textContent=o.type+(Number.isFinite(o.mag)?' · mag '+o.mag:'')+
+  ' · RA '+(pos.ra/15).toFixed(3)+' h · Dec '+pos.decl.toFixed(2)+'°'+
+  ' · Az '+pos.az.toFixed(2)+'° · Alt '+pos.alt.toFixed(2)+'°'+
+  (pos.alt>=0?' · Above horizon':' · Below horizon')+
+  (o.approximate?' · Approximate constellation centre':'');
+ detail.append(title,info);
+}
+$('celestial-search-input').addEventListener('input',renderCelestialFinder);
 function canvas(el){
  const w=el.clientWidth,h=el.clientHeight,dpr=Math.min(devicePixelRatio||1,2);
  if(!w||!h)return null;
@@ -569,6 +598,7 @@ function orrery(){
 function formatCoord(n,positive,negative){return Math.abs(n).toFixed(2)+'° '+(n>=0?positive:negative)}
 let almanacCurrent=null;
 function render(){
+ renderCelestialFinder();
  const s=sunHorizontal(state.date,state.lat,state.lon),m=moon(state.date,state.lat,state.lon);
  const ev=sunEvents(state.date,state.lat,state.lon);
  const tomorrow=new Date(Date.UTC(state.date.getUTCFullYear(),state.date.getUTCMonth(),state.date.getUTCDate()+1,12));
