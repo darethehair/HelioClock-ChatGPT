@@ -33,7 +33,7 @@ const toAltAz=(ra,dec,date,lat,lon,precession)=>{
  return horizontal(eq.ra,eq.decl,date,lat,lon);
 };
 function projection({mode,width,height,zoom,heading,showBelowHorizon}){
- const X=width/2,Y=height/2,radius=(Math.min(width-35,height-20)/2-14)*zoom;
+ const X=width/2,Y=height/2,radius=(Math.min(width-35,height-20)/2-14)*zoom*(zoom<1?.88:1);
  return h=>{
   if(!Number.isFinite(h.alt)||!Number.isFinite(h.az))return null;
   if(h.alt<0&&!showBelowHorizon)return null;
@@ -421,7 +421,7 @@ function paintRectContours(c,levels,opts,visibility,shade,outline){
 function paintPolarMask(c,{date,lat,lon,width,height,zoom,heading,precession,showBelowHorizon=false,debugMaskMode='planar',panX=0,panY=0},visibility){
  // Corrected pole-aware closure, shared with rectangular shading.
  const mask=fixedEquatorialMask(debugMaskMode);
- const R=(Math.min(width-35,height-20)/2-14)*zoom;
+ const R=(Math.min(width-35,height-20)/2-14)*zoom*(zoom<1?.88:1);
  const cols=Math.ceil(width/2),rows=Math.ceil(height/2);
  const cv=makeCanvas(cols,rows),ctx=cv.getContext('2d');
  const out=ctx.createImageData(cols,rows),dst=out.data;
@@ -461,7 +461,7 @@ function paintPolarContours(c,levels,opts,visibility,shade,outline){
  if(shade)paintPolarMask(c,opts,visibility);
  if(!outline)return;
  const {date,lat,lon,width,height,zoom,heading,precession,showBelowHorizon=false}=opts;
- const R=(Math.min(width-35,height-20)/2-14)*zoom;
+ const R=(Math.min(width-35,height-20)/2-14)*zoom*(zoom<1?.88:1);
  const proj=geoAzimuthalEquidistant().rotate([0,-90]).clipAngle(showBelowHorizon?179.9:90)
   .scale(R/(Math.PI/2)).translate([width/2,height/2]).precision(.2);
  const path=geoPath(proj,c);
@@ -492,7 +492,7 @@ export function drawMilkyWay(c,opts){
   const g=rectGeometry(width,height);
   c.beginPath();c.rect(g.left,g.top,g.right-g.left,(showBelowHorizon?g.bottom:(g.top+g.bottom)/2)-g.top);c.clip();
  }else{
-  const R=(Math.min(width-35,height-20)/2-14)*zoom;
+  const R=(Math.min(width-35,height-20)/2-14)*zoom*(zoom<1?.88:1);
   c.beginPath();c.arc(width/2,height/2,R*(showBelowHorizon?2:1),0,2*Math.PI);c.clip();
  }
  // Clip both shaded regions and outline strokes to the appropriate view.
@@ -501,7 +501,7 @@ export function drawMilkyWay(c,opts){
   const rawProjection=h=>{
    if(!Number.isFinite(h.az)||!Number.isFinite(h.alt))return null;
    if(mode==='rect')return projectRect(h.az,h.alt,width,height,heading);
-   const R=(Math.min(width-35,height-20)/2-14)*zoom;
+   const R=(Math.min(width-35,height-20)/2-14)*zoom*(zoom<1?.88:1);
    const angle=(h.az-90-heading)*RAD,r=R*(1-h.alt/90);
    return [width/2+Math.cos(angle)*r,height/2+Math.sin(angle)*r];
   };
