@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v84",
+      "summary": "Fit the full below-horizon polar sky to the available canvas in regular and fullscreen layouts, preserving the largest possible view and keeping cursor mapping aligned."
+    },
+    {
       "version": "v83",
       "summary": "Shift the sub-1× polar sky downward to avoid clipping at the top while preserving its angular scale; keep grids, Milky Way, ecliptic, objects and cursor mapping aligned without altering the normal 1× view."
     },
