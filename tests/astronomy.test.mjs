@@ -87,3 +87,18 @@ for(const [ra,dec] of [[0,0],[85,45],[173.5,-28],[290,80],[354,-62]]){
   assert.ok(previous.date<simulated&&following.date>simulated,planet+' '+kind+' must bracket simulated date');
   assert.ok(previous.distanceAU>0&&following.distanceAU>0,planet+' '+kind+' distance in AU');
  }
+
+ // v91: finder planets share the existing date/observer-aware Sky Compass ephemeris.
+ const {SEARCH_OBJECTS,findCelestialObjects,celestialObjectPosition}=await import('../celestial-search.js');
+ const {skyPlanets}=await import('../sky-planets.js');
+ assert.equal(SEARCH_OBJECTS.filter(o=>o.type==='Planet').length,7);
+ const jupiter=findCelestialObjects('jupiter').find(o=>o.name==='Jupiter');
+ assert.ok(jupiter&&jupiter.dynamic,'Jupiter is searchable as a moving planet');
+ for(const date of [at('2026-11-16T12:00:00Z'),at('2028-03-04T23:00:00Z')]){
+  const position=celestialObjectPosition(jupiter,date,49.19,-98.1);
+  const reference=skyPlanets(date,49.19,-98.1).find(p=>p.name==='Jupiter');
+  for(const key of ['ra','decl','az','alt'])
+   assert.ok(Math.abs(position[key]-reference[key])<1e-10,'finder and compass planetary '+key+' agree');
+ }
+ assert.ok(Math.abs(celestialObjectPosition(jupiter,at('2026-11-16T12:00:00Z'),49.19,-98.1).az-
+  celestialObjectPosition(jupiter,at('2026-11-17T12:00:00Z'),49.19,-98.1).az)>0.01,'planet position depends on simulation date');

@@ -105,6 +105,7 @@ Release highlights are curated in [`release-notes.json`](release-notes.json). Wh
 
 | Release | Highlights |
 | --- | --- |
+| **v91** | Extend the celestial object finder to all seven visible planets using the same topocentric Astronomy Engine ephemerides as Sky Compass, with date-aware positioning and regression tests. |
 | **v90** | Move celestial object search into a compact collapsible section within Sky Compass, retaining search, Center and Follow controls and mobile fullscreen access. |
 | **v89** | Add optional Follow through time tracking for the selected celestial object, with continuous Sky Compass recentering and manual pan/rotation/zoom to exit tracking. |
 | **v88** | Add a Center in Sky Compass action for selected finder results, repositioning either projection and revealing below-horizon targets in the rectangular view. |

@@ -66,6 +66,7 @@ function renderCelestialFinder(){
  detail.replaceChildren();
  if(!selectedCelestialObject)return;
  const o=selectedCelestialObject,pos=celestialObjectPosition(o,state.date,state.lat,state.lon,state.usePrecession);
+ if(!pos)return;
  const title=document.createElement('strong');title.textContent=o.name+(o.alias?' — '+o.alias:'');
  const info=document.createElement('p');
  info.textContent=o.type+(Number.isFinite(o.mag)?' · mag '+o.mag:'')+

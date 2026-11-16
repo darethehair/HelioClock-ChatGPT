@@ -3,7 +3,7 @@
 This is a planning backlog, not a claim that the features are implemented. Inspired in part by Darren's original MEphemeris (2008–2011); do not port its obsolete Python 2/PyGTK code or change the separate AI Studio HelioClock repository.
 
 ## Next: celestial object finder
-- Unified search across existing stars, planets, Messier/NGC deep-sky objects and constellations.
+- Unified search across existing stars, planets, Messier/NGC deep-sky objects and constellations. **Stars, planets, Messier objects and constellations are implemented through v91; broader NGC coverage remains future work.**
 - Show selected object's coordinates, local altitude/azimuth, horizon status and selected-date context.
 - Highlight or centre the result in the Sky Compass; retain the shared simulation date.
 - Expand the same finder to dynamic small bodies when orbital catalogues become available.
