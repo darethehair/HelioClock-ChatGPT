@@ -7,7 +7,7 @@ export function drawSkyDSOs(c,{date,lat,lon,width,height,mode='polar',zoom=1,hea
  panX=0,panY=0,precession=true,showBelowHorizon=false,
  showGalaxies=false,showNebulae=false,showClusters=false,showLabels=true}){
  const enabled={galaxy:showGalaxies,nebula:showNebulae,cluster:showClusters};
- const radius=(Math.min(width-35,height-20)/2-14)*zoom*(zoom<1?.88:1);
+ const radius=(Math.min(width-35,height-20)/2-14)*zoom;
  const scale=mode==='rect'?1/zoom:1;
  const occupied=[...(c.__skyLabelRects||[])],visible=[],objects=[];
  for(const [id,ra,dec,family,subclass,mag,name] of MESSIER_DSOS){
