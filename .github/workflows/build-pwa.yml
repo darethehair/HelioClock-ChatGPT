@@ -65,6 +65,8 @@ jobs:
           node-version: '22'
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+      - name: Verify curated release history matches README and version
+        run: npm run docs:check
       - name: Syntax checks
         run: |
           for file in astronomy.js app.js solar-chart.js moon-renderer.js sky-atlas.js milky-way.js sky-projection.js ecliptic.js almanac.js eclipse-events.js eclipse-geometry.js eclipse-earth-shadow.js earth-renderer.js earth-admin1-data.js earth-gazetteer.js earth-cities-data.js earth-nearest-settlement.js solar-eclipse-renderer.js; do
