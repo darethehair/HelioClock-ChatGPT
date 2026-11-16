@@ -104,6 +104,7 @@ Release highlights are curated in [`release-notes.json`](release-notes.json). Wh
 
 | Release | Highlights |
 | --- | --- |
+| **v84** | Fit the full below-horizon polar sky to the available canvas in regular and fullscreen layouts, preserving the largest possible view and keeping cursor mapping aligned. |
 | **v83** | Shift the sub-1× polar sky downward to avoid clipping at the top while preserving its angular scale; keep grids, Milky Way, ecliptic, objects and cursor mapping aligned without altering the normal 1× view. |
 | **v82** | Extend the polar Sky Compass zoom to 0.5× to reveal the below-horizon hemisphere; distinguish it with a shaded annulus and prominent horizon ring, while retaining the normal 1× view and extending celestial overlays. |
 | **v81** | Render the Moon in the Sky Compass as a phase-correct illuminated disc, with the bright limb directed toward the Sun in the active sky projection. |
