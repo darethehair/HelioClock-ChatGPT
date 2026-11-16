@@ -105,6 +105,7 @@ Release highlights are curated in [`release-notes.json`](release-notes.json). Wh
 
 | Release | Highlights |
 | --- | --- |
+| **v89** | Add optional Follow through time tracking for the selected celestial object, with continuous Sky Compass recentering and manual pan/rotation/zoom to exit tracking. |
 | **v88** | Add a Center in Sky Compass action for selected finder results, repositioning either projection and revealing below-horizon targets in the rectangular view. |
 | **v87** | Highlight the selected celestial search result in both Sky Compass projections with a date-aware position marker, including zoom-aware sizing. |
 | **v86** | Introduce an offline celestial object finder for named stars, Messier objects and constellations, with date- and observer-aware RA/Dec, azimuth, altitude and horizon status. |

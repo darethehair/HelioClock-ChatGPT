@@ -48,6 +48,7 @@ function selectDate(){
 }
 function notice(msg){$('message').hidden=!msg;$('message').textContent=msg||''}
 let selectedCelestialObject=null;
+let followCelestialObject=false;
 function renderCelestialFinder(){
  const input=$('celestial-search-input'),results=$('celestial-search-results'),detail=$('celestial-search-detail');
  if(!input||!results||!detail)return;
@@ -78,16 +79,33 @@ function renderCelestialFinder(){
  center.textContent='Center in Sky Compass';
  center.addEventListener('click',centerSelectedCelestialObject);
  detail.append(center);
+ const follow=document.createElement('button');follow.type='button';
+ follow.className='celestial-search-result';
+ follow.textContent=followCelestialObject?'Stop following object':'Follow through time';
+ follow.setAttribute('aria-pressed',String(followCelestialObject));
+ follow.addEventListener('click',()=>{
+  followCelestialObject=!followCelestialObject;
+  if(followCelestialObject)centerSelectedCelestialObject();
+  else renderCelestialFinder();
+ });
+ detail.append(follow);
 }
 // Locate only when requested; simply selecting a result preserves the user's sky view.
 function centerSelectedCelestialObject(){
  if(!selectedCelestialObject)return;
+ if(!alignSkyToSelectedObject(true)){
+  notice('Sky Compass is not visible. Enable its panel and try again.');return;
+ }
+ render();
+ $('sky').closest('.sky-panel')?.scrollIntoView({block:'nearest',behavior:'smooth'});
+ notice('Centered '+selectedCelestialObject.name+' in Sky Compass'+(followCelestialObject?' · following through time.':'.'));
+}
+function alignSkyToSelectedObject(ensureZoom=false){
+ if(!selectedCelestialObject)return false;
  const target=celestialObjectPosition(selectedCelestialObject,state.date,state.lat,state.lon,state.usePrecession);
- if(!Number.isFinite(target.az)||!Number.isFinite(target.alt))return;
+ if(!Number.isFinite(target.az)||!Number.isFinite(target.alt))return false;
  const skyCanvas=$('sky'),w=skyCanvas.clientWidth,h=skyCanvas.clientHeight;
- if(!w||!h){notice('Sky Compass is not visible. Enable its panel and try again.');return;}
- // Below the horizon is best located in the rectangular full-sphere view.
- // The normal polar projection intentionally hides that hemisphere.
+ if(!w||!h)return false;
  if(target.alt<0&&state.skyProjection==='polar'){
   state.skyProjection='rect';
   $('below-horizon-setting').hidden=false;
@@ -98,15 +116,16 @@ function centerSelectedCelestialObject(){
   }
  }
  if(target.alt<0)$('show-below-horizon').checked=true;
- state.skyHeading=state.skyProjection==='rect'?wrap(target.az-180,360):target.az;
+ const heading=state.skyProjection==='rect'?target.az-180:target.az;
+ state.skyHeading=((heading+180)%360+360)%360-180;
  $('sky-heading').value=String(state.skyHeading);
+ if(ensureZoom)state.skyZoom=Math.max(state.skyZoom,state.skyProjection==='rect'?1.6:1.5);
  if(state.skyProjection==='rect'){
-  state.skyZoom=Math.max(state.skyZoom,1.6);
   const [x,y]=projectRect(target.az,target.alt,w,h,state.skyHeading);
-  state.skyPanX=clamp((w/2-x)*state.skyZoom,-w*(state.skyZoom-1)/2,w*(state.skyZoom-1)/2);
-  state.skyPanY=clamp((h/2-y)*state.skyZoom,-h*(state.skyZoom-1)/2,h*(state.skyZoom-1)/2);
+  const zoom=state.skyZoom;
+  state.skyPanX=clamp((w/2-x)*zoom,-w*(zoom-1)/2,w*(zoom-1)/2);
+  state.skyPanY=clamp((h/2-y)*zoom,-h*(zoom-1)/2,h*(zoom-1)/2);
  }else{
-  state.skyZoom=Math.max(state.skyZoom,1.5);
   const radius=(Math.min(w-35,h-20)/2-14)*state.skyZoom;
   const angle=(target.az-90-state.skyHeading)*RAD;
   const distance=radius*(1-target.alt/90);
@@ -114,9 +133,7 @@ function centerSelectedCelestialObject(){
   state.skyPanY=-distance*Math.sin(angle);
  }
  $('sky-zoom').value=String(state.skyZoom);
- render();
- skyCanvas.closest('.sky-panel')?.scrollIntoView({block:'nearest',behavior:'smooth'});
- notice(target.alt<0?selectedCelestialObject.name+' is below the horizon; showing its position in the full-sphere sky.':'Centered '+selectedCelestialObject.name+' in Sky Compass.');
+ return true;
 }
 $('celestial-search-input').addEventListener('input',renderCelestialFinder);
 function canvas(el){
@@ -240,6 +257,7 @@ function fillSkyBackground(c,w,h,altitude){
  c.fillStyle=gradient;c.fillRect(0,0,w,h);
 }
 function sky(){
+ if(followCelestialObject)alignSkyToSelectedObject();
  const o=canvas($('sky'));if(!o)return;const{c,w,h}=o;
  const X=w/2,Y=h/2;
  const polarBaseRadius=Math.min(w-35,h-20)/2-14;
@@ -790,6 +808,7 @@ $('play-time').addEventListener('click',()=>{
 });
 setInterval(()=>{if(state.playing)shiftTime(15)},180);
 function viewRange(id,key){$(id).addEventListener('input',e=>{state[key]=Number(e.target.value);render()})}
+$('sky-heading').addEventListener('input',()=>{followCelestialObject=false;renderCelestialFinder();});
 viewRange('sky-heading','skyHeading');
 // Slider zoom is centred; wheel zoom targets the pointer position.
 $('sky-zoom').addEventListener('input',e=>setPolarSkyZoom(Number(e.target.value)));
@@ -1257,6 +1276,7 @@ function reset(id,defaults){
  for(const [key,value] of Object.entries(defaults)){if(controls[key])$(controls[key]).value=value}
  render()});
 }
+$('sky-reset').addEventListener('click',()=>{followCelestialObject=false;renderCelestialFinder();});
 reset('sky-reset',{skyZoom:1,skyPanX:0,skyPanY:0,skyHeading:0});
 // Reset map orientation to the observer, not Greenwich/the equator.
 $('earth-reset').addEventListener('click',()=>{
@@ -1275,6 +1295,7 @@ function wheelZoom(canvasId,controlId,key,lo,hi){
 // displacement from the chart centre. Correct the pan to keep the chosen
 // sky position stationary, including when the pointer isn't near zenith.
 function setPolarSkyZoom(next,clientX=null,clientY=null){
+ if(followCelestialObject){followCelestialObject=false;renderCelestialFinder();}
  const canvas=$('sky'),rect=canvas.getBoundingClientRect();
  const old=state.skyZoom;
  next=clamp(next,state.skyProjection==='polar'?.5:1,3);
@@ -1322,6 +1343,7 @@ function dragCanvas(id,onMove){
  const midpoint=()=>{const [p,q]=[...pointers.values()];return {x:(p.x+q.x)/2,y:(p.y+q.y)/2}};
  el.addEventListener('pointerdown',e=>{
   if(e.pointerType==='mouse'&&e.button!==0)return;
+  if(id==='sky'&&followCelestialObject){followCelestialObject=false;renderCelestialFinder();}
   pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
   start={x:e.clientX,y:e.clientY};
   if(['sky','earth-map','orrery'].includes(id)&&pointers.size===2)pinchDistance=distance();

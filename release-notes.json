@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v89",
+      "summary": "Add optional Follow through time tracking for the selected celestial object, with continuous Sky Compass recentering and manual pan/rotation/zoom to exit tracking."
+    },
+    {
       "version": "v88",
       "summary": "Add a Center in Sky Compass action for selected finder results, repositioning either projection and revealing below-horizon targets in the rectangular view."
     },
