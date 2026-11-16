@@ -20,7 +20,7 @@ export function drawEcliptic(c,{date,lat,lon,width,height,mode='polar',heading=0
  if(g){
   const bottom=showBelowHorizon?g.bottom:(g.top+g.bottom)/2;
   c.rect(g.left,g.top,g.right-g.left,bottom-g.top);
- }else c.arc(width/2,height/2,R,0,Math.PI*2);
+ }else c.arc(width/2,height/2,R*(showBelowHorizon?2:1),0,Math.PI*2);
  c.clip();
  c.lineWidth=1.35;c.strokeStyle='rgba(250,177,95,.90)';c.setLineDash([7,5]);
  // An independent segment at each ecliptic sample avoids joining across
@@ -29,7 +29,7 @@ export function drawEcliptic(c,{date,lat,lon,width,height,mode='polar',heading=0
  for(let lambda=0;lambda<=360;lambda+=.75){
   const eq=eclipticEquatorial(lambda,eps);
   const h=horizontal(eq.ra,eq.decl,date,lat,lon);
-  if(h.alt<0&&(mode!=='rect'||!showBelowHorizon)){positions.push(null);continue;}
+  if(h.alt<0&&!showBelowHorizon){positions.push(null);continue;}
   if(g)positions.push(projectRect(h.az,h.alt,width,height,heading));
   else{
    const theta=(h.az-90-heading)*RAD,d=R*(1-h.alt/90);
