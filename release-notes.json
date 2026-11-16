@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v92",
+      "summary": "Show selected-object rise, upper-transit and set times for the simulation UTC date, including circumpolar visibility status and geometric-horizon cautions."
+    },
+    {
       "version": "v91",
       "summary": "Extend the celestial object finder to all seven visible planets using the same topocentric Astronomy Engine ephemerides as Sky Compass, with date-aware positioning and regression tests."
     },

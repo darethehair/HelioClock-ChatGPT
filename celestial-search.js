@@ -27,3 +27,57 @@ export function celestialObjectPosition(object,date,lat,lon,precession=true){
  const eq=precession?precessJ2000(object.ra,object.dec,date):{ra:object.ra,decl:object.dec};
  return {...eq,...horizontal(eq.ra,eq.decl,date,lat,lon)};
 }
+
+/**
+ * Rise, upper transit, and set events on the UTC calendar date containing
+ * the simulation timestamp. Geometric centre crossing altitude 0 degrees:
+ * no refraction, atmospheric extinction, or local terrain horizon.
+ * Planet positions are recomputed at each sample (not frozen at midnight).
+ */
+export function celestialDailyEvents(object,date,lat,lon,precession=true){
+ const midnight=Date.UTC(date.getUTCFullYear(),date.getUTCMonth(),date.getUTCDate());
+ const end=midnight+86400000;
+ const interval=20*60000;
+ const altitude=ms=>celestialObjectPosition(object,new Date(ms),lat,lon,precession)?.alt;
+ const samples=[];
+ for(let ms=midnight;ms<=end;ms+=interval){
+  const alt=altitude(ms);
+  if(!Number.isFinite(alt))return null;
+  samples.push({ms,alt});
+ }
+ const refineCrossing=(a,b)=>{
+  let lo=a.ms,hi=b.ms,fa=a.alt;
+  for(let k=0;k<26&&hi-lo>1000;k++){
+   const mid=(lo+hi)/2,fm=altitude(mid);
+   if((fa<=0&&fm<=0)||(fa>=0&&fm>=0)){lo=mid;fa=fm;}
+   else hi=mid;
+  }
+  return new Date((lo+hi)/2);
+ };
+ const rises=[],sets=[];
+ for(let i=1;i<samples.length;i++){
+  const a=samples[i-1],b=samples[i];
+  if(a.alt<0&&b.alt>=0)rises.push(refineCrossing(a,b));
+  if(a.alt>=0&&b.alt<0)sets.push(refineCrossing(a,b));
+ }
+ // Every day spans slightly more than one sidereal rotation. For planets
+ // we still search every peak, rather than assuming a fixed transit time.
+ const peaks=[];
+ for(let i=1;i<samples.length-1;i++){
+  if(samples[i].alt>=samples[i-1].alt&&samples[i].alt>=samples[i+1].alt){
+   let lo=samples[i-1].ms,hi=samples[i+1].ms;
+   for(let k=0;k<32&&hi-lo>1000;k++){
+    const x=lo+(hi-lo)*.38196601125,y=lo+(hi-lo)*.61803398875;
+    if(altitude(x)<altitude(y))lo=x;else hi=y;
+   }
+   const ms=(lo+hi)/2;
+   peaks.push({date:new Date(ms),alt:altitude(ms)});
+  }
+ }
+ const transit=peaks.sort((a,b)=>b.alt-a.alt)[0]||null;
+ const alwaysAbove=samples.every(s=>s.alt>0);
+ const alwaysBelow=samples.every(s=>s.alt<0);
+ return {date:new Date(midnight),rises,sets,transit,
+  horizonStatus:alwaysAbove?'always-above':alwaysBelow?'always-below':'crosses',
+  definition:'Geometric centre at 0° altitude, no refraction or terrain'};
+}

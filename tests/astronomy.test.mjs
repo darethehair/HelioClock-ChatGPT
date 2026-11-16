@@ -102,3 +102,27 @@ for(const [ra,dec] of [[0,0],[85,45],[173.5,-28],[290,80],[354,-62]]){
  }
  assert.ok(Math.abs(celestialObjectPosition(jupiter,at('2026-11-16T12:00:00Z'),49.19,-98.1).az-
   celestialObjectPosition(jupiter,at('2026-11-17T12:00:00Z'),49.19,-98.1).az)>0.01,'planet position depends on simulation date');
+
+ // v92: UTC-date rise/transit/set finder, incl. circumpolar limits.
+ const {celestialDailyEvents}=await import('../celestial-search.js');
+ const observingDate=at('2026-11-16T15:00:00Z');
+ const m31=findCelestialObjects('M31')[0];
+ const m31Events=celestialDailyEvents(m31,observingDate,49.19,-98.10);
+ assert.equal(m31Events.date.toISOString(),'2026-11-16T00:00:00.000Z');
+ assert.ok(m31Events.transit&&m31Events.transit.alt>0,'M31 upper culmination calculated');
+ assert.ok(m31Events.rises.length>=1&&m31Events.sets.length>=1,'M31 crosses both horizons in UTC day');
+ for(const rise of m31Events.rises)
+  assert.ok(Math.abs(celestialObjectPosition(m31,rise,49.19,-98.10).alt)<0.02,'rise near 0-degree horizon');
+ for(const set of m31Events.sets)
+  assert.ok(Math.abs(celestialObjectPosition(m31,set,49.19,-98.10).alt)<0.02,'set near 0-degree horizon');
+ const neverSets={name:'North polar target',type:'Star',ra:0,dec:85};
+ const neverRises={name:'South polar target',type:'Star',ra:0,dec:-85};
+ const aboveEvents=celestialDailyEvents(neverSets,observingDate,49.19,-98.1);
+ const belowEvents=celestialDailyEvents(neverRises,observingDate,49.19,-98.1);
+ assert.equal(aboveEvents.horizonStatus,'always-above');
+ assert.equal(belowEvents.horizonStatus,'always-below');
+ assert.equal(aboveEvents.rises.length+aboveEvents.sets.length,0);
+ assert.equal(belowEvents.rises.length+belowEvents.sets.length,0);
+ const planetEvents=celestialDailyEvents(jupiter,observingDate,49.19,-98.1);
+ assert.ok(planetEvents.transit&&Number.isFinite(planetEvents.transit.alt));
+ assert.ok(planetEvents.transit.date>=planetEvents.date&&planetEvents.transit.date<new Date(planetEvents.date.getTime()+86400000));

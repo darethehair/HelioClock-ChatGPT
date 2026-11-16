@@ -1,4 +1,4 @@
-import {findCelestialObjects,celestialObjectPosition} from './celestial-search.js';
+import {findCelestialObjects,celestialObjectPosition,celestialDailyEvents} from './celestial-search.js';
 import {drawSkyMoon,moonBrightDirection} from './sky-moon-phase.js';
 import {renderAlmanac} from './almanac.js';
 import {drawEcliptic} from './ecliptic.js';
@@ -49,6 +49,15 @@ function selectDate(){
 function notice(msg){$('message').hidden=!msg;$('message').textContent=msg||''}
 let selectedCelestialObject=null;
 let followCelestialObject=false;
+let finderEventsCache={key:null,result:null};
+function selectedObjectEvents(object){
+ const day=state.date.toISOString().slice(0,10);
+ const key=[object.name,object.type,day,state.lat,state.lon,state.usePrecession].join('|');
+ if(finderEventsCache.key!==key){
+  finderEventsCache={key,result:celestialDailyEvents(object,state.date,state.lat,state.lon,state.usePrecession)};
+ }
+ return finderEventsCache.result;
+}
 function renderCelestialFinder(){
  const input=$('celestial-search-input'),results=$('celestial-search-results'),detail=$('celestial-search-detail');
  if(!input||!results||!detail)return;
@@ -75,6 +84,19 @@ function renderCelestialFinder(){
   (pos.alt>=0?' · Above horizon':' · Below horizon')+
   (o.approximate?' · Approximate constellation centre':'');
  detail.append(title,info);
+ const events=selectedObjectEvents(o);
+ if(events){
+  const formatEvent=d=>d?d.toISOString().slice(11,16)+' UTC':'—';
+  const line=document.createElement('p');
+  const rises=events.rises.map(formatEvent).join(', ')||'—';
+  const sets=events.sets.map(formatEvent).join(', ')||'—';
+  const transit=events.transit?formatEvent(events.transit.date)+' ('+events.transit.alt.toFixed(1)+'°)':'—';
+  const status=events.horizonStatus==='always-above'?' · Always above horizon':events.horizonStatus==='always-below'?' · Always below horizon':'';
+  line.textContent=events.date.toISOString().slice(0,10)+' UTC · Rise '+rises+' · Upper transit '+transit+' · Set '+sets+status;
+  const note=document.createElement('p');
+  note.textContent='Geometric 0° horizon · no refraction or terrain · UTC-day events';
+  detail.append(line,note);
+ }
  const center=document.createElement('button');center.type='button';
  center.className='celestial-search-result';
  center.textContent='Center in Sky Compass';
