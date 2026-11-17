@@ -105,6 +105,7 @@ Release highlights are curated in [`release-notes.json`](release-notes.json). Wh
 
 | Release | Highlights |
 | --- | --- |
+| **v109** | 100 searchable diameter-ranked numbered minor planets from NASA/JPL; low-cost markers, selective orbit paths, labels for the primary four and the selected body. |
 | **v108** | Inspect selected comet/asteroid inclination, eccentricity, perihelion and aphelion, ascending node, and signed ecliptic height; optionally show a 3D drop line to the ecliptic plane. |
 | **v107** | Click or tap Orrery planet, asteroid, or selected-comet markers for a synchronized object selection, highlighting, heliocentric distance and date readout; gestures still rotate without selecting. |
 | **v106** | Synchronize numeric Orrery camera angles with mouse/touch dragging and reset, while allowing direct gestures across the full ±180° tilt range. |

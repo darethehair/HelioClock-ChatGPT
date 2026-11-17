@@ -2474,12 +2474,12 @@ test('Clear selection removes Halley marker and Orrery orbit without altering ti
 
 test('Orrery minor-body controls select bodies independently of Sky Compass layers',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
- await expect.poll(()=>page.locator('#orrery-asteroid-select option').count()).toBe(5);
+ await expect.poll(()=>page.locator('#orrery-asteroid-select option').count()).toBe(101);
  const orreryAsteroids=page.locator('#orrery-show-asteroids');
  await expect(orreryAsteroids).not.toBeChecked();
  await expect(page.locator('#show-asteroids')).not.toBeChecked();
  await orreryAsteroids.check();
- await expect.poll(()=>page.locator('#orrery').evaluate(el=>JSON.parse(el.dataset.asteroids||'[]').length)).toBe(4);
+ await expect.poll(()=>page.locator('#orrery').evaluate(el=>JSON.parse(el.dataset.asteroids||'[]').length)).toBe(100);
  await expect(page.locator('#show-asteroids')).not.toBeChecked();
  await orreryAsteroids.uncheck();
  await page.locator('#orrery-asteroid-select').selectOption('Vesta');
@@ -2500,9 +2500,9 @@ test('Orrery minor-body controls select bodies independently of Sky Compass laye
 
 test('Orrery labels all four minor bodies and provides reversible numeric 3D tilt and faint mesh',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
- await expect.poll(()=>page.locator('#orrery-asteroid-select option').count()).toBe(5);
+ await expect.poll(()=>page.locator('#orrery-asteroid-select option').count()).toBe(101);
  await page.locator('#orrery-show-asteroids').check();
- await expect.poll(()=>page.locator('#orrery').evaluate(el=>JSON.parse(el.dataset.asteroids||'[]').length)).toBe(4);
+ await expect.poll(()=>page.locator('#orrery').evaluate(el=>JSON.parse(el.dataset.asteroids||'[]').length)).toBe(100);
  await page.locator('#orrery-3d').check();
  await page.locator('#orrery-tilt').fill('140');
  await expect(page.locator('#orrery-tilt-number')).toHaveValue('140');
@@ -2541,7 +2541,7 @@ test('Orrery mouse gesture synchronizes tilt and rotation numeric values includi
 
 test('Orrery click selects a plotted asteroid and planet without changing date',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
- await expect.poll(()=>page.locator('#orrery-asteroid-select option').count()).toBe(5);
+ await expect.poll(()=>page.locator('#orrery-asteroid-select option').count()).toBe(101);
  await page.locator('#orrery-show-asteroids').check();
  await page.locator('[data-orbit-mode="outer"]').click();
  await page.locator('#orrery').scrollIntoViewIfNeeded();
@@ -2567,7 +2567,7 @@ test('Orrery click selects a plotted asteroid and planet without changing date',
 
 test('Selected minor-body geometry updates with time and optional 3D height guide',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
- await expect.poll(()=>page.locator('#orrery-asteroid-select option').count()).toBe(5);
+ await expect.poll(()=>page.locator('#orrery-asteroid-select option').count()).toBe(101);
  const details=page.locator('#orrery-orbit-geometry');
  await expect(details).toBeHidden();
  await page.locator('#orrery-asteroid-select').selectOption('Vesta');
@@ -2586,4 +2586,17 @@ test('Selected minor-body geometry updates with time and optional 3D height guid
  await expect(page.locator('#orrery')).toHaveAttribute('data-height-guide','false');
  await page.locator('#orrery-clear-minor-body').click();
  await expect(details).toBeHidden();
+});
+
+test('100 size-ranked minor planets are searchable by numbered designation',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await expect.poll(()=>page.locator('#orrery-asteroid-select option').count()).toBe(101);
+ await page.locator('.sky-panel .celestial-finder').evaluate(el=>el.open=true);
+ await page.locator('#celestial-search-input').fill('4 Vesta');
+ await expect(page.locator('#celestial-search-results')).toContainText('Vesta');
+ await page.locator('#orrery-show-asteroids').check();
+ await expect.poll(()=>page.locator('#orrery').evaluate(el=>JSON.parse(el.dataset.asteroids||'[]').length)).toBe(100);
+ await page.locator('#orrery-show-asteroids').uncheck();
+ await page.locator('#orrery-asteroid-select').selectOption('Vesta');
+ await expect.poll(()=>page.locator('#orrery').evaluate(el=>JSON.parse(el.dataset.asteroids||'[]').map(x=>x.name))).toEqual(['Vesta']);
 });

@@ -87,11 +87,11 @@ async function loadAsteroids(){
  const status=$('asteroid-catalog-status');
  try{
   const res=await fetch('./major-asteroids.json');if(!res.ok)throw Error('unavailable');
-  const data=await res.json();if(data.records?.length!==4)throw Error('incomplete');
+  const data=await res.json();if(data.schema!==2||data.records?.length!==100)throw Error('incomplete');
   setAsteroidSearchObjects(data.records);
-  status.textContent='NASA/JPL SBDB · four major bodies · downloaded '+sourceTimestamp(data.retrievedUtc)+' · approximate orbits';
+  status.textContent='NASA/JPL SBDB · 100 size-ranked minor planets · downloaded '+sourceTimestamp(data.retrievedUtc)+' · approximate orbits';
   const select=$('orrery-asteroid-select');
-  select.replaceChildren(new Option('— Select —',''),...asteroidObjects().map(obj=>new Option(obj.name,obj.name)));
+  select.replaceChildren(new Option('— Select —',''),...asteroidObjects().map(obj=>new Option(obj.elements.number+' '+obj.name,obj.name)));
   renderCelestialFinder();sky();orrery();
  }catch{status.textContent='Asteroid catalogue unavailable in this build';}
 }
@@ -591,7 +591,7 @@ function sky(){
   if(!Number.isFinite(sx)||!Number.isFinite(sy)||sx<0||sx>w||sy<0||sy>h)continue;
   c.save();c.translate(x,y);if(rectSky)c.scale(1/state.skyZoom,1/state.skyZoom);
   c.rotate(Math.PI/4);c.fillStyle='#dfb5ff';c.fillRect(-3,-3,6,6);c.restore();
-  if($('show-labels').checked&&!selected)label(c,obj.name,x+8,y-6,'#dfb5ff',10);
+  if($('show-labels').checked&&(selected||obj.elements.number<=4))label(c,obj.name,x+8,y-6,'#dfb5ff',10);
   drawnAsteroids.push({name:obj.name,az:p.az,alt:p.alt,selected});
  }
  $('sky').dataset.asteroids=JSON.stringify(drawnAsteroids);
@@ -768,7 +768,12 @@ function orrery(){
  const asteroidSelect=$('orrery-asteroid-select');
  if(asteroidSelect&&asteroidSelect.value!==(selectedAsteroid?.name||''))asteroidSelect.value=selectedAsteroid?.name||'';
  const visibleAsteroids=asteroidObjects().filter(obj=>$('orrery-show-asteroids').checked||obj.name===selectedAsteroid?.name);
- const asteroidCoords=visibleAsteroids.map(obj=>({obj,pos:asteroidPosition(obj.elements,state.date)})).filter(x=>x.pos);
+ const cache=orrery.asteroidCache||(orrery.asteroidCache={time:null,coords:new Map()});
+ if(cache.time!==state.date.getTime()){
+  cache.time=state.date.getTime();
+  cache.coords=new Map(asteroidObjects().map(obj=>[obj.name,asteroidPosition(obj.elements,state.date)]));
+ }
+ const asteroidCoords=visibleAsteroids.map(obj=>({obj,pos:cache.coords.get(obj.name)})).filter(x=>x.pos);
  const selectedMinor=selectedComet||selectedAsteroid;
  const selectedMinorPosition=selectedComet?comet:
   asteroidCoords.find(item=>item.obj.name===selectedAsteroid?.name)?.pos||null;
@@ -893,14 +898,16 @@ function orrery(){
  }
  const asteroidsPlotted=[];
  for(const {obj,pos} of asteroidCoords){
-  const track=asteroidPath(obj.elements);
-  c.save();c.strokeStyle='#a37db67f';c.lineWidth=.8;c.beginPath();
-  track.forEach((p,i)=>{const [x,y]=project(p.y,p.x,threeD?p.z:0);if(!i)c.moveTo(x,y);else c.lineTo(x,y)});
-  c.stroke();c.restore();
+  if(obj.name===selectedAsteroid?.name){
+   const track=asteroidPath(obj.elements);
+   c.save();c.strokeStyle='#a37db67f';c.lineWidth=.8;c.beginPath();
+   track.forEach((p,i)=>{const [x,y]=project(p.y,p.x,threeD?p.z:0);if(!i)c.moveTo(x,y);else c.lineTo(x,y)});
+   c.stroke();c.restore();
+  }
   const [x,y]=project(pos.y,pos.x,threeD?pos.z:0);
   if(x>=0&&x<=w&&y>=0&&y<=h){
    c.save();c.fillStyle='#dfb5ff';c.translate(x,y);c.rotate(Math.PI/4);c.fillRect(-3,-3,6,6);c.restore();
-   label(c,obj.name,x+8,y-7,'#dfb5ff',10);
+   if(obj.elements.number<=4||obj.name===selectedAsteroid?.name)label(c,obj.name,x+8,y-7,'#dfb5ff',10);
   }
   if(x>=0&&x<=w&&y>=0&&y<=h)hitTargets.push({name:obj.name,type:obj.type,x,y,distanceAU:pos.distanceAU});
   asteroidsPlotted.push({name:obj.name,radiusAU:pos.distanceAU});

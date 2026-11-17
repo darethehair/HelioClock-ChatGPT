@@ -16,7 +16,7 @@ export const SEARCH_OBJECTS=[
 let cometSearchObjects=[];
 let asteroidSearchObjects=[];
 export function setAsteroidSearchObjects(records){
- asteroidSearchObjects=records.map(elements=>({name:elements.name,type:elements.type,alias:String(elements.number),dynamic:true,elements}));
+ asteroidSearchObjects=records.map(elements=>({name:elements.name,type:elements.type,alias:String(elements.number)+' '+elements.name,designation:String(elements.number),dynamic:true,elements}));
  return asteroidSearchObjects.length;
 }
 export function asteroidObjects(){return asteroidSearchObjects}
@@ -71,7 +71,7 @@ export function findCelestialObjects(query,limit=12){
  const q=String(query||'').trim().toLocaleLowerCase();
  if(!q)return [];
  const candidates=q.length>=2?[...SEARCH_OBJECTS,...cometSearchObjects,...asteroidSearchObjects]:SEARCH_OBJECTS;
- return candidates.filter(o=>[o.name,o.alias].some(n=>n&&n.toLocaleLowerCase().includes(q)))
+ return candidates.filter(o=>[o.name,o.alias,o.designation].some(n=>n&&n.toLocaleLowerCase().includes(q)))
   .sort((a,b)=>Number(a.name.toLocaleLowerCase()===q)-Number(b.name.toLocaleLowerCase()===q)||
     Number(a.name.toLocaleLowerCase().startsWith(q))-Number(b.name.toLocaleLowerCase().startsWith(q))||
     a.name.localeCompare(b.name)).reverse().slice(0,limit);

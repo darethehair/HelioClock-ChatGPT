@@ -40,3 +40,23 @@ export function asteroidSky(object,date,lat,lon){
  const eq=Astronomy.EquatorFromVector(v),h=Astronomy.Horizon(t,new Astronomy.Observer(lat,lon,0),eq.ra,eq.dec,'');
  return {ra:eq.ra*15,decl:eq.dec,az:h.azimuth,alt:h.altitude,distanceAU:eq.dist,sunDistanceAU:p.distanceAU,epochAgeDays:p.epochAgeDays,approximate:true};
 }
+
+export function parseJplQueryAsteroids(result,retrievedUtc){
+ const fields=result?.fields,rows=result?.data;
+ if(!Array.isArray(fields)||!Array.isArray(rows)||
+  !['pdes','name','epoch','a','e','i','om','w','ma','diameter'].every(f=>fields.includes(f)))
+  throw Error('Invalid SBDB Query table or fields');
+ const out=[];
+ for(const row of rows){
+  const v=Object.fromEntries(fields.map((f,j)=>[f,row[j]]));
+  const number=Number(v.pdes),a=Number(v.a),e=Number(v.e),i=Number(v.i),diameterKm=Number(v.diameter);
+  if(!Number.isInteger(number)||number<1||!String(v.name||'').trim()||
+    v.diameter===null||!(diameterKm>0)||!(a>0&&e>=0&&e<1&&i>=0&&i<=180)||
+    ![v.epoch,v.om,v.w,v.ma].every(x=>x!==null&&Number.isFinite(Number(x))))continue;
+  out.push({number,name:String(v.name).trim(),type:number===1?'Dwarf planet':'Asteroid',
+   epochJD:Number(v.epoch),aAU:a,eccentricity:e,inclinationDeg:i,nodeDeg:Number(v.om),
+   argPeriDeg:Number(v.w),meanAnomalyDeg:Number(v.ma),diameterKm,
+   orbitClass:v.class||null,orbitId:v.orbit_id||null,equinox:v.equinox||'J2000',retrievedUtc});
+ }
+ return out;
+}
