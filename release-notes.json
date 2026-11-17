@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v100",
+      "summary": "Always draw the comet glyph for an explicitly selected object such as Halley, regardless of the automatic comet layer's age/range limits or visibility toggle; keep automatic markers filtered."
+    },
+    {
       "version": "v99",
       "summary": "Add optional pale-cyan nucleus-and-tail comet icons to Sky Compass maps, with a persistent Show comets toggle and date-filtered MPC positions."
     },

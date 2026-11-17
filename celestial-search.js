@@ -49,6 +49,16 @@ export function cometMapCandidates(date,limit=60){
   return Math.abs(peri(a)-now)-Math.abs(peri(b)-now);
  }).slice(0,limit);
 }
+/** Selected comets bypass automatic catalogue limits, even with layer off.
+ * This avoids losing an explicitly requested object like 1P/Halley in 2026.
+ */
+export function cometObjectsForMap(date,showAutomatic=false,selected=null){
+ const selectedComet=selected?.type==='Comet'?selected:null;
+ if(!showAutomatic)return selectedComet?[selectedComet]:[];
+ const automatic=cometMapCandidates(date);
+ if(!selectedComet)return automatic;
+ return [selectedComet,...automatic.filter(o=>o.name!==selectedComet.name)];
+}
 export function findCelestialObjects(query,limit=12){
  const q=String(query||'').trim().toLocaleLowerCase();
  if(!q)return [];

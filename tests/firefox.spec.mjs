@@ -2423,3 +2423,21 @@ test('Comet overlay toggle is independent and retained in preferences',async({pa
  await page.locator('#show-comets').uncheck();
  await expect(page.locator('#sky')).toHaveAttribute('data-comets','[]');
 });
+
+test('Selecting Halley draws cyan comet glyph even when automatic comet layer is off',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await expect(page.locator('#show-comets')).not.toBeChecked();
+ await page.locator('.sky-panel .celestial-finder').evaluate(el=>el.open=true);
+ await page.locator('#celestial-search-input').fill('Halley');
+ const result=page.locator('#celestial-search-results button').filter({hasText:'Halley'}).first();
+ await expect(result).toBeVisible({timeout:15000});
+ await result.click();
+ const plotted=await page.waitForFunction(()=>{
+  const data=JSON.parse(document.getElementById('sky').dataset.comets||'[]');
+  return data.some(x=>x.name.toLowerCase().includes('halley')&&x.selected);
+ },null,{timeout:15000});
+ expect(await plotted.jsonValue()).toBeTruthy();
+ await page.locator('#show-comets').check();
+ await expect.poll(()=>page.locator('#sky').evaluate(el=>
+  JSON.parse(el.dataset.comets||'[]').filter(x=>x.name.toLowerCase().includes('halley')).length)).toBe(1);
+});

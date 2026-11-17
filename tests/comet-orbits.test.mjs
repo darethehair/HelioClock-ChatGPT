@@ -44,3 +44,13 @@ setCometSearchObjects([
 ]);
 assert.deepEqual(cometMapCandidates(at).map(x=>x.name),['C/Near 2026']);
 assert.deepEqual(cometMapCandidates(at,0),[]);
+
+const {cometObjectsForMap}=await import('../celestial-search.js');
+const halley={...elements,name:'1P/Halley',type:'Comet',
+ elements:{...elements,perihelion:{year:2061,month:7,dayTT:28},epochTT:{year:2026,month:11,day:16}}};
+assert.deepEqual(cometObjectsForMap(at,false,halley).map(x=>x.name),['1P/Halley'],
+ 'explicitly selected Halley remains visible even with automatic comets off');
+assert.deepEqual(cometObjectsForMap(at,true,halley).map(x=>x.name),['1P/Halley','C/Near 2026'],
+ 'selected Halley bypasses two-year filter without duplication');
+assert.deepEqual(cometObjectsForMap(at,false,null),[],
+ 'hidden automatic layer has no unselected comets');
