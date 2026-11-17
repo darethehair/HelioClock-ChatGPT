@@ -27,6 +27,28 @@ export function setCometSearchObjects(records){
  cometSearchObjects=[...unique.values()];
  return cometSearchObjects.length;
 }
+/**
+ * Limit automatic map symbols to comets with a reasonably contemporary
+ * perihelion and published element epoch. This is NOT a visibility/magnitude
+ * prediction; observational brightness of comets varies greatly.
+ */
+export function cometMapCandidates(date,limit=60){
+ const year=date.getUTCFullYear(),now=date.getTime();
+ return cometSearchObjects.filter(o=>{
+  const p=o.elements.perihelion,epoch=o.elements.epochTT;
+  if(Math.abs(p.year-year)>2||o.elements.qAU>5)return false;
+  if(epoch){
+   const time=Date.UTC(epoch.year,epoch.month-1,epoch.day);
+   if(!Number.isFinite(time)||Math.abs(time-now)>730*86400000)return false;
+  }
+  return true;
+ }).sort((a,b)=>{
+  const peri=o=>Date.UTC(o.elements.perihelion.year,o.elements.perihelion.month-1,
+   Math.floor(o.elements.perihelion.dayTT))+
+   (o.elements.perihelion.dayTT%1)*86400000;
+  return Math.abs(peri(a)-now)-Math.abs(peri(b)-now);
+ }).slice(0,limit);
+}
 export function findCelestialObjects(query,limit=12){
  const q=String(query||'').trim().toLocaleLowerCase();
  if(!q)return [];
