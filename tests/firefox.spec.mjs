@@ -2559,3 +2559,26 @@ test('Orrery click selects a plotted asteroid and planet without changing date',
  await expect(page.locator('#orrery-inspection')).toContainText('Neptune · Planet');
  await expect(page.locator('#orrery-inspection')).toContainText('Astronomy Engine');
 });
+
+test('Selected minor-body geometry updates with time and optional 3D height guide',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await expect.poll(()=>page.locator('#orrery-asteroid-select option').count()).toBe(5);
+ const details=page.locator('#orrery-orbit-geometry');
+ await expect(details).toBeHidden();
+ await page.locator('#orrery-asteroid-select').selectOption('Vesta');
+ await expect(details).toBeVisible();
+ await expect(details).toContainText('Vesta · inclination');
+ await expect(details).toContainText('eccentricity');
+ await expect(details).toContainText('ecliptic height');
+ const earlier=await page.locator('#orrery').evaluate(el=>JSON.parse(el.dataset.orbitGeometry).heightAU);
+ await page.locator('#orrery-3d').check();
+ await page.locator('#orrery-height-guide').check();
+ await expect(page.locator('#orrery')).toHaveAttribute('data-height-guide','true');
+ await page.locator('#dock-next-day').click();
+ const later=await page.locator('#orrery').evaluate(el=>JSON.parse(el.dataset.orbitGeometry).heightAU);
+ expect(later).not.toBe(earlier);
+ await page.locator('#orrery-height-guide').uncheck();
+ await expect(page.locator('#orrery')).toHaveAttribute('data-height-guide','false');
+ await page.locator('#orrery-clear-minor-body').click();
+ await expect(details).toBeHidden();
+});

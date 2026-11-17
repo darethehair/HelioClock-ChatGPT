@@ -17,6 +17,7 @@ import {drawSkyGrid} from './sky-grid.js';
 import {skyPlanets} from './sky-planets.js';
 import {cometHeliocentricEcliptic,cometOrbitPath} from './comet-orbits.js';
 import {asteroidPosition,asteroidPath} from './asteroid-orbits.js';
+import {minorBodyGeometry} from './minor-body-geometry.js';
 import {renderEarth,earthTextureStatus,earthCoordinatesAt} from './earth-renderer.js';
 import {cloudStatus,refreshClouds} from './clouds.js';
 import {findPlanetaryEvent,eventPlanets,eventOptions} from './planetary-events.js';
@@ -768,6 +769,25 @@ function orrery(){
  if(asteroidSelect&&asteroidSelect.value!==(selectedAsteroid?.name||''))asteroidSelect.value=selectedAsteroid?.name||'';
  const visibleAsteroids=asteroidObjects().filter(obj=>$('orrery-show-asteroids').checked||obj.name===selectedAsteroid?.name);
  const asteroidCoords=visibleAsteroids.map(obj=>({obj,pos:asteroidPosition(obj.elements,state.date)})).filter(x=>x.pos);
+ const selectedMinor=selectedComet||selectedAsteroid;
+ const selectedMinorPosition=selectedComet?comet:
+  asteroidCoords.find(item=>item.obj.name===selectedAsteroid?.name)?.pos||null;
+ const orbitGeometry=selectedMinor?minorBodyGeometry(selectedMinor,selectedMinorPosition):null;
+ const inspector=$('orrery-orbit-geometry');
+ inspector.hidden=!orbitGeometry;
+ if(orbitGeometry){
+  const x=orbitGeometry;
+  const sign=n=>(n>=0?'+':'')+n.toFixed(3);
+  inspector.textContent=x.name+' · inclination '+x.inclinationDeg.toFixed(2)+'°'+
+   ' · eccentricity '+x.eccentricity.toFixed(5)+
+   ' · perihelion '+x.perihelionAU.toFixed(3)+' AU'+
+   (x.aphelionAU===null?' · no finite aphelion':' · aphelion '+x.aphelionAU.toFixed(3)+' AU')+
+   ' · ecliptic height '+sign(x.heightAU)+' AU'+
+   ' · ascending node '+x.nodeDeg.toFixed(2)+'°'+
+   ' · '+(x.heightAU>=0?'north of ecliptic':'south of ecliptic')+
+   ' · approximate, unperturbed orbit';
+ }else inspector.textContent='';
+ $('orrery').dataset.orbitGeometry=JSON.stringify(orbitGeometry);
  const defaultMaximum=outer?30.07:1.524;
  const selectedDistance=comet?.distanceAU||asteroidCoords.find(x=>x.obj.name===selectedAsteroid?.name)?.pos.distanceAU;
  const maximum=fitSelectedComet&&selectedDistance?Math.max(defaultMaximum,selectedDistance*1.2):defaultMaximum;
@@ -858,6 +878,18 @@ function orrery(){
    c.save();c.strokeStyle='#f0c477';c.lineWidth=1.8;c.setLineDash([6,5]);
    c.beginPath();c.moveTo(X,Y);c.lineTo(ex,ey);c.lineTo(px,py);c.stroke();c.restore();
   }
+ }
+ // The optional drop line joins the selected minor body's actual
+ // heliocentric ecliptic Z to its projected location on the Z=0 plane.
+ // It shares the same camera as every planetary orbit and the mesh.
+ const heightGuideOn=Boolean($('orrery-height-guide').checked&&threeD&&selectedMinorPosition);
+ $('orrery').dataset.heightGuide=String(heightGuideOn);
+ if(heightGuideOn){
+  const p=selectedMinorPosition;
+  const [x1,y1]=project(p.y,p.x,p.z),[x0,y0]=project(p.y,p.x,0);
+  c.save();c.strokeStyle='#e2cc9a9c';c.lineWidth=1.15;c.setLineDash([3,4]);
+  c.beginPath();c.moveTo(x1,y1);c.lineTo(x0,y0);c.stroke();
+  c.setLineDash([]);c.fillStyle='#b2bec3';c.beginPath();c.arc(x0,y0,2.2,0,2*PI);c.fill();c.restore();
  }
  const asteroidsPlotted=[];
  for(const {obj,pos} of asteroidCoords){
@@ -1146,6 +1178,7 @@ function chooseOrreryMinorBody(object){
 }
 $('orrery-show-asteroids').addEventListener('change',()=>{orrery();persistPrefs()});
 $('orrery-show-comet-orbit').addEventListener('change',()=>{orrery();persistPrefs()});
+$('orrery-height-guide').addEventListener('change',()=>{orrery();persistPrefs()});
 $('orrery-asteroid-select').addEventListener('change',()=>{
  const object=asteroidObjects().find(o=>o.name===$('orrery-asteroid-select').value);
  if(object)chooseOrreryMinorBody(object);
@@ -2074,7 +2107,7 @@ applyLayout(activeLayout);
  * Simulation date/time and temporary pan/zoom are excluded by default.
  */
 const PREF_KEY='helioclock-preferences-v1',LEGACY_LAYOUT_KEY='helioclock-layout-v21';
-const PREF_CHECKBOXES=['orrery-3d','orrery-ecliptic-mesh','orrery-show-asteroids','orrery-show-comet-orbit','show-au-rings','show-earthshine','show-constellations',
+const PREF_CHECKBOXES=['orrery-3d','orrery-ecliptic-mesh','orrery-show-asteroids','orrery-show-comet-orbit','orrery-height-guide','show-au-rings','show-earthshine','show-constellations',
  'show-milkyway-shade','show-milkyway-outline','show-galactic-center',
  'show-stars','show-comets','show-asteroids','show-labels','show-sky-paths','show-below-horizon',
  'show-dso-galaxies','show-dso-nebulae','show-dso-clusters','show-dso-labels','show-constellation-names',

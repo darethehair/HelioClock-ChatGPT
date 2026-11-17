@@ -764,3 +764,8 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 
 /* v107: unobtrusive selected-orbit readout, including on touch devices. */
 .orrery-inspection{font-size:11px;line-height:1.5;color:#c8dbea;padding:5px 1px 9px;min-height:28px}
+
+/* v108: compact explanation of selected minor-body orbital geometry. */
+.orrery-orbit-geometry{font-size:11px;line-height:1.65;color:#e0cee9;background:#151b30;
+ padding:8px 11px;margin:0 0 8px;border:1px solid #554267;border-radius:7px}
+.orrery-orbit-geometry[hidden]{display:none!important}

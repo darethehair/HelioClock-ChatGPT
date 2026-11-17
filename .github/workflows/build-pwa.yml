@@ -78,6 +78,7 @@ jobs:
           node --check sw.js
           node --check comet-catalog.js
           node --check comet-orbits.js
+          node --check minor-body-geometry.js
           node --check asteroid-orbits.js
           node --check scripts/update-major-asteroids.mjs
           node --check horizons-validation.js
@@ -110,6 +111,8 @@ jobs:
         run: node tests/horizons-validation.test.mjs
       - name: Asteroid orbital unit regression
         run: npx esbuild tests/asteroids.test.mjs --bundle --platform=node --format=esm --outfile=/tmp/helioclock-asteroids-test.mjs && node /tmp/helioclock-asteroids-test.mjs
+      - name: Minor-body orbital geometry unit checks
+        run: node tests/minor-body-geometry.test.mjs
       - name: Lunar sky marker regression
         run: node --test tests/sky-moon-phase.test.mjs
       - name: Bundle application
