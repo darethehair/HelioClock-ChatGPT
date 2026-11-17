@@ -4,7 +4,7 @@ const asteroid=minorBodyGeometry({name:'Vesta',type:'Asteroid',elements:{
  aAU:2.5,eccentricity:.2,inclinationDeg:7,nodeDeg:103,argPeriDeg:150
 }},{x:1,y:2,z:-.4,epochAgeDays:10});
 assert.equal(asteroid.perihelionAU,2);
-assert.equal(asteroid.aphelionAU,3);
+assert.ok(Math.abs(asteroid.aphelionAU-3)<1e-12);
 assert.equal(asteroid.heightAU,-.4);
 assert.equal(asteroid.inclinationDeg,7);
 assert.ok(Math.abs(asteroid.sunDistanceAU-Math.sqrt(5.16))<1e-12);
