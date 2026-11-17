@@ -1,4 +1,4 @@
-import {findCelestialObjects,celestialObjectPosition,celestialDailyEvents,setCometSearchObjects,cometObjectsForMap} from './celestial-search.js';
+import {findCelestialObjects,celestialObjectPosition,celestialDailyEvents,setCometSearchObjects,cometObjectsForMap,setAsteroidSearchObjects,asteroidObjects} from './celestial-search.js';
 import {drawSkyMoon,moonBrightDirection} from './sky-moon-phase.js';
 import {renderAlmanac} from './almanac.js';
 import {drawEcliptic} from './ecliptic.js';
@@ -16,6 +16,7 @@ import {drawSolarYear} from './solar-chart.js';
 import {drawSkyGrid} from './sky-grid.js';
 import {skyPlanets} from './sky-planets.js';
 import {cometHeliocentricEcliptic,cometOrbitPath} from './comet-orbits.js';
+import {asteroidPosition,asteroidPath} from './asteroid-orbits.js';
 import {renderEarth,earthTextureStatus,earthCoordinatesAt} from './earth-renderer.js';
 import {cloudStatus,refreshClouds} from './clouds.js';
 import {findPlanetaryEvent,eventPlanets,eventOptions} from './planetary-events.js';
@@ -81,6 +82,17 @@ async function loadCometCatalogStatus(){
  }catch{el.textContent='Comet catalogue not available · check latest build';}
 }
 loadCometCatalogStatus();
+async function loadAsteroids(){
+ const status=$('asteroid-catalog-status');
+ try{
+  const res=await fetch('./major-asteroids.json');if(!res.ok)throw Error('unavailable');
+  const data=await res.json();if(data.records?.length!==4)throw Error('incomplete');
+  setAsteroidSearchObjects(data.records);
+  status.textContent='NASA/JPL SBDB · four major bodies · downloaded '+sourceTimestamp(data.retrievedUtc)+' · approximate orbits';
+  renderCelestialFinder();sky();orrery();
+ }catch{status.textContent='Asteroid catalogue unavailable in this build';}
+}
+loadAsteroids();
 let selectedCelestialObject=null;
 let followCelestialObject=false;
 let finderEventsCache={key:null,result:null};
@@ -118,11 +130,12 @@ function renderCelestialFinder(){
   ' · Az '+pos.az.toFixed(2)+'° · Alt '+pos.alt.toFixed(2)+'°'+
   (pos.alt>=0?' · Above horizon':' · Below horizon')+
   (o.type==='Constellation'?' · Approximate constellation centre':'')+
-   (o.type==='Comet'?' · Approximate comet orbit (no planetary perturbations)':'');
+   (o.type==='Comet'?' · Approximate comet orbit (no planetary perturbations)':'')+
+   (o.type==='Asteroid'||o.type==='Dwarf planet'?' · Approximate two-body orbit':'');
  detail.append(title,info);
- if(o.type==='Comet'){
+ if(['Comet','Asteroid','Dwarf planet'].includes(o.type)){
   const extra=document.createElement('p'),e=o.elements;
-  extra.textContent='Earth distance '+pos.distanceAU.toFixed(3)+' AU · Sun distance '+pos.sunDistanceAU.toFixed(3)+' AU · q '+e.qAU+' AU · eccentricity '+e.eccentricity+
+  extra.textContent='Earth distance '+pos.distanceAU.toFixed(3)+' AU · Sun distance '+pos.sunDistanceAU.toFixed(3)+' AU · q '+(e.qAU??e.aAU)+' AU · eccentricity '+e.eccentricity+
    (Number.isFinite(pos.epochAgeDays)?' · Element epoch '+Math.round(pos.epochAgeDays)+' days from simulated date':' · Orbit epoch unavailable');
   const warning=document.createElement('p');
   warning.textContent='⚠ Approximate unperturbed orbit. Position can be significantly wrong far from the element epoch, near planetary encounters or for outgassing comets. Not a JPL Horizons prediction.';
@@ -561,6 +574,24 @@ function sky(){
  $('sky').dataset.planets=JSON.stringify(plottedPlanets);
  // A small, filtered comet layer. Symbols represent approximate orbit
  // locations, NOT predicted visibility or physical tail direction.
+ const drawnAsteroids=[];
+ for(const obj of asteroidObjects()){
+  const selected=obj.name===selectedCelestialObject?.name&&['Asteroid','Dwarf planet'].includes(selectedCelestialObject?.type);
+  if(!selected&&!$('show-asteroids').checked)continue;
+  const p=celestialObjectPosition(obj,state.date,state.lat,state.lon,state.usePrecession);
+  if(!p||(!belowHorizon&&p.alt<0))continue;
+  const [x,y]=rectSky?projectRect(p.az,p.alt,w,h,state.skyHeading):
+   [X+rad*(1-p.alt/90)*Math.cos((p.az-90-state.skyHeading)*RAD),
+    Y+rad*(1-p.alt/90)*Math.sin((p.az-90-state.skyHeading)*RAD)];
+  const sx=rectSky?w/2+(x-w/2)*state.skyZoom+state.skyPanX:x+state.skyPanX;
+  const sy=rectSky?h/2+(y-h/2)*state.skyZoom+state.skyPanY:y+state.skyPanY;
+  if(!Number.isFinite(sx)||!Number.isFinite(sy)||sx<0||sx>w||sy<0||sy>h)continue;
+  c.save();c.translate(x,y);if(rectSky)c.scale(1/state.skyZoom,1/state.skyZoom);
+  c.rotate(Math.PI/4);c.fillStyle='#dfb5ff';c.fillRect(-3,-3,6,6);c.restore();
+  if($('show-labels').checked&&!selected)label(c,obj.name,x+8,y-6,'#dfb5ff',10);
+  drawnAsteroids.push({name:obj.name,az:p.az,alt:p.alt,selected});
+ }
+ $('sky').dataset.asteroids=JSON.stringify(drawnAsteroids);
  const drawnComets=[];
  for(const object of cometObjectsForMap(state.date,$('show-comets').checked,selectedCelestialObject)){
    const targeted=object.type==='Comet'&&selectedCelestialObject?.type==='Comet'&&
@@ -728,8 +759,12 @@ function orrery(){
  const selectedComet=selectedCelestialObject?.type==='Comet'?selectedCelestialObject:null;
  const comet=selectedComet?cometHeliocentricEcliptic(selectedComet.elements,state.date):null;
  const cometPath=selectedComet?cometOrbitPath(selectedComet.elements,150):[];
+ const selectedAsteroid=['Asteroid','Dwarf planet'].includes(selectedCelestialObject?.type)?selectedCelestialObject:null;
+ const visibleAsteroids=asteroidObjects().filter(obj=>$('show-asteroids').checked||obj.name===selectedAsteroid?.name);
+ const asteroidCoords=visibleAsteroids.map(obj=>({obj,pos:asteroidPosition(obj.elements,state.date)})).filter(x=>x.pos);
  const defaultMaximum=outer?30.07:1.524;
- const maximum=fitSelectedComet&&comet?Math.max(defaultMaximum,comet.distanceAU*1.2):defaultMaximum;
+ const selectedDistance=comet?.distanceAU||asteroidCoords.find(x=>x.obj.name===selectedAsteroid?.name)?.pos.distanceAU;
+ const maximum=fitSelectedComet&&selectedDistance?Math.max(defaultMaximum,selectedDistance*1.2):defaultMaximum;
  const scale=Math.min(w*.44,h*.43)/maximum*state.orreryZoom;
  const tilt=(threeD?state.orreryTilt:0)*RAD,rotation=(threeD?state.orreryRotation:0)*RAD;
  // Rotate the ecliptic around its pole, then tip it toward the observer.
@@ -795,6 +830,20 @@ function orrery(){
    c.beginPath();c.moveTo(X,Y);c.lineTo(ex,ey);c.lineTo(px,py);c.stroke();c.restore();
   }
  }
+ const asteroidsPlotted=[];
+ for(const {obj,pos} of asteroidCoords){
+  const track=asteroidPath(obj.elements);
+  c.save();c.strokeStyle='#a37db67f';c.lineWidth=.8;c.beginPath();
+  track.forEach((p,i)=>{const [x,y]=project(p.y,p.x,threeD?p.z:0);if(!i)c.moveTo(x,y);else c.lineTo(x,y)});
+  c.stroke();c.restore();
+  const [x,y]=project(pos.y,pos.x,threeD?pos.z:0);
+  if(x>=0&&x<=w&&y>=0&&y<=h){
+   c.save();c.fillStyle='#dfb5ff';c.translate(x,y);c.rotate(Math.PI/4);c.fillRect(-3,-3,6,6);c.restore();
+   if(obj.name===selectedAsteroid?.name||outer)label(c,obj.name,x+8,y-7,'#dfb5ff',10);
+  }
+  asteroidsPlotted.push({name:obj.name,radiusAU:pos.distanceAU});
+ }
+ $('orrery').dataset.asteroids=JSON.stringify(asteroidsPlotted);
  // Draw the selected comet in the same ecliptic coordinate system as planets.
  // This is a two-body guide, and open/extreme trajectories are clipped at 150 AU.
  const cometStatus=$('orrery-comet-status');
@@ -824,7 +873,8 @@ function orrery(){
   cometStatus.textContent='Select a comet in the Sky Compass finder to see its orbit here.';
   $('orrery').dataset.comet='null';
  }
- $('orrery-fit-comet').disabled=!comet;
+ $('orrery-fit-comet').disabled=!(comet||selectedAsteroid);
+ $('orrery-fit-comet').textContent=selectedAsteroid?'Fit selected asteroid':'Fit selected comet';
  // Draw farther bodies first in the tilted view.
  const markers=planets.map(p=>({p,screen:position(p)})).sort((a,b)=>b.screen[2]-a.screen[2]);
  dot(c,X,Y,outer?5:12,'#ffcd7d',18);
@@ -1015,7 +1065,7 @@ for(const button of document.querySelectorAll('[data-event-direction]')){
 }
 updateOrreryEventChoices();
 $('orrery-fit-comet').addEventListener('click',()=>{
- if(selectedCelestialObject?.type!=='Comet')return;
+ if(!['Comet','Asteroid','Dwarf planet'].includes(selectedCelestialObject?.type))return;
  fitSelectedComet=true;orrery();
 });
 // Discs share pan/zoom controls, but preserve independent zoom and pan between views.
@@ -1426,6 +1476,7 @@ $('star-magnitude').addEventListener('change',e=>{
 });
 $('show-constellations').addEventListener('change',render);
 $('show-comets').addEventListener('change',render);
+$('show-asteroids').addEventListener('change',render);
 for(const id of ['show-milkyway-shade','show-milkyway-outline','show-galactic-center'])$(id).addEventListener('change',render);
 window.addEventListener('helioclock-milkyway-ready',render);
 $('mw-copy-debug').addEventListener('click',async()=>{
@@ -1898,7 +1949,7 @@ applyLayout(activeLayout);
 const PREF_KEY='helioclock-preferences-v1',LEGACY_LAYOUT_KEY='helioclock-layout-v21';
 const PREF_CHECKBOXES=['orrery-3d','show-au-rings','show-earthshine','show-constellations',
  'show-milkyway-shade','show-milkyway-outline','show-galactic-center',
- 'show-stars','show-comets','show-labels','show-sky-paths','show-below-horizon',
+ 'show-stars','show-comets','show-asteroids','show-labels','show-sky-paths','show-below-horizon',
  'show-dso-galaxies','show-dso-nebulae','show-dso-clusters','show-dso-labels','show-constellation-names',
  'show-ecliptic','use-precession','show-stellar-colors',
  'show-planets','show-altaz-grid','show-radec-grid',

@@ -78,6 +78,8 @@ jobs:
           node --check sw.js
           node --check comet-catalog.js
           node --check comet-orbits.js
+          node --check asteroid-orbits.js
+          node --check scripts/update-major-asteroids.mjs
           node --check horizons-validation.js
           node --check scripts/verify-halley-horizons.mjs
           node --check scripts/update-comets.mjs
@@ -106,6 +108,8 @@ jobs:
         run: npx esbuild tests/comet-orbits.test.mjs --bundle --platform=node --format=esm --outfile=/tmp/helioclock-comet-orbits-test.mjs && node /tmp/helioclock-comet-orbits-test.mjs
       - name: JPL Horizons XYZ comparison parser regression
         run: node tests/horizons-validation.test.mjs
+      - name: Asteroid orbital unit regression
+        run: npx esbuild tests/asteroids.test.mjs --bundle --platform=node --format=esm --outfile=/tmp/helioclock-asteroids-test.mjs && node /tmp/helioclock-asteroids-test.mjs
       - name: Lunar sky marker regression
         run: node --test tests/sky-moon-phase.test.mjs
       - name: Bundle application
@@ -343,6 +347,8 @@ jobs:
           key: helioclock-mpc-comets-v1-${{ github.run_id }}
       - name: Compare Halley at 1986, 2026 and 2061 with JPL Horizons
         run: node scripts/verify-halley-horizons.mjs dist/comets.json dist/halley-validation.json
+      - name: Package JPL major asteroid elements
+        run: node scripts/update-major-asteroids.mjs dist/major-asteroids.json
       - name: Stage static files for browser test
         run: cp index.html styles.css astronomy.js manifest.webmanifest sw.js icon.svg hero-landscape-natural.webp dist/ && ver="$(node -p 'require("./package.json").version.split(".")[0]')" && printf '{"version":%s,"test":true,"commit":"%s","built_utc":"%s"}\n' "$ver" "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > dist/build-info.json
       - name: Stamp cache identity for browser tests

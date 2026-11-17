@@ -4,6 +4,7 @@ import {CONSTELLATION_NAMES} from './sky-constellation-names.js';
 import {horizontal,precessJ2000} from './astronomy.js';
 import {skyPlanets} from './sky-planets.js';
 import {cometTopocentricPosition} from './comet-orbits.js';
+import {asteroidSky} from './asteroid-orbits.js';
 
 const PLANET_NAMES=['Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune'];
 export const SEARCH_OBJECTS=[
@@ -13,6 +14,13 @@ export const SEARCH_OBJECTS=[
  ...CONSTELLATION_NAMES.map(([abbr,name,ra,dec])=>({name,type:'Constellation',ra,dec,alias:abbr,approximate:true}))
 ];
 let cometSearchObjects=[];
+let asteroidSearchObjects=[];
+export function setAsteroidSearchObjects(records){
+ asteroidSearchObjects=records.map(elements=>({name:elements.name,type:elements.type,alias:String(elements.number),dynamic:true,elements}));
+ return asteroidSearchObjects.length;
+}
+export function asteroidObjects(){return asteroidSearchObjects}
+
 export function setCometSearchObjects(records){
  const unique=new Map();
  for(const e of records){
@@ -62,7 +70,7 @@ export function cometObjectsForMap(date,showAutomatic=false,selected=null){
 export function findCelestialObjects(query,limit=12){
  const q=String(query||'').trim().toLocaleLowerCase();
  if(!q)return [];
- const candidates=q.length>=2?[...SEARCH_OBJECTS,...cometSearchObjects]:SEARCH_OBJECTS;
+ const candidates=q.length>=2?[...SEARCH_OBJECTS,...cometSearchObjects,...asteroidSearchObjects]:SEARCH_OBJECTS;
  return candidates.filter(o=>[o.name,o.alias].some(n=>n&&n.toLocaleLowerCase().includes(q)))
   .sort((a,b)=>Number(a.name.toLocaleLowerCase()===q)-Number(b.name.toLocaleLowerCase()===q)||
     Number(a.name.toLocaleLowerCase().startsWith(q))-Number(b.name.toLocaleLowerCase().startsWith(q))||
@@ -70,6 +78,7 @@ export function findCelestialObjects(query,limit=12){
 }
 export function celestialObjectPosition(object,date,lat,lon,precession=true){
  if(object.type==='Comet')return cometTopocentricPosition(object.elements,date,lat,lon);
+ if(object.type==='Asteroid'||object.type==='Dwarf planet')return asteroidSky(object.elements,date,lat,lon);
  if(object.type==='Planet'&&object.dynamic){
   const planet=skyPlanets(date,lat,lon).find(p=>p.name===object.name);
   return planet?{ra:planet.ra,decl:planet.decl,az:planet.az,alt:planet.alt}:null;
