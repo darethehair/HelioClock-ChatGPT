@@ -789,6 +789,29 @@ function orrery(){
   }
   c.stroke();c.restore();
  };
+ // Optional orientation reference: a low-contrast grid in the ecliptic
+ // (z = 0) so it flips correctly as the camera crosses edge-on and underside.
+ if($('orrery-ecliptic-mesh').checked){
+  const extent=outer?30:3.5;
+  const step=outer?5:.5;
+  c.save();c.strokeStyle='#6e91a529';c.lineWidth=.65;
+  for(let n=-extent;n<=extent+1e-8;n+=step){
+   c.beginPath();
+   let [sx,sy]=project(n,-extent);c.moveTo(sx,sy);
+   [sx,sy]=project(n,extent);c.lineTo(sx,sy);c.stroke();
+   c.beginPath();
+   [sx,sy]=project(-extent,n);c.moveTo(sx,sy);
+   [sx,sy]=project(extent,n);c.lineTo(sx,sy);c.stroke();
+  }
+  // Slightly stronger orthogonal principal axes, drawn without labels.
+  c.strokeStyle='#84aac547';c.lineWidth=.8;
+  for(const [a,b,d,e] of [[-extent,0,extent,0],[0,-extent,0,extent]]){
+   const [sx,sy]=project(a,b),[ex,ey]=project(d,e);
+   c.beginPath();c.moveTo(sx,sy);c.lineTo(ex,ey);c.stroke();
+  }
+  c.restore();
+ }
+ $('orrery').dataset.mesh=String($('orrery-ecliptic-mesh').checked);
  // Orbit guides use each body's instantaneous heliocentric radius, as before;
  // actual planetary markers use their measured ecliptic heights.
  // Sample each planet's actual inclined heliocentric path over one sidereal period.
@@ -843,7 +866,7 @@ function orrery(){
   const [x,y]=project(pos.y,pos.x,threeD?pos.z:0);
   if(x>=0&&x<=w&&y>=0&&y<=h){
    c.save();c.fillStyle='#dfb5ff';c.translate(x,y);c.rotate(Math.PI/4);c.fillRect(-3,-3,6,6);c.restore();
-   if(obj.name===selectedAsteroid?.name||outer)label(c,obj.name,x+8,y-7,'#dfb5ff',10);
+   label(c,obj.name,x+8,y-7,'#dfb5ff',10);
   }
   asteroidsPlotted.push({name:obj.name,radiusAU:pos.distanceAU});
  }
@@ -1031,7 +1054,14 @@ $('sky-zoom-out').addEventListener('click',()=>setPolarSkyZoom(Math.round(clamp(
 $('sky-zoom-in').addEventListener('click',()=>setPolarSkyZoom(Math.round(clamp(state.skyZoom*1.25,1,3)*100)/100));
 viewRange('earth-zoom','earthZoom');
 // Camera-only changes redraw the orrery, not the Earth, sky, Moon and almanac.
-function orreryRange(id,key){$(id).addEventListener('input',e=>{state[key]=Number(e.target.value);orrery()})}
+function orreryRange(id,key){
+ $(id).addEventListener('input',e=>{
+  state[key]=Number(e.target.value);
+  const number=$((id==='orrery-tilt'?'orrery-tilt-number':id==='orrery-rotation'?'orrery-rotation-number':''));
+  if(number)number.value=String(state[key]);
+  orrery();
+ });
+}
 orreryRange('orrery-zoom','orreryZoom');
 $('orrery-3d').addEventListener('change',e=>{
  state.orrery3D=e.target.checked;
@@ -1040,6 +1070,17 @@ $('orrery-3d').addEventListener('change',e=>{
 });
 orreryRange('orrery-tilt','orreryTilt');
 orreryRange('orrery-rotation','orreryRotation');
+for(const [id,key] of [['orrery-tilt','orreryTilt'],['orrery-rotation','orreryRotation']]){
+ const field=$(id+'-number');
+ field.addEventListener('change',()=>{
+  const value=Number(field.value);
+  state[key]=Number.isFinite(value)?Math.max(-180,Math.min(180,value)):0;
+  field.value=String(state[key]);
+  $(id).value=String(state[key]);
+  orrery();
+ });
+}
+$('orrery-ecliptic-mesh').addEventListener('change',()=>{orrery();persistPrefs()});
 // Shared disc viewer handles the Moon slider and pan/zoom interaction.
 $('show-au-rings').addEventListener('change',orrery);
 for(const button of document.querySelectorAll('[data-orbit-mode]')){
@@ -1987,7 +2028,7 @@ applyLayout(activeLayout);
  * Simulation date/time and temporary pan/zoom are excluded by default.
  */
 const PREF_KEY='helioclock-preferences-v1',LEGACY_LAYOUT_KEY='helioclock-layout-v21';
-const PREF_CHECKBOXES=['orrery-3d','orrery-show-asteroids','orrery-show-comet-orbit','show-au-rings','show-earthshine','show-constellations',
+const PREF_CHECKBOXES=['orrery-3d','orrery-ecliptic-mesh','orrery-show-asteroids','orrery-show-comet-orbit','show-au-rings','show-earthshine','show-constellations',
  'show-milkyway-shade','show-milkyway-outline','show-galactic-center',
  'show-stars','show-comets','show-asteroids','show-labels','show-sky-paths','show-below-horizon',
  'show-dso-galaxies','show-dso-nebulae','show-dso-clusters','show-dso-labels','show-constellation-names',

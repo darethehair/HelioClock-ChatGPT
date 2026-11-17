@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v105",
+      "summary": "Label all four minor bodies in the Orrery, extend 3D tilt through ±180°, show editable tilt/rotation degrees, and optionally draw a faint ecliptic reference mesh."
+    },
+    {
       "version": "v104",
       "summary": "Add independent Orrery minor-body controls to toggle all four JPL asteroids, choose one directly, search for any bundled MPC comet, show/hide comet orbit guides, and clear selections without leaving the Orrery."
     },

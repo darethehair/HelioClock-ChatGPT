@@ -2497,3 +2497,23 @@ test('Orrery minor-body controls select bodies independently of Sky Compass laye
  await expect(page.locator('#orrery-fit-comet')).toBeDisabled();
  await expect(page.locator('#celestial-clear-selection')).toBeHidden();
 });
+
+test('Orrery labels all four minor bodies and provides reversible numeric 3D tilt and faint mesh',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await expect.poll(()=>page.locator('#orrery-asteroid-select option').count()).toBe(5);
+ await page.locator('#orrery-show-asteroids').check();
+ await expect.poll(()=>page.locator('#orrery').evaluate(el=>JSON.parse(el.dataset.asteroids||'[]').length)).toBe(4);
+ await page.locator('#orrery-3d').check();
+ await page.locator('#orrery-tilt').fill('140');
+ await expect(page.locator('#orrery-tilt-number')).toHaveValue('140');
+ await page.locator('#orrery-tilt-number').fill('-125');
+ await page.locator('#orrery-tilt-number').dispatchEvent('change');
+ await expect(page.locator('#orrery-tilt')).toHaveValue('-125');
+ await page.locator('#orrery-rotation-number').fill('70');
+ await page.locator('#orrery-rotation-number').dispatchEvent('change');
+ await expect(page.locator('#orrery-rotation')).toHaveValue('70');
+ await page.locator('#orrery-ecliptic-mesh').check();
+ await expect(page.locator('#orrery')).toHaveAttribute('data-mesh','true');
+ await page.locator('#orrery-ecliptic-mesh').uncheck();
+ await expect(page.locator('#orrery')).toHaveAttribute('data-mesh','false');
+});

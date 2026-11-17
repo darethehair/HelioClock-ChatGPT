@@ -757,3 +757,7 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 .orrery-minor-body-controls button{background:#1a3349;color:#d8ecfb;border:1px solid #54718c;border-radius:5px;padding:6px 9px;cursor:pointer;font-size:11px}
 .orrery-minor-body-controls button:hover{border-color:#afd8f4}
 .orrery-minor-body-controls small{flex-basis:100%;color:#a5bccc;line-height:1.35}
+
+/* v105: numerical 3D camera controls and ecliptic reference. */
+.orrery-angle-number{width:51px!important;min-width:51px!important;max-width:51px!important;height:26px;padding:3px 5px!important;border:1px solid #547087;border-radius:5px;background:#14283d;color:#e0eff9;font-size:11px;font-variant-numeric:tabular-nums}
+.orrery-3d-setting{gap:5px}
