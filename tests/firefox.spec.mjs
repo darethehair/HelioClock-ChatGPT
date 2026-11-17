@@ -2485,6 +2485,7 @@ test('Orrery minor-body controls select bodies independently of Sky Compass laye
  await page.locator('#orrery-asteroid-select').selectOption('Vesta');
  await expect.poll(()=>page.locator('#orrery').evaluate(el=>JSON.parse(el.dataset.asteroids||'[]').map(x=>x.name))).toEqual(['Vesta']);
  await expect(page.locator('#orrery-comet-status')).toContainText('Vesta');
+ await page.locator('.sky-panel .celestial-finder').evaluate(el=>el.open=true);
  await expect(page.locator('#celestial-clear-selection')).toBeVisible();
  await page.locator('#orrery-comet-search').fill('Halley');
  await page.locator('#orrery-find-comet').click();
