@@ -870,7 +870,11 @@ function orrery(){
    (comet.distanceAU>maximum?' · outside view; choose Fit selected comet':'');
   $('orrery').dataset.comet=JSON.stringify({name:selectedComet.name,x:comet.x,y:comet.y,z:comet.z,radiusAU:comet.distanceAU,fit:fitSelectedComet});
  }else{
-  cometStatus.textContent='Select a comet in the Sky Compass finder to see its orbit here.';
+  const selectedBody=asteroidCoords.find(item=>item.obj.name===selectedAsteroid?.name)?.pos;
+  cometStatus.textContent=selectedBody
+   ?selectedAsteroid.name+' · '+selectedBody.distanceAU.toFixed(2)+
+    ' AU from Sun · approximate two-body orbit · elements '+Math.round(selectedBody.epochAgeDays)+' days from simulated date'
+   :'Select a comet or asteroid in the Sky Compass finder to see its orbit here.';
   $('orrery').dataset.comet='null';
  }
  $('orrery-fit-comet').disabled=!(comet||selectedAsteroid);
@@ -883,7 +887,7 @@ function orrery(){
   if(outer||p.radius*scale>20)label(c,p.name,x+8,y-7,p.color,10);
  });
  $('planet-legend').innerHTML=planets.map(p=>'<span style="color:'+p.color+'">● '+p.name+'</span>').join('');
- $('au-scale-description').textContent=(outer?'Outer view · 5 AU intervals':'Inner view · 0.25 AU intervals')+(threeD?' · ecliptic perspective':'')+(fitSelectedComet&&comet?' · fitted comet':'');
+ $('au-scale-description').textContent=(outer?'Outer view · 5 AU intervals':'Inner view · 0.25 AU intervals')+(threeD?' · ecliptic perspective':'')+(fitSelectedComet&&selectedDistance?' · fitted selected object':'');
 }
 function formatCoord(n,positive,negative){return Math.abs(n).toFixed(2)+'° '+(n>=0?positive:negative)}
 let almanacCurrent=null;
