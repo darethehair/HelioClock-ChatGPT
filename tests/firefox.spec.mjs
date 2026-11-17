@@ -2600,3 +2600,20 @@ test('100 size-ranked minor planets are searchable by numbered designation',asyn
  await page.locator('#orrery-asteroid-select').selectOption('Vesta');
  await expect.poll(()=>page.locator('#orrery').evaluate(el=>JSON.parse(el.dataset.asteroids||'[]').map(x=>x.name))).toEqual(['Vesta']);
 });
+
+test('Minor planets use hollow-circle markers; ecliptic risers also cover planets',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await expect.poll(()=>page.locator('#orrery-asteroid-select option').count()).toBe(101);
+ await page.locator('#orrery-show-asteroids').check();
+ await expect(page.locator('#orrery')).toHaveAttribute('data-minor-marker-style','hollow-circle');
+ await page.locator('#orrery-3d').check();
+ await page.locator('#orrery-height-guide').check();
+ const guides=await page.locator('#orrery').evaluate(el=>JSON.parse(el.dataset.planetGuides||'[]'));
+ expect(guides.map(p=>p.name)).toEqual(['Mercury','Venus','Earth','Mars']);
+ expect(guides.find(p=>p.name==='Mercury').heightAU).not.toBe(0);
+ await page.locator('[data-orbit-mode="outer"]').click();
+ const outer=await page.locator('#orrery').evaluate(el=>JSON.parse(el.dataset.planetGuides||'[]'));
+ expect(outer.map(p=>p.name)).toEqual(['Jupiter','Saturn','Uranus','Neptune']);
+ await page.locator('#orrery-height-guide').uncheck();
+ await expect.poll(()=>page.locator('#orrery').evaluate(el=>JSON.parse(el.dataset.planetGuides||'[]').length)).toBe(0);
+});

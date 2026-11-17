@@ -105,6 +105,7 @@ Release highlights are curated in [`release-notes.json`](release-notes.json). Wh
 
 | Release | Highlights |
 | --- | --- |
+| **v110** | Replace 100 minor-planet diamond markers with small hollow circles (selected body enlarged), and extend optional ecliptic height risers to visible planets, with numeric planet height in inspection. |
 | **v109** | 100 searchable diameter-ranked numbered minor planets from NASA/JPL; low-cost markers, selective orbit paths, labels for the primary four and the selected body. |
 | **v108** | Inspect selected comet/asteroid inclination, eccentricity, perihelion and aphelion, ascending node, and signed ecliptic height; optionally show a 3D drop line to the ecliptic plane. |
 | **v107** | Click or tap Orrery planet, asteroid, or selected-comet markers for a synchronized object selection, highlighting, heliocentric distance and date readout; gestures still rotate without selecting. |

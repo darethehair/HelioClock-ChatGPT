@@ -909,13 +909,19 @@ function orrery(){
   }
   const [x,y]=project(pos.y,pos.x,threeD?pos.z:0);
   if(x>=0&&x<=w&&y>=0&&y<=h){
-   c.save();c.fillStyle='#dfb5ff';c.translate(x,y);c.rotate(Math.PI/4);c.fillRect(-3,-3,6,6);c.restore();
-   if(obj.elements.number<=4||obj.name===selectedAsteroid?.name)label(c,obj.name,x+8,y-7,'#dfb5ff',10);
+   // Small unfilled circles keep the 100-body layer visually distinct from
+   // filled planet discs. A selected body gets a slightly brighter ring.
+   const selected=obj.name===selectedAsteroid?.name;
+   c.save();c.beginPath();c.arc(x,y,selected?4.1:2.7,0,2*PI);
+   c.strokeStyle=selected?'#f1d6ff':'#bc9bd4';
+   c.lineWidth=selected?1.55:1.05;c.stroke();c.restore();
+   if(obj.elements.number<=4||selected)label(c,obj.name,x+8,y-7,'#dfb5ff',10);
   }
   if(x>=0&&x<=w&&y>=0&&y<=h)hitTargets.push({name:obj.name,type:obj.type,x,y,distanceAU:pos.distanceAU});
   asteroidsPlotted.push({name:obj.name,radiusAU:pos.distanceAU});
  }
  $('orrery').dataset.asteroids=JSON.stringify(asteroidsPlotted);
+ $('orrery').dataset.minorMarkerStyle='hollow-circle';
  // Draw the selected comet in the same ecliptic coordinate system as planets.
  // This is a two-body guide, and open/extreme trajectories are clipped at 150 AU.
  const cometStatus=$('orrery-comet-status');
@@ -952,6 +958,26 @@ function orrery(){
  }
  $('orrery-fit-comet').disabled=!(comet||selectedAsteroid);
  $('orrery-fit-comet').textContent=selectedAsteroid?'Fit selected asteroid':'Fit selected comet';
+ // Planetary height guides use the same actual ecliptic Z coordinates
+ // (Astronomy Engine) as their markers, NOT a schematic orbital inclination.
+ // Keep all eight guides faint. Earth is the near-zero ecliptic reference.
+ const planetGuides=[];
+ if($('orrery-height-guide').checked&&threeD){
+  c.save();c.setLineDash([2,4]);c.lineWidth=.85;c.strokeStyle='#a6b6c268';
+  for(const p of planets){
+   const x=p.radius*Math.sin(p.angle*RAD),y=p.radius*Math.cos(p.angle*RAD);
+   const [topX,topY]=project(x,y,p.eclipticZ);
+   const [baseX,baseY]=project(x,y,0);
+   const heightAU=p.eclipticZ;
+   planetGuides.push({name:p.name,heightAU,from:[topX,topY],to:[baseX,baseY]});
+   if(Math.abs(heightAU)<1e-6)continue;
+   c.beginPath();c.moveTo(topX,topY);c.lineTo(baseX,baseY);c.stroke();
+   c.save();c.setLineDash([]);c.fillStyle='#a6b6c285';
+   c.beginPath();c.arc(baseX,baseY,1.7,0,2*PI);c.fill();c.restore();
+  }
+  c.restore();
+ }
+ $('orrery').dataset.planetGuides=JSON.stringify(planetGuides);
  // Draw farther bodies first in the tilted view.
  const markers=planets.map(p=>({p,screen:position(p)})).sort((a,b)=>b.screen[2]-a.screen[2]);
  dot(c,X,Y,outer?5:12,'#ffcd7d',18);
@@ -966,9 +992,10 @@ function orrery(){
  orreryHitTargets=hitTargets;
  $('orrery').dataset.hitTargets=JSON.stringify(hitTargets);
  const selected=hitTargets.find(t=>t.name===selectedCelestialObject?.name);
+ const selectedPlanet=selected?.type==='Planet'?planets.find(p=>p.name===selected.name):null;
  $('orrery-inspection').textContent=selected
   ?selected.name+' · '+selected.type+' · '+selected.distanceAU.toFixed(3)+' AU from Sun · '+state.date.toISOString().slice(0,16).replace('T',' ')+' UTC'+
-   (selected.type==='Planet'?' · Astronomy Engine ephemeris':' · approximate two-body orbit')
+   (selectedPlanet?' · ecliptic height '+(selectedPlanet.eclipticZ>=0?'+':'')+selectedPlanet.eclipticZ.toFixed(5)+' AU · Astronomy Engine ephemeris':' · approximate two-body orbit')
   :'Click or tap a plotted body to inspect its heliocentric position.';
  $('planet-legend').innerHTML=planets.map(p=>'<span style="color:'+p.color+'">● '+p.name+'</span>').join('');
  $('au-scale-description').textContent=(outer?'Outer view · 5 AU intervals':'Inner view · 0.25 AU intervals')+(threeD?' · ecliptic perspective':'')+(fitSelectedComet&&selectedDistance?' · fitted selected object':'');

@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v110",
+      "summary": "Replace 100 minor-planet diamond markers with small hollow circles (selected body enlarged), and extend optional ecliptic height risers to visible planets, with numeric planet height in inspection."
+    },
+    {
       "version": "v109",
       "summary": "100 searchable diameter-ranked numbered minor planets from NASA/JPL; low-cost markers, selective orbit paths, labels for the primary four and the selected body."
     },
