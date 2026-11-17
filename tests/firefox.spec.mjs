@@ -2451,3 +2451,23 @@ test('Selecting Halley draws cyan comet glyph even when automatic comet layer is
  await expect.poll(()=>page.locator('#sky').evaluate(el=>
   JSON.parse(el.dataset.comets||'[]').filter(x=>x.name.toLowerCase().includes('halley')).length)).toBe(1);
 });
+
+test('Clear selection removes Halley marker and Orrery orbit without altering time',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('.sky-panel .celestial-finder').evaluate(el=>el.open=true);
+ await page.locator('#celestial-search-input').fill('Halley');
+ const result=page.locator('#celestial-search-results button').filter({hasText:'Halley'}).first();
+ await expect(result).toBeVisible({timeout:15000});
+ await result.click();
+ const clear=page.locator('#celestial-clear-selection');
+ await expect(clear).toBeVisible();
+ await expect.poll(()=>page.locator('#orrery').evaluate(el=>JSON.parse(el.dataset.comet||'null')?.name)).toContain('Halley');
+ const before=await page.locator('#dock-date').inputValue();
+ await clear.click();
+ await expect(clear).toBeHidden();
+ await expect(page.locator('#celestial-search-input')).toHaveValue('');
+ await expect(page.locator('#orrery')).toHaveAttribute('data-comet','null');
+ await expect(page.locator('#sky')).toHaveAttribute('data-comets','[]');
+ await expect(page.locator('#dock-date')).toHaveValue(before);
+ await expect(page.locator('#orrery-fit-comet')).toBeDisabled();
+});

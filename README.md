@@ -105,6 +105,7 @@ Release highlights are curated in [`release-notes.json`](release-notes.json). Wh
 
 | Release | Highlights |
 | --- | --- |
+| **v102** | Add Clear selection to restore an unselected Sky Compass and Orrery; generate an offline, explicitly caveated JPL Horizons XYZ comparison for Halley at 1986, 2026, and 2061 in each packaged build. |
 | **v101** | Plot the selected comet's approximate heliocentric orbit and position in the Orrery with a Fit selected comet control, and keep Sky Compass grid lines thin and subtle under zoom. |
 | **v100** | Always draw the comet glyph for an explicitly selected object such as Halley, regardless of the automatic comet layer's age/range limits or visibility toggle; keep automatic markers filtered. |
 | **v99** | Add optional pale-cyan nucleus-and-tail comet icons to Sky Compass maps, with a persistent Show comets toggle and date-filtered MPC positions. |

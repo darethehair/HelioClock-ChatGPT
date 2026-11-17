@@ -94,6 +94,7 @@ function selectedObjectEvents(object){
 }
 function renderCelestialFinder(){
  const input=$('celestial-search-input'),results=$('celestial-search-results'),detail=$('celestial-search-detail');
+ $('celestial-clear-selection').hidden=!selectedCelestialObject;
  if(!input||!results||!detail)return;
  const matches=findCelestialObjects(input.value);
  results.replaceChildren();
@@ -202,6 +203,16 @@ function alignSkyToSelectedObject(ensureZoom=false){
  return true;
 }
 $('celestial-search-input').addEventListener('input',renderCelestialFinder);
+$('celestial-clear-selection').addEventListener('click',()=>{
+ selectedCelestialObject=null;
+ followCelestialObject=false;
+ fitSelectedComet=false;
+ finderEventsCache={key:null,result:null};
+ $('celestial-search-input').value='';
+ notice('');
+ renderCelestialFinder();
+ sky();orrery();
+});
 function canvas(el){
  const w=el.clientWidth,h=el.clientHeight,dpr=Math.min(devicePixelRatio||1,2);
  if(!w||!h)return null;

@@ -743,3 +743,7 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 .orrery-comet-tools button{background:#17354b;border:1px solid #5487a1;border-radius:6px;color:#d4f5ff;padding:7px 10px;font-size:11px}
 .orrery-comet-tools button:disabled{opacity:.45;cursor:default}
 .orrery-comet-tools span{flex:1 1 200px;line-height:1.4}
+
+/* v102: explicit exit from the celestial object finder. */
+#celestial-clear-selection{margin:7px 0 3px;padding:6px 10px;border:1px solid #547a94;background:#183249;border-radius:6px;color:#d9eeff;font-size:11px}
+#celestial-clear-selection[hidden]{display:none!important}
