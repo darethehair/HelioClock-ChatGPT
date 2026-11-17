@@ -2553,9 +2553,14 @@ test('Orrery click selects a plotted asteroid and planet without changing date',
  await expect(page.locator('#orrery-inspection')).toContainText('Vesta');
  await expect(page.locator('#orrery-comet-status')).toContainText('Vesta');
  await expect(page.locator('#dock-date')).toHaveValue(date);
+ // Selecting Vesta reveals the orbit-geometry inspector above the canvas,
+ // changing its page coordinates. Recompute the bounding box after that layout
+ // change instead of reusing the position recorded before the first click.
+ await page.locator('#orrery').scrollIntoViewIfNeeded();
  const planet=await page.locator('#orrery').evaluate(el=>JSON.parse(el.dataset.hitTargets||'[]').find(t=>t.name==='Neptune'));
  expect(planet).toBeTruthy();
- await page.mouse.click(bounds.x+planet.x,bounds.y+planet.y);
+ const nextBounds=await page.locator('#orrery').boundingBox();
+ await page.mouse.click(nextBounds.x+planet.x,nextBounds.y+planet.y);
  await expect(page.locator('#orrery-inspection')).toContainText('Neptune · Planet');
  await expect(page.locator('#orrery-inspection')).toContainText('Astronomy Engine');
 });
