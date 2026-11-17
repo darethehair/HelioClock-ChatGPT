@@ -259,13 +259,17 @@ test('Rectangular sky draws every 30-degree azimuth meridian visibly at 1x',asyn
   };
   return Array.from({length:11},(_,i)=>{
    const x=left+(i+1)*(right-left)/12;
-   return {az:(i+1)*30,bright:pixel(x),off:pixel(x+8)};
+   // The v101 meridians are intentionally subpixel-thin and translucent.
+   // Sampling a neighborhood catches antialiasing and fractional pixel
+   // alignment without demanding a thick bright line.
+   const bright=Math.max(...[-3,-2,-1,0,1,2,3].map(dx=>pixel(x+dx)));
+   const off=Math.max(...[-1,0,1].map(dx=>pixel(x+9+dx)));
+   return {az:(i+1)*30,bright,off};
   });
  });
- // A thin antialiased 0.85px line can land between device pixels.
- // Require a measurable contrast on each 30° meridian, rather than a
- // fixed 20-unit channel sum at a single subpixel.
- for(const p of check)expect(p.bright,JSON.stringify(p)).toBeGreaterThan(p.off+12);
+ // Require a visible meridian at each 30° interval, despite the deliberately
+ // muted stroke. An absent grid produces no local contrast at all.
+ for(const p of check)expect(p.bright,JSON.stringify(p)).toBeGreaterThan(p.off+6);
  const grid=await page.locator('#sky').evaluate(el=>JSON.parse(el.dataset.gridInfo));
  expect(grid.azStep).toBe(30);
  { await revealSkyControl(page,'show-altaz-grid'); await page.locator('#show-altaz-grid').uncheck(); }
