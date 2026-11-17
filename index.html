@@ -139,6 +139,15 @@
  <button type="button" data-event-direction="-1">‹ Previous</button>
  <button type="button" data-event-direction="1">Next ›</button>
  <small id="orrery-event-status" role="status" aria-live="polite">Choose Previous or Next to find a planetary event.</small>
+</div><div class="orrery-minor-body-controls" role="group" aria-label="Orrery minor bodies">
+ <strong>Minor bodies</strong>
+ <label><input type="checkbox" id="orrery-show-asteroids"> ◆ Show four asteroids</label>
+ <label><input type="checkbox" id="orrery-show-comet-orbit" checked> ☄ Comet orbit guide</label>
+ <label>Choose asteroid <select id="orrery-asteroid-select" aria-label="Choose asteroid in Orrery"><option value="">— Select —</option></select></label>
+ <label>Find comet <input id="orrery-comet-search" type="search" placeholder="e.g. Halley" aria-label="Comet name in Orrery" autocomplete="off"></label>
+ <button type="button" id="orrery-find-comet">Select comet</button>
+ <button type="button" id="orrery-clear-minor-body">Clear selection</button>
+ <small id="orrery-minor-body-message" role="status">Choose a minor body to display its approximate heliocentric orbit.</small>
 </div><div class="orrery-comet-tools"><button id="orrery-fit-comet" type="button" disabled>Fit selected comet</button><span id="orrery-comet-status" role="status">Select a comet in Sky Compass finder to show its orbit here.</span></div><canvas id="orrery" aria-label="Planets and selected comet orbit view"></canvas><div class="planet-legend" id="planet-legend"><span>● Mercury</span><span>● Venus</span><span>● Earth</span><span>● Mars</span></div></section>
  <section class="panel almanac-panel" hidden><button class="panel-fullscreen" type="button" data-fullscreen="almanac-panel" aria-label="Fullscreen astronomical information" title="Fullscreen (Esc to return)">⛶ Expand</button>
  <div class="panel-heading"><div><div class="section-kicker">07 / ASTRONOMICAL ALMANAC</div><h2>☀ Astronomical information ☾</h2><p>MChronos-inspired text almanac · events displayed in your device's local timezone</p></div></div>

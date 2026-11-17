@@ -2471,3 +2471,28 @@ test('Clear selection removes Halley marker and Orrery orbit without altering ti
  await expect(page.locator('#dock-date')).toHaveValue(before);
  await expect(page.locator('#orrery-fit-comet')).toBeDisabled();
 });
+
+test('Orrery minor-body controls select bodies independently of Sky Compass layers',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await expect.poll(()=>page.locator('#orrery-asteroid-select option').count()).toBe(5);
+ const orreryAsteroids=page.locator('#orrery-show-asteroids');
+ await expect(orreryAsteroids).not.toBeChecked();
+ await expect(page.locator('#show-asteroids')).not.toBeChecked();
+ await orreryAsteroids.check();
+ await expect.poll(()=>page.locator('#orrery').evaluate(el=>JSON.parse(el.dataset.asteroids||'[]').length)).toBe(4);
+ await expect(page.locator('#show-asteroids')).not.toBeChecked();
+ await orreryAsteroids.uncheck();
+ await page.locator('#orrery-asteroid-select').selectOption('Vesta');
+ await expect.poll(()=>page.locator('#orrery').evaluate(el=>JSON.parse(el.dataset.asteroids||'[]').map(x=>x.name))).toEqual(['Vesta']);
+ await expect(page.locator('#orrery-comet-status')).toContainText('Vesta');
+ await expect(page.locator('#celestial-clear-selection')).toBeVisible();
+ await page.locator('#orrery-comet-search').fill('Halley');
+ await page.locator('#orrery-find-comet').click();
+ await expect.poll(()=>page.locator('#orrery').evaluate(el=>JSON.parse(el.dataset.comet||'null')?.name)).toContain('Halley');
+ await page.locator('#orrery-show-comet-orbit').uncheck();
+ await expect(page.locator('#orrery')).toHaveAttribute('data-comet',/Halley/);
+ await page.locator('#orrery-clear-minor-body').click();
+ await expect(page.locator('#orrery')).toHaveAttribute('data-comet','null');
+ await expect(page.locator('#orrery-fit-comet')).toBeDisabled();
+ await expect(page.locator('#celestial-clear-selection')).toBeHidden();
+});

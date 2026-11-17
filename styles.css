@@ -747,3 +747,13 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 /* v102: explicit exit from the celestial object finder. */
 #celestial-clear-selection{margin:7px 0 3px;padding:6px 10px;border:1px solid #547a94;background:#183249;border-radius:6px;color:#d9eeff;font-size:11px}
 #celestial-clear-selection[hidden]{display:none!important}
+
+/* v104: independent, compact minor-body selection directly from the Orrery. */
+.orrery-minor-body-controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:10px;margin:9px 0 2px;border:1px solid #344e6b;border-radius:9px;background:#0d1b2c;color:#c9ddec;font-size:11px}
+.orrery-minor-body-controls strong{color:#e1baff;letter-spacing:.05em}
+.orrery-minor-body-controls label{display:inline-flex;align-items:center;gap:5px}
+.orrery-minor-body-controls label input[type=checkbox]{accent-color:#bb94e6}
+.orrery-minor-body-controls input[type=search],.orrery-minor-body-controls select{max-width:170px;min-width:90px;background:#152c44;color:#d8edfb;border:1px solid #56718a;border-radius:5px;padding:6px;font-size:11px}
+.orrery-minor-body-controls button{background:#1a3349;color:#d8ecfb;border:1px solid #54718c;border-radius:5px;padding:6px 9px;cursor:pointer;font-size:11px}
+.orrery-minor-body-controls button:hover{border-color:#afd8f4}
+.orrery-minor-body-controls small{flex-basis:100%;color:#a5bccc;line-height:1.35}

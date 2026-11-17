@@ -89,6 +89,8 @@ async function loadAsteroids(){
   const data=await res.json();if(data.records?.length!==4)throw Error('incomplete');
   setAsteroidSearchObjects(data.records);
   status.textContent='NASA/JPL SBDB · four major bodies · downloaded '+sourceTimestamp(data.retrievedUtc)+' · approximate orbits';
+  const select=$('orrery-asteroid-select');
+  select.replaceChildren(new Option('— Select —',''),...asteroidObjects().map(obj=>new Option(obj.name,obj.name)));
   renderCelestialFinder();sky();orrery();
  }catch{status.textContent='Asteroid catalogue unavailable in this build';}
 }
@@ -760,7 +762,9 @@ function orrery(){
  const comet=selectedComet?cometHeliocentricEcliptic(selectedComet.elements,state.date):null;
  const cometPath=selectedComet?cometOrbitPath(selectedComet.elements,150):[];
  const selectedAsteroid=['Asteroid','Dwarf planet'].includes(selectedCelestialObject?.type)?selectedCelestialObject:null;
- const visibleAsteroids=asteroidObjects().filter(obj=>$('show-asteroids').checked||obj.name===selectedAsteroid?.name);
+ const asteroidSelect=$('orrery-asteroid-select');
+ if(asteroidSelect&&asteroidSelect.value!==(selectedAsteroid?.name||''))asteroidSelect.value=selectedAsteroid?.name||'';
+ const visibleAsteroids=asteroidObjects().filter(obj=>$('orrery-show-asteroids').checked||obj.name===selectedAsteroid?.name);
  const asteroidCoords=visibleAsteroids.map(obj=>({obj,pos:asteroidPosition(obj.elements,state.date)})).filter(x=>x.pos);
  const defaultMaximum=outer?30.07:1.524;
  const selectedDistance=comet?.distanceAU||asteroidCoords.find(x=>x.obj.name===selectedAsteroid?.name)?.pos.distanceAU;
@@ -849,7 +853,7 @@ function orrery(){
  const cometStatus=$('orrery-comet-status');
  if(comet&&selectedComet){
   c.save();c.strokeStyle='#85d8edb0';c.lineWidth=1.2;c.setLineDash([5,4]);
-  for(const segment of cometPath){
+  for(const segment of ($('orrery-show-comet-orbit').checked?cometPath:[])){
    c.beginPath();
    segment.forEach((p,j)=>{
     const [sx,sy]=project(p.y,p.x,threeD?p.z:0);
@@ -1068,6 +1072,38 @@ for(const button of document.querySelectorAll('[data-event-direction]')){
  });
 }
 updateOrreryEventChoices();
+function chooseOrreryMinorBody(object){
+ selectedCelestialObject=object;
+ followCelestialObject=false;
+ fitSelectedComet=false;
+ finderEventsCache={key:null,result:null};
+ $('orrery-minor-body-message').textContent=object?object.name+' selected; orbit is approximate.':'Selection cleared.';
+ renderCelestialFinder();
+ sky();orrery();
+}
+$('orrery-show-asteroids').addEventListener('change',()=>{orrery();persistPrefs()});
+$('orrery-show-comet-orbit').addEventListener('change',()=>{orrery();persistPrefs()});
+$('orrery-asteroid-select').addEventListener('change',()=>{
+ const object=asteroidObjects().find(o=>o.name===$('orrery-asteroid-select').value);
+ if(object)chooseOrreryMinorBody(object);
+});
+$('orrery-find-comet').addEventListener('click',()=>{
+ const text=$('orrery-comet-search').value.trim();
+ if(!text){$('orrery-minor-body-message').textContent='Enter a comet name first.';return}
+ const matches=findCelestialObjects(text,12).filter(o=>o.type==='Comet');
+ const exact=matches.find(o=>o.name.toLowerCase()===text.toLowerCase())||matches[0];
+ if(!exact){$('orrery-minor-body-message').textContent='No matching comet in the bundled MPC catalogue.';return}
+ chooseOrreryMinorBody(exact);
+});
+$('orrery-comet-search').addEventListener('keydown',e=>{
+ if(e.key==='Enter'){e.preventDefault();$('orrery-find-comet').click()}
+});
+$('orrery-clear-minor-body').addEventListener('click',()=>{
+ chooseOrreryMinorBody(null);
+ $('orrery-comet-search').value='';
+ $('celestial-search-input').value='';
+ renderCelestialFinder();
+});
 $('orrery-fit-comet').addEventListener('click',()=>{
  if(!['Comet','Asteroid','Dwarf planet'].includes(selectedCelestialObject?.type))return;
  fitSelectedComet=true;orrery();
@@ -1951,7 +1987,7 @@ applyLayout(activeLayout);
  * Simulation date/time and temporary pan/zoom are excluded by default.
  */
 const PREF_KEY='helioclock-preferences-v1',LEGACY_LAYOUT_KEY='helioclock-layout-v21';
-const PREF_CHECKBOXES=['orrery-3d','show-au-rings','show-earthshine','show-constellations',
+const PREF_CHECKBOXES=['orrery-3d','orrery-show-asteroids','orrery-show-comet-orbit','show-au-rings','show-earthshine','show-constellations',
  'show-milkyway-shade','show-milkyway-outline','show-galactic-center',
  'show-stars','show-comets','show-asteroids','show-labels','show-sky-paths','show-below-horizon',
  'show-dso-galaxies','show-dso-nebulae','show-dso-clusters','show-dso-labels','show-constellation-names',

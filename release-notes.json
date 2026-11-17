@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v104",
+      "summary": "Add independent Orrery minor-body controls to toggle all four JPL asteroids, choose one directly, search for any bundled MPC comet, show/hide comet orbit guides, and clear selections without leaving the Orrery."
+    },
+    {
       "version": "v103",
       "summary": "Add JPL SBDB-backed Ceres, Pallas, Juno and Vesta search and approximate positions, optional purple asteroid markers and orbits in the Sky Compass and Orrery."
     },
