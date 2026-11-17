@@ -1683,7 +1683,10 @@ test('v50 satellite cloud toggle, timestamp and reprojected overlay',async({page
  });
  await expect(page.locator('#earth-clouds')).not.toBeChecked();
  await page.locator('#earth-clouds').check();
- await expect(page.locator('#earth-cloud-status')).toContainText('NASA NOAA-20 + NOAA-21 VIIRS mosaics');
+ await expect(page.locator('#earth-cloud-status')).toContainText('NASA GIBS · NOAA-20 + NOAA-21 VIIRS true-colour WMS');
+ await expect(page.locator('#earth-cloud-status')).toContainText('image dates');
+ await expect(page.locator('#earth-cloud-status')).toContainText('fetched');
+ await expect(page.locator('#earth-cloud-status')).toContainText('UTC');
  expect(fetched).toBeGreaterThan(0);
  await page.locator('#earth-cloud-opacity').fill('95');
  await expect(page.locator('#earth-cloud-opacity-value')).toHaveText('95%');
@@ -1720,7 +1723,9 @@ test('v52 cloud fallback uses NOAA-21 when NOAA-20 is unavailable',async({page})
   return route.abort();
  });
  await page.locator('#earth-clouds').check();
- await expect(page.locator('#earth-cloud-status')).toContainText('NASA NOAA-21 VIIRS mosaics');
+ await expect(page.locator('#earth-cloud-status')).toContainText('NASA GIBS · NOAA-21 VIIRS true-colour WMS');
+ await expect(page.locator('#earth-cloud-status')).toContainText('image dates');
+ await expect(page.locator('#earth-cloud-status')).toContainText('fetched');
  expect(primary).toBeGreaterThan(0);
  expect(backup).toBeGreaterThan(0);
 });
