@@ -2521,6 +2521,7 @@ test('Orrery labels all four minor bodies and provides reversible numeric 3D til
 test('Orrery mouse gesture synchronizes tilt and rotation numeric values including underside',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  await page.locator('#orrery-3d').check();
+ await page.locator('#orrery').scrollIntoViewIfNeeded();
  const bounds=await page.locator('#orrery').boundingBox();
  expect(bounds).toBeTruthy();
  const x=bounds.x+bounds.width*.48,y=bounds.y+bounds.height*.40;
@@ -2543,6 +2544,7 @@ test('Orrery click selects a plotted asteroid and planet without changing date',
  await expect.poll(()=>page.locator('#orrery-asteroid-select option').count()).toBe(5);
  await page.locator('#orrery-show-asteroids').check();
  await page.locator('[data-orbit-mode="outer"]').click();
+ await page.locator('#orrery').scrollIntoViewIfNeeded();
  const date=await page.locator('#dock-date').inputValue();
  const asteroid=await page.locator('#orrery').evaluate(el=>JSON.parse(el.dataset.hitTargets||'[]').find(t=>t.name==='Vesta'));
  expect(asteroid).toBeTruthy();
