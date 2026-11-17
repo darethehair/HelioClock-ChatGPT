@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v107",
+      "summary": "Click or tap Orrery planet, asteroid, or selected-comet markers for a synchronized object selection, highlighting, heliocentric distance and date readout; gestures still rotate without selecting."
+    },
+    {
       "version": "v106",
       "summary": "Synchronize numeric Orrery camera angles with mouse/touch dragging and reset, while allowing direct gestures across the full ±180° tilt range."
     },

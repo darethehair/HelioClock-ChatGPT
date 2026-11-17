@@ -753,11 +753,13 @@ function drawMoon(){
  }
  updateDiscViewport();
 }
+let orreryHitTargets=[];
 function orrery(){
  const o=canvas($('orrery'));if(!o)return;
  const {c,w,h}=o,X=w/2,Y=h/2,outer=state.orbitMode==='outer',threeD=state.orrery3D;
  c.fillStyle='#000';c.fillRect(0,0,w,h);
  const all=orbitPositions(state.date),planets=outer?all:all.slice(0,4);
+ const hitTargets=[];
  const selectedComet=selectedCelestialObject?.type==='Comet'?selectedCelestialObject:null;
  const comet=selectedComet?cometHeliocentricEcliptic(selectedComet.elements,state.date):null;
  const cometPath=selectedComet?cometOrbitPath(selectedComet.elements,150):[];
@@ -868,6 +870,7 @@ function orrery(){
    c.save();c.fillStyle='#dfb5ff';c.translate(x,y);c.rotate(Math.PI/4);c.fillRect(-3,-3,6,6);c.restore();
    label(c,obj.name,x+8,y-7,'#dfb5ff',10);
   }
+  if(x>=0&&x<=w&&y>=0&&y<=h)hitTargets.push({name:obj.name,type:obj.type,x,y,distanceAU:pos.distanceAU});
   asteroidsPlotted.push({name:obj.name,radiusAU:pos.distanceAU});
  }
  $('orrery').dataset.asteroids=JSON.stringify(asteroidsPlotted);
@@ -892,6 +895,7 @@ function orrery(){
    c.font='11px sans-serif';c.fillStyle='#c2f4ff';c.textAlign='left';
    c.fillText(selectedComet.name,cx+8,cy-8);c.restore();
   }
+  if(cx>=0&&cx<=w&&cy>=0&&cy<=h)hitTargets.push({name:selectedComet.name,type:'Comet',x:cx,y:cy,distanceAU:comet.distanceAU});
   cometStatus.textContent=selectedComet.name+' · '+comet.distanceAU.toFixed(2)+
    ' AU from Sun · approximate two-body orbit'+
    (comet.distanceAU>maximum?' · outside view; choose Fit selected comet':'');
@@ -910,9 +914,20 @@ function orrery(){
  const markers=planets.map(p=>({p,screen:position(p)})).sort((a,b)=>b.screen[2]-a.screen[2]);
  dot(c,X,Y,outer?5:12,'#ffcd7d',18);
  markers.forEach(({p,screen:[x,y]})=>{
+  hitTargets.push({name:p.name,type:'Planet',x,y,distanceAU:p.radius});
   dot(c,x,y,outer?Math.max(2.6,p.r*.75):p.r,p.color,9);
   if(outer||p.radius*scale>20)label(c,p.name,x+8,y-7,p.color,10);
+  if(selectedCelestialObject?.type==='Planet'&&selectedCelestialObject.name===p.name){
+   c.save();c.beginPath();c.arc(x,y,12,0,2*PI);c.strokeStyle='#ffe5a0';c.lineWidth=1.4;c.stroke();c.restore();
+  }
  });
+ orreryHitTargets=hitTargets;
+ $('orrery').dataset.hitTargets=JSON.stringify(hitTargets);
+ const selected=hitTargets.find(t=>t.name===selectedCelestialObject?.name);
+ $('orrery-inspection').textContent=selected
+  ?selected.name+' · '+selected.type+' · '+selected.distanceAU.toFixed(3)+' AU from Sun · '+state.date.toISOString().slice(0,16).replace('T',' ')+' UTC'+
+   (selected.type==='Planet'?' · Astronomy Engine ephemeris':' · approximate two-body orbit')
+  :'Click or tap a plotted body to inspect its heliocentric position.';
  $('planet-legend').innerHTML=planets.map(p=>'<span style="color:'+p.color+'">● '+p.name+'</span>').join('');
  $('au-scale-description').textContent=(outer?'Outer view · 5 AU intervals':'Inner view · 0.25 AU intervals')+(threeD?' · ecliptic perspective':'')+(fitSelectedComet&&selectedDistance?' · fitted selected object':'');
 }
@@ -1152,6 +1167,32 @@ $('orrery-clear-minor-body').addEventListener('click',()=>{
  $('celestial-search-input').value='';
  renderCelestialFinder();
 });
+// Pointer hit testing is screen-space and uses the same projected positions as
+// rendering. Ignore actual drag gestures so a camera rotation cannot select
+// an arbitrary planet when the pointer is released.
+{
+ const canvas=$('orrery');const starts=new Map();
+ canvas.addEventListener('pointerdown',e=>{
+  if(e.button!==0&&e.pointerType==='mouse')return;
+  starts.set(e.pointerId,{x:e.clientX,y:e.clientY,moved:false});
+ });
+ canvas.addEventListener('pointermove',e=>{
+  const start=starts.get(e.pointerId);
+  if(start&&Math.hypot(e.clientX-start.x,e.clientY-start.y)>8)start.moved=true;
+ });
+ canvas.addEventListener('pointercancel',e=>starts.delete(e.pointerId));
+ canvas.addEventListener('pointerup',e=>{
+  const start=starts.get(e.pointerId);starts.delete(e.pointerId);
+  if(!start||start.moved||!state.orrery3D&&Math.hypot(e.clientX-start.x,e.clientY-start.y)>8)return;
+  const rect=canvas.getBoundingClientRect(),x=e.clientX-rect.left,y=e.clientY-rect.top;
+  const candidate=orreryHitTargets.map(hit=>({...hit,dist:Math.hypot(hit.x-x,hit.y-y)}))
+   .filter(hit=>hit.dist<=14).sort((a,b)=>a.dist-b.dist)[0];
+  if(!candidate)return;
+  const object=findCelestialObjects(candidate.name,12).find(o=>o.name===candidate.name&&o.type===candidate.type);
+  if(!object)return;
+  chooseOrreryMinorBody(object);
+ });
+}
 $('orrery-fit-comet').addEventListener('click',()=>{
  if(!['Comet','Asteroid','Dwarf planet'].includes(selectedCelestialObject?.type))return;
  fitSelectedComet=true;orrery();

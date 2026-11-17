@@ -105,6 +105,7 @@ Release highlights are curated in [`release-notes.json`](release-notes.json). Wh
 
 | Release | Highlights |
 | --- | --- |
+| **v107** | Click or tap Orrery planet, asteroid, or selected-comet markers for a synchronized object selection, highlighting, heliocentric distance and date readout; gestures still rotate without selecting. |
 | **v106** | Synchronize numeric Orrery camera angles with mouse/touch dragging and reset, while allowing direct gestures across the full ±180° tilt range. |
 | **v105** | Label all four minor bodies in the Orrery, extend 3D tilt through ±180°, show editable tilt/rotation degrees, and optionally draw a faint ecliptic reference mesh. |
 | **v104** | Add independent Orrery minor-body controls to toggle all four JPL asteroids, choose one directly, search for any bundled MPC comet, show/hide comet orbit guides, and clear selections without leaving the Orrery. |

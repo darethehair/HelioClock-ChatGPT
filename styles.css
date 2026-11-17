@@ -761,3 +761,6 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 /* v105: numerical 3D camera controls and ecliptic reference. */
 .orrery-angle-number{width:51px!important;min-width:51px!important;max-width:51px!important;height:26px;padding:3px 5px!important;border:1px solid #547087;border-radius:5px;background:#14283d;color:#e0eff9;font-size:11px;font-variant-numeric:tabular-nums}
 .orrery-3d-setting{gap:5px}
+
+/* v107: unobtrusive selected-orbit readout, including on touch devices. */
+.orrery-inspection{font-size:11px;line-height:1.5;color:#c8dbea;padding:5px 1px 9px;min-height:28px}

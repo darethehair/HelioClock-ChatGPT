@@ -2537,3 +2537,23 @@ test('Orrery mouse gesture synchronizes tilt and rotation numeric values includi
  await expect(page.locator('#orrery-tilt-number')).toHaveValue('55');
  await expect(page.locator('#orrery-rotation-number')).toHaveValue('0');
 });
+
+test('Orrery click selects a plotted asteroid and planet without changing date',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await expect.poll(()=>page.locator('#orrery-asteroid-select option').count()).toBe(5);
+ await page.locator('#orrery-show-asteroids').check();
+ await page.locator('[data-orbit-mode="outer"]').click();
+ const date=await page.locator('#dock-date').inputValue();
+ const asteroid=await page.locator('#orrery').evaluate(el=>JSON.parse(el.dataset.hitTargets||'[]').find(t=>t.name==='Vesta'));
+ expect(asteroid).toBeTruthy();
+ const bounds=await page.locator('#orrery').boundingBox();
+ await page.mouse.click(bounds.x+asteroid.x,bounds.y+asteroid.y);
+ await expect(page.locator('#orrery-inspection')).toContainText('Vesta');
+ await expect(page.locator('#orrery-comet-status')).toContainText('Vesta');
+ await expect(page.locator('#dock-date')).toHaveValue(date);
+ const planet=await page.locator('#orrery').evaluate(el=>JSON.parse(el.dataset.hitTargets||'[]').find(t=>t.name==='Neptune'));
+ expect(planet).toBeTruthy();
+ await page.mouse.click(bounds.x+planet.x,bounds.y+planet.y);
+ await expect(page.locator('#orrery-inspection')).toContainText('Neptune · Planet');
+ await expect(page.locator('#orrery-inspection')).toContainText('Astronomy Engine');
+});
