@@ -89,6 +89,9 @@ async function loadAsteroids(){
   const res=await fetch('./major-asteroids.json');if(!res.ok)throw Error('unavailable');
   const data=await res.json();if(data.schema!==2||data.records?.length!==100)throw Error('incomplete');
   setAsteroidSearchObjects(data.records);
+  // Initial render may have cached an empty catalogue before this async load.
+  // Invalidate before drawing newly loaded orbital positions.
+  orrery.asteroidCache=null;
   status.textContent='NASA/JPL SBDB · 100 size-ranked minor planets · downloaded '+sourceTimestamp(data.retrievedUtc)+' · approximate orbits';
   const select=$('orrery-asteroid-select');
   select.replaceChildren(new Option('— Select —',''),...asteroidObjects().map(obj=>new Option(obj.elements.number+' '+obj.name,obj.name)));
