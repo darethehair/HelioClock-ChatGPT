@@ -2409,3 +2409,17 @@ test('Tablet Earth observer controls wrap inside their dashboard card',async({pa
  await page.locator('#earth-pick-observer').click();
  await expect(page.locator('#earth-pick-observer')).toHaveAttribute('aria-pressed','false');
 });
+
+test('Comet overlay toggle is independent and retained in preferences',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ const toggle=page.locator('#show-comets');
+ await expect(toggle).not.toBeChecked();
+ await expect(page.locator('#sky')).toHaveAttribute('data-comets','[]');
+ await toggle.check();
+ await expect(toggle).toBeChecked();
+ await expect(page.locator('#sky')).toHaveAttribute('data-comets',/^\[/);
+ await page.reload();
+ await expect(page.locator('#show-comets')).toBeChecked();
+ await page.locator('#show-comets').uncheck();
+ await expect(page.locator('#sky')).toHaveAttribute('data-comets','[]');
+});

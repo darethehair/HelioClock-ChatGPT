@@ -35,3 +35,12 @@ assert.ok(Math.abs(fromFinder.ra-actual.ra)<1e-9);
 assert.ok(Math.abs(fromFinder.alt-actual.alt)<1e-9);
 const daily=celestialDailyEvents(chosen,at,49.19,-98.1);
 assert.ok(daily&&daily.transit&&Number.isFinite(daily.transit.alt),'comet finder rise/transit calculations');
+
+const {cometMapCandidates}=await import('../celestial-search.js');
+setCometSearchObjects([
+ {...elements,name:'C/Near 2026',perihelion:{year:2026,month:11,dayTT:17},epochTT:{year:2026,month:11,day:16}},
+ {...elements,name:'C/Old 1900',perihelion:{year:1900,month:11,dayTT:17},epochTT:{year:1900,month:11,day:16}},
+ {...elements,name:'C/Far 2026',qAU:12,perihelion:{year:2026,month:11,dayTT:17},epochTT:{year:2026,month:11,day:16}}
+]);
+assert.deepEqual(cometMapCandidates(at).map(x=>x.name),['C/Near 2026']);
+assert.deepEqual(cometMapCandidates(at,0),[]);

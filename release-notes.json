@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v99",
+      "summary": "Add optional pale-cyan nucleus-and-tail comet icons to Sky Compass maps, with a persistent Show comets toggle and date-filtered MPC positions."
+    },
+    {
       "version": "v98",
       "summary": "Show source filenames, data dates and download timestamps for MPC comets, NASA solar images and cloud imagery, and NOAA space-weather feeds; distinguish observations from retrieval times."
     },
