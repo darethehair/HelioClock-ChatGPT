@@ -792,13 +792,13 @@ function orrery(){
   for(const segment of cometPath){
    c.beginPath();
    segment.forEach((p,j)=>{
-    const [sx,sy]=project(p.x,p.y,threeD?p.z:0);
+    const [sx,sy]=project(p.y,p.x,threeD?p.z:0);
     if(!j)c.moveTo(sx,sy);else c.lineTo(sx,sy);
    });
    c.stroke();
   }
   c.restore();
-  const [cx,cy]=project(comet.x,comet.y,threeD?comet.z:0);
+  const [cx,cy]=project(comet.y,comet.x,threeD?comet.z:0);
   if(cx>=-10&&cx<=w+10&&cy>=-10&&cy<=h+10){
    c.save();c.fillStyle='#a2edff';c.strokeStyle='#e7ffff';c.lineWidth=1.5;
    c.beginPath();c.arc(cx,cy,4,0,2*PI);c.fill();c.stroke();
