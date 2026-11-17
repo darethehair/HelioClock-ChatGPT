@@ -15,6 +15,7 @@ import {solarDiscOrientation} from './solar-disc-orientation.js';
 import {drawSolarYear} from './solar-chart.js';
 import {drawSkyGrid} from './sky-grid.js';
 import {skyPlanets} from './sky-planets.js';
+import {cometHeliocentricEcliptic,cometOrbitPath} from './comet-orbits.js';
 import {renderEarth,earthTextureStatus,earthCoordinatesAt} from './earth-renderer.js';
 import {cloudStatus,refreshClouds} from './clouds.js';
 import {findPlanetaryEvent,eventPlanets,eventOptions} from './planetary-events.js';
@@ -26,6 +27,7 @@ const $=id=>document.getElementById(id);
 const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyPanX:0,skyPanY:0,skyHeading:0,earthZoom:1,earthLon:-98.10,earthLat:49.19,earthProjection:'equal',earthMapStyle:'physical',earthTextureQuality:'2k',orreryZoom:1,moonZoom:1,discView:'moon',sunZoom:1,moonPanX:0,moonPanY:0,sunPanX:0,sunPanY:0,orbitMode:'inner',orrery3D:false,orreryTilt:55,orreryRotation:0,skyLight:'daylight',skyProjection:'polar',magLimit:3.5,stellarColors:true,usePrecession:true,playing:false};
 const fmt=d=>d.toISOString().slice(0,10);
 let highlightedOrreryEvent=null;
+let fitSelectedComet=false;
 function updateOrreryEventChoices(){
  const planetSelect=$('orrery-event-planet'),kindSelect=$('orrery-event-kind');
  const planets=eventPlanets(state.orbitMode),oldPlanet=planetSelect.value;
@@ -101,7 +103,7 @@ function renderCelestialFinder(){
   const button=document.createElement('button');button.type='button';
   button.className='celestial-search-result';
   button.textContent=object.name+(object.alias?' — '+object.alias:'')+' · '+object.type;
-  button.addEventListener('click',()=>{selectedCelestialObject=object;renderCelestialFinder();sky();});
+  button.addEventListener('click',()=>{selectedCelestialObject=object;fitSelectedComet=false;renderCelestialFinder();sky();orrery();});
   results.append(button);
  }
  detail.replaceChildren();
@@ -712,7 +714,11 @@ function orrery(){
  const {c,w,h}=o,X=w/2,Y=h/2,outer=state.orbitMode==='outer',threeD=state.orrery3D;
  c.fillStyle='#000';c.fillRect(0,0,w,h);
  const all=orbitPositions(state.date),planets=outer?all:all.slice(0,4);
- const maximum=outer?30.07:1.524;
+ const selectedComet=selectedCelestialObject?.type==='Comet'?selectedCelestialObject:null;
+ const comet=selectedComet?cometHeliocentricEcliptic(selectedComet.elements,state.date):null;
+ const cometPath=selectedComet?cometOrbitPath(selectedComet.elements,150):[];
+ const defaultMaximum=outer?30.07:1.524;
+ const maximum=fitSelectedComet&&comet?Math.max(defaultMaximum,comet.distanceAU*1.2):defaultMaximum;
  const scale=Math.min(w*.44,h*.43)/maximum*state.orreryZoom;
  const tilt=(threeD?state.orreryTilt:0)*RAD,rotation=(threeD?state.orreryRotation:0)*RAD;
  // Rotate the ecliptic around its pole, then tip it toward the observer.
@@ -778,6 +784,36 @@ function orrery(){
    c.beginPath();c.moveTo(X,Y);c.lineTo(ex,ey);c.lineTo(px,py);c.stroke();c.restore();
   }
  }
+ // Draw the selected comet in the same ecliptic coordinate system as planets.
+ // This is a two-body guide, and open/extreme trajectories are clipped at 150 AU.
+ const cometStatus=$('orrery-comet-status');
+ if(comet&&selectedComet){
+  c.save();c.strokeStyle='#85d8edb0';c.lineWidth=1.2;c.setLineDash([5,4]);
+  for(const segment of cometPath){
+   c.beginPath();
+   segment.forEach((p,j)=>{
+    const [sx,sy]=project(p.x,p.y,threeD?p.z:0);
+    if(!j)c.moveTo(sx,sy);else c.lineTo(sx,sy);
+   });
+   c.stroke();
+  }
+  c.restore();
+  const [cx,cy]=project(comet.x,comet.y,threeD?comet.z:0);
+  if(cx>=-10&&cx<=w+10&&cy>=-10&&cy<=h+10){
+   c.save();c.fillStyle='#a2edff';c.strokeStyle='#e7ffff';c.lineWidth=1.5;
+   c.beginPath();c.arc(cx,cy,4,0,2*PI);c.fill();c.stroke();
+   c.font='11px sans-serif';c.fillStyle='#c2f4ff';c.textAlign='left';
+   c.fillText(selectedComet.name,cx+8,cy-8);c.restore();
+  }
+  cometStatus.textContent=selectedComet.name+' · '+comet.distanceAU.toFixed(2)+
+   ' AU from Sun · approximate two-body orbit'+
+   (comet.distanceAU>maximum?' · outside view; choose Fit selected comet':'');
+  $('orrery').dataset.comet=JSON.stringify({name:selectedComet.name,x:comet.x,y:comet.y,z:comet.z,radiusAU:comet.distanceAU,fit:fitSelectedComet});
+ }else{
+  cometStatus.textContent='Select a comet in the Sky Compass finder to see its orbit here.';
+  $('orrery').dataset.comet='null';
+ }
+ $('orrery-fit-comet').disabled=!comet;
  // Draw farther bodies first in the tilted view.
  const markers=planets.map(p=>({p,screen:position(p)})).sort((a,b)=>b.screen[2]-a.screen[2]);
  dot(c,X,Y,outer?5:12,'#ffcd7d',18);
@@ -786,7 +822,7 @@ function orrery(){
   if(outer||p.radius*scale>20)label(c,p.name,x+8,y-7,p.color,10);
  });
  $('planet-legend').innerHTML=planets.map(p=>'<span style="color:'+p.color+'">● '+p.name+'</span>').join('');
- $('au-scale-description').textContent=(outer?'Outer view · 5 AU intervals':'Inner view · 0.25 AU intervals')+(threeD?' · ecliptic perspective':'');
+ $('au-scale-description').textContent=(outer?'Outer view · 5 AU intervals':'Inner view · 0.25 AU intervals')+(threeD?' · ecliptic perspective':'')+(fitSelectedComet&&comet?' · fitted comet':'');
 }
 function formatCoord(n,positive,negative){return Math.abs(n).toFixed(2)+'° '+(n>=0?positive:negative)}
 let almanacCurrent=null;
@@ -967,6 +1003,10 @@ for(const button of document.querySelectorAll('[data-event-direction]')){
  });
 }
 updateOrreryEventChoices();
+$('orrery-fit-comet').addEventListener('click',()=>{
+ if(selectedCelestialObject?.type!=='Comet')return;
+ fitSelectedComet=true;orrery();
+});
 // Discs share pan/zoom controls, but preserve independent zoom and pan between views.
 // A cursor-anchored zoom keeps the solar surface feature under the pointer stationary.
 const discStage=$('disc-stage'),solarPhoto=$('solar-photo');

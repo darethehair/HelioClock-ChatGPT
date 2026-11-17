@@ -737,3 +737,9 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 .data-provenance{display:block;max-width:100%;min-width:0;overflow-wrap:anywhere;line-height:1.5}
 .sky-panel #comet-catalog-status{margin-top:8px;color:#b6d5e7;font-size:11px}
 .moon-panel #solar-status{color:#c5deee}
+
+/* Selected comet controls in Orrery. */
+.orrery-comet-tools{display:flex;align-items:center;flex-wrap:wrap;gap:9px;padding:7px 0 10px;color:#9bc8d9;font-size:11px}
+.orrery-comet-tools button{background:#17354b;border:1px solid #5487a1;border-radius:6px;color:#d4f5ff;padding:7px 10px;font-size:11px}
+.orrery-comet-tools button:disabled{opacity:.45;cursor:default}
+.orrery-comet-tools span{flex:1 1 200px;line-height:1.4}

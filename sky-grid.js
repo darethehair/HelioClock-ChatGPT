@@ -36,7 +36,7 @@ export function drawSkyGrid(ctx,opts){
    if(!started){ctx.moveTo(x,y);started=true}else ctx.lineTo(x,y);
    prev=[x,y];count++;
   }
-  if(count>1){ctx.lineWidth=width;ctx.strokeStyle=color;ctx.stroke()}
+  if(count>1){ctx.lineWidth=mode==='rect'?width/Math.max(.1,zoom):width;ctx.strokeStyle=color;ctx.stroke()}
  }
  ctx.save();
  if(mode==='rect'){
@@ -48,11 +48,11 @@ export function drawSkyGrid(ctx,opts){
   const firstAlt=showBelowHorizon?-90:0;
   for(let alt=firstAlt;alt<=90;alt+=step.alt){
    const points=[];for(let az=0;az<=360;az+=3)points.push({az,alt});
-   curve(points,alt===0?'#e8f3ffbb':'#9cbedb79',alt===0?1.2:.8);
+   curve(points,alt===0?'#c8dcec66':'#91b9da38',alt===0?1:.65);
   }
   for(let az=0;az<360;az+=step.az){
    const points=[];for(let alt=firstAlt;alt<=90;alt+=3)points.push({az,alt});
-   curve(points,'#a4d0ebc2',az%90===0?1.2:1);
+   curve(points,az%90===0?'#8ab4d173':'#7baac84a',az%90===0?1:.65);
   }
  }
  if(showRaDec){
@@ -62,14 +62,14 @@ export function drawSkyGrid(ctx,opts){
    for(let ra=0;ra<=360;ra+=Math.min(2,step.ra/4)){
     const p=horizontal(ra,dec,date,lat,lon);points.push(p);
    }
-   curve(points,dec===0?'#f8cf947e':'#d8a9655e',dec===0?1.15:.75);
+   curve(points,dec===0?'#f8cf9466':'#d8a96548',dec===0?1:.65);
   }
   for(let ra=0;ra<360;ra+=step.ra){
    const points=[];
    for(let dec=-90;dec<=90;dec+=2){
     points.push(horizontal(ra,dec,date,lat,lon));
    }
-   curve(points,'#d6aa6759',.7);
+   curve(points,'#d6aa6740',.65);
   }
  }
  ctx.restore();

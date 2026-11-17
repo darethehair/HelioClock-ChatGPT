@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v101",
+      "summary": "Plot the selected comet's approximate heliocentric orbit and position in the Orrery with a Fit selected comet control, and keep Sky Compass grid lines thin and subtle under zoom."
+    },
+    {
       "version": "v100",
       "summary": "Always draw the comet glyph for an explicitly selected object such as Halley, regardless of the automatic comet layer's age/range limits or visibility toggle; keep automatic markers filtered."
     },

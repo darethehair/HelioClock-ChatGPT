@@ -54,3 +54,11 @@ assert.deepEqual(cometObjectsForMap(at,true,halley).map(x=>x.name),['1P/Halley',
  'selected Halley bypasses two-year filter without duplication');
 assert.deepEqual(cometObjectsForMap(at,false,null),[],
  'hidden automatic layer has no unselected comets');
+
+const {cometOrbitPath}=await import('../comet-orbits.js');
+const ellipse=cometOrbitPath(elements,10,200);
+assert.equal(ellipse.length,1);
+assert.ok(ellipse[0].length>100);
+const hyperbola=cometOrbitPath({...elements,eccentricity:1.3},20,200);
+assert.ok(hyperbola.length>0);
+assert.ok(hyperbola.flat().every(p=>[p.x,p.y,p.z].every(Number.isFinite)));

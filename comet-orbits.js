@@ -70,3 +70,24 @@ export function cometTopocentricPosition(elements,date,lat,lon){
   distanceAU:eq.dist,sunDistanceAU:body.distanceAU,
   epochAgeDays,daysFromPerihelion:body.daysFromPerihelion,approximate:true};
 }
+
+/** Plot clipped conic segments in heliocentric J2000 ecliptic AU. */
+export function cometOrbitPath(elements,cutoffAU=150,samples=300){
+ const {qAU:q,eccentricity:e,argPeriDeg:arg,nodeDeg:node,inclinationDeg:incl}=elements||{};
+ if(![q,e,arg,node,incl].every(Number.isFinite)||q<=0||e<0||cutoffAU<=q)return [];
+ const p=q*(1+e),extent=e<1?Math.PI:Math.acos(-1/e)-1e-5;
+ const O=node*DEG,i=incl*DEG,omega=arg*DEG;
+ const segments=[];let segment=[];
+ for(let n=0;n<=samples;n++){
+  const v=-extent+2*extent*n/samples,denom=1+e*Math.cos(v);
+  const r=denom>0?p/denom:Infinity;
+  if(!Number.isFinite(r)||r>cutoffAU){
+   if(segment.length>1)segments.push(segment);
+   segment=[];continue;
+  }
+  const u=omega+v,co=Math.cos(O),so=Math.sin(O),cu=Math.cos(u),su=Math.sin(u),ci=Math.cos(i);
+  segment.push({x:r*(co*cu-so*su*ci),y:r*(so*cu+co*su*ci),z:r*su*Math.sin(i)});
+ }
+ if(segment.length>1)segments.push(segment);
+ return segments;
+}
