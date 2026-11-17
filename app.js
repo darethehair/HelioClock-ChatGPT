@@ -1053,6 +1053,13 @@ $('sky-zoom').addEventListener('input',e=>setPolarSkyZoom(Number(e.target.value)
 $('sky-zoom-out').addEventListener('click',()=>setPolarSkyZoom(Math.round(clamp(state.skyZoom/1.25,state.skyProjection==='polar'?.5:1,3)*100)/100));
 $('sky-zoom-in').addEventListener('click',()=>setPolarSkyZoom(Math.round(clamp(state.skyZoom*1.25,1,3)*100)/100));
 viewRange('earth-zoom','earthZoom');
+// Shared numeric readouts for slider, mouse, touch, and reset input paths.
+function syncOrreryAngles(){
+ for(const [id,key] of [['orrery-tilt','orreryTilt'],['orrery-rotation','orreryRotation']]){
+  $(id).value=String(state[key]);
+  $(id+'-number').value=String(Math.round(state[key]*10)/10);
+ }
+}
 // Camera-only changes redraw the orrery, not the Earth, sky, Moon and almanac.
 function orreryRange(id,key){
  $(id).addEventListener('input',e=>{
@@ -1611,8 +1618,8 @@ $('earth-reset').addEventListener('click',()=>{
 });
 $('orrery-reset').addEventListener('click',()=>{
  state.orreryZoom=1;state.orreryTilt=55;state.orreryRotation=0;
- $('orrery-zoom').value=1;$('orrery-tilt').value=55;$('orrery-rotation').value=0;
- orrery();
+ $('orrery-zoom').value=1;
+ syncOrreryAngles();orrery();
 });
 function wheelZoom(canvasId,controlId,key,lo,hi){
  $(canvasId).addEventListener('wheel',e=>{e.preventDefault();state[key]=clamp(state[key]*(e.deltaY>0?.88:1.14),lo,hi);$(controlId).value=state[key];if(canvasId==='orrery')orrery();else render()},{passive:false});
@@ -1727,9 +1734,8 @@ dragCanvas('orrery',(dx,dy,el)=>{
  // A full-width horizontal drag rotates 360 degrees; a full-height
  // vertical drag changes the camera elevation by 90 degrees.
  state.orreryRotation=((state.orreryRotation+dx/el.clientWidth*360+180)%360+360)%360-180;
- state.orreryTilt=clamp(state.orreryTilt+dy/el.clientHeight*180,-90,90);
- $('orrery-rotation').value=state.orreryRotation;
- $('orrery-tilt').value=state.orreryTilt;
+ state.orreryTilt=clamp(state.orreryTilt+dy/el.clientHeight*180,-180,180);
+ syncOrreryAngles();
 });
 // Some Android browsers cancel pointer capture during touch gestures.
 // Use native single-touch movement as a fallback for the 3D camera.
@@ -1746,9 +1752,8 @@ dragCanvas('orrery',(dx,dy,el)=>{
   // Touch events and pointer events can both fire; suppress duplicate
   // pointer movement while the native touch fallback owns this gesture.
   state.orreryRotation=((state.orreryRotation+dx/el.clientWidth*360+180)%360+360)%360-180;
-  state.orreryTilt=clamp(state.orreryTilt+dy/el.clientHeight*180,-90,90);
-  $('orrery-rotation').value=state.orreryRotation;
-  $('orrery-tilt').value=state.orreryTilt;
+  state.orreryTilt=clamp(state.orreryTilt+dy/el.clientHeight*180,-180,180);
+  syncOrreryAngles();
   orrery();
  },{passive:false});
  el.addEventListener('touchend',()=>{last=null},{passive:true});

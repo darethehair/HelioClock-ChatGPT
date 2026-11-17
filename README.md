@@ -105,6 +105,7 @@ Release highlights are curated in [`release-notes.json`](release-notes.json). Wh
 
 | Release | Highlights |
 | --- | --- |
+| **v106** | Synchronize numeric Orrery camera angles with mouse/touch dragging and reset, while allowing direct gestures across the full ±180° tilt range. |
 | **v105** | Label all four minor bodies in the Orrery, extend 3D tilt through ±180°, show editable tilt/rotation degrees, and optionally draw a faint ecliptic reference mesh. |
 | **v104** | Add independent Orrery minor-body controls to toggle all four JPL asteroids, choose one directly, search for any bundled MPC comet, show/hide comet orbit guides, and clear selections without leaving the Orrery. |
 | **v103** | Add JPL SBDB-backed Ceres, Pallas, Juno and Vesta search and approximate positions, optional purple asteroid markers and orbits in the Sky Compass and Orrery. |

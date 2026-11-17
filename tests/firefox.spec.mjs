@@ -2517,3 +2517,23 @@ test('Orrery labels all four minor bodies and provides reversible numeric 3D til
  await page.locator('#orrery-ecliptic-mesh').uncheck();
  await expect(page.locator('#orrery')).toHaveAttribute('data-mesh','false');
 });
+
+test('Orrery mouse gesture synchronizes tilt and rotation numeric values including underside',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('#orrery-3d').check();
+ const bounds=await page.locator('#orrery').boundingBox();
+ expect(bounds).toBeTruthy();
+ const x=bounds.x+bounds.width*.48,y=bounds.y+bounds.height*.40;
+ await page.mouse.move(x,y);await page.mouse.down();
+ await page.mouse.move(x+bounds.width*.16,y+bounds.height*.28,{steps:8});
+ await page.mouse.up();
+ const rotation=Number(await page.locator('#orrery-rotation-number').inputValue());
+ const tilt=Number(await page.locator('#orrery-tilt-number').inputValue());
+ expect(rotation).toBeGreaterThan(20);
+ expect(tilt).toBeGreaterThan(90);
+ expect(Math.abs(rotation-Number(await page.locator('#orrery-rotation').inputValue()))).toBeLessThan(.6);
+ expect(Math.abs(tilt-Number(await page.locator('#orrery-tilt').inputValue()))).toBeLessThan(.6);
+ await page.locator('#orrery-reset').click();
+ await expect(page.locator('#orrery-tilt-number')).toHaveValue('55');
+ await expect(page.locator('#orrery-rotation-number')).toHaveValue('0');
+});
