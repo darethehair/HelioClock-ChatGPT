@@ -2613,7 +2613,7 @@ test('Minor planets use hollow-circle markers; ecliptic risers also cover planet
  expect(guides.find(p=>p.name==='Mercury').heightAU).not.toBe(0);
  await page.locator('[data-orbit-mode="outer"]').click();
  const outer=await page.locator('#orrery').evaluate(el=>JSON.parse(el.dataset.planetGuides||'[]'));
- expect(outer.map(p=>p.name)).toEqual(['Jupiter','Saturn','Uranus','Neptune']);
+ expect(outer.map(p=>p.name)).toEqual(['Mercury','Venus','Earth','Mars','Jupiter','Saturn','Uranus','Neptune']);
  await page.locator('#orrery-height-guide').uncheck();
  await expect.poll(()=>page.locator('#orrery').evaluate(el=>JSON.parse(el.dataset.planetGuides||'[]').length)).toBe(0);
 });
