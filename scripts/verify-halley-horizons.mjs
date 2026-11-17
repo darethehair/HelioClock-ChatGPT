@@ -26,7 +26,7 @@ else{
   if(!model){report.errors.push(date+': model propagation failed');continue}
   const next=new Date(Date.parse(date+'T00:00:00Z')+86400000).toISOString().slice(0,10);
   const params=new URLSearchParams({
-   format:'json',COMMAND:"'1P;'",MAKE_EPHEM:'YES',OBJ_DATA:'NO',EPHEM_TYPE:'VECTORS',
+   format:'json',COMMAND:"'DES=1P;CAP'",MAKE_EPHEM:'YES',OBJ_DATA:'NO',EPHEM_TYPE:'VECTOR',
    CENTER:"'500@10'",START_TIME:"'"+date+"'",STOP_TIME:"'"+next+"'",
    STEP_SIZE:"'1 d'",OUT_UNITS:"'AU-D'",REF_PLANE:"'ECLIPTIC'",
    REF_SYSTEM:"'ICRF'",VEC_TABLE:'2',TIME_TYPE:"'TDB'"
@@ -35,6 +35,11 @@ else{
    const response=await fetch(report.source+'?'+params,{signal:AbortSignal.timeout(16000),headers:{'User-Agent':'HelioClock-ChatGPT orbital-validation/102'}});
    if(!response.ok)throw Error('HTTP '+response.status);
    const data=await response.json();
+   if(!data.result?.includes('$SOE')){
+    const diagnostic=String(data.error||data.result||'No Horizons result')
+      .replace(/\s+/g,' ').slice(0,320);
+    throw Error('Horizons returned no vectors: '+diagnostic);
+   }
    const reference=parseHorizonsVector(data.result);
    const comparison=vectorComparison(model,reference);
    report.samples.push({date,model:{x:model.x,y:model.y,z:model.z},
