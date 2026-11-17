@@ -47,6 +47,18 @@ function selectDate(){
  pausePlayback();state.date=next;state.live=false;render();
 }
 function notice(msg){$('message').hidden=!msg;$('message').textContent=msg||''}
+// Provenance must use real UTC time, not the chosen simulation date.
+const provenanceMs=value=>typeof value==='number'?value:Date.parse(value||'');
+function sourceTimestamp(value){
+ const ms=provenanceMs(value);
+ return Number.isFinite(ms)?new Date(ms).toISOString().slice(0,16).replace('T',' ')+' UTC':'unknown';
+}
+function sourceAge(value){
+ const ms=provenanceMs(value);
+ if(!Number.isFinite(ms))return 'age unknown';
+ const minutes=Math.max(0,Math.floor((Date.now()-ms)/60000));
+ return minutes<60?minutes+' min old':minutes<2880?Math.floor(minutes/60)+' h old':Math.floor(minutes/1440)+' days old';
+}
 // Load bundled MPC data into the finder, without any live runtime MPC dependency.
 async function loadCometCatalogStatus(){
  const el=$('comet-catalog-status');
@@ -58,8 +70,10 @@ async function loadCometCatalogStatus(){
   if(data.schema!==1||!Array.isArray(data.records)||data.records.length!==data.count)throw Error('invalid snapshot');
   if(data.count===0){el.textContent='MPC comet catalogue unavailable · try next build';return;}
   const searchable=setCometSearchObjects(data.records);
-  const when=data.retrievedUtc?data.retrievedUtc.slice(0,10):'date unknown';
-  el.textContent=searchable+' searchable comets · MPC '+(data.status==='cached'?'cached':'snapshot')+' '+when+' · approximate two-body positions';
+  el.textContent=searchable+' searchable comets · MPC CometEls.txt · downloaded '+sourceTimestamp(data.retrievedUtc)+' ('+sourceAge(data.retrievedUtc)+')'+
+   (data.status==='cached'?' · cached previous download':'')+' · bundled in app · approximate orbits';
+  el.title='MPC source: '+(data.sourceUrl||'CometEls.txt')+'; download date '+sourceTimestamp(data.retrievedUtc)+
+   '. Each comet has its own separate orbital epoch.';
   renderCelestialFinder();
  }catch{el.textContent='Comet catalogue not available · check latest build';}
 }
@@ -252,19 +266,25 @@ function worldMap(){
   earthRegionBorders:$('earth-region-borders').checked,
   earthCityLabels:$('earth-city-labels').checked});
  const cloud=cloudStatus(),cloudEnabled=$('earth-clouds').checked;
+ const cloudSource=cloud.status==='ready'
+  ?'NASA GIBS · '+cloud.satellite+' VIIRS true-colour WMS · image dates '+cloud.day+
+   ' UTC · fetched '+sourceTimestamp(cloud.requested)+' ('+sourceAge(cloud.requested)+')'
+  :'NASA GIBS · NOAA-20/21 VIIRS true-colour WMS · no verified image date';
  $('earth-cloud-status').textContent=!cloudEnabled
-  ?'Clouds off · NASA daily true-colour imagery (approximate)'
+  ?'Clouds off · '+(cloud.status==='ready'?'cached '+cloudSource:'NASA GIBS imagery not loaded')
   :cloud.status==='ready'
-   ?'NASA '+cloud.satellite+' VIIRS mosaics '+cloud.day+' UTC (older imagery fills only missing swaths) · approximate clouds (not measured cloud fraction) · independent of simulated date'
-   :cloud.status==='loading'?'Loading NASA satellite imagery…'
-   :cloud.status==='unavailable'?'Cloud imagery unavailable · check connection / NASA GIBS'
+   ?cloudSource+' · illustrative overlay; independent of simulated date'
+   :cloud.status==='loading'?'Loading NASA GIBS NOAA-20/21 VIIRS imagery…'
+   :cloud.status==='unavailable'?'NASA GIBS imagery unavailable · no current cloud image'
    :'Clouds awaiting imagery';
+ $('earth-cloud-status').title=cloudSource+' · WMS mosaics; older dates may fill coverage gaps.';
  const loaded=weather.grid&&auroraFresh();
- const stamp=weather.forecast?new Date(weather.forecast).toLocaleString('en-GB',{hour12:false}):'—';
  $('earth-space-weather-status').textContent=
-  (loaded?'NOAA OVATION forecast '+stamp:'Aurora forecast unavailable or stale')+
-  ' · '+(weather.kp===null?'Kp unavailable':'Kp '+weather.kp.toFixed(1))+
-  ' · Live data, independent of simulated date';
+  'NOAA OVATION aurora · '+(loaded?'forecast '+sourceTimestamp(weather.forecast):'forecast unavailable or stale')+
+  ' · observation '+sourceTimestamp(weather.observed)+
+  ' · NOAA planetary Kp '+(weather.kp===null?'unavailable':weather.kp.toFixed(1)+' at '+sourceTimestamp(weather.kpTime))+
+  ' · fetched '+sourceTimestamp(weather.fetchedAt)+' · independent of simulated date';
+ $('earth-space-weather-status').title='Sources: NOAA OVATION aurora JSON and NOAA planetary K-index JSON. Forecast and observation timestamps are from NOAA.';
  const badge=$('kp-badge');
  badge.textContent=weather.kp===null?'Kp —':'Kp '+weather.kp.toFixed(1);
  badge.dataset.tier=weather.kp===null?'unknown':weather.kp>=7?'severe':weather.kp>=5?'storm':weather.kp>=4?'active':'quiet';
@@ -925,6 +945,7 @@ let lastMoonTilt=0;
 // is used only as a clearly labelled approximation, independent of simulation.
 let solarObservationProxy=new Date();
 let solarImageIsFallback=false;
+let solarFetchedAt=null;
 function updateSolarOrientationReadout(){
  const {B0,P}=solarDiscOrientation(solarObservationProxy);
  const extra=solarImageIsFallback?' · offline photo date unknown':' · computed at image retrieval time';
@@ -1134,22 +1155,25 @@ updateEclipseFilters();
 
 function refreshSolarImage(){
  const stamp=Date.now();solarRequest++;
- $('solar-status').textContent='Loading latest NASA image…';
+ $('solar-status').textContent='NASA SDO · fetching latest_2048_HMIIC.jpg…';
  solarPhoto.onload=()=>{
   // The actual capture time is printed on NASA's image; do not confuse
   // when a browser request finished with the astrophysical observation time.
-  solarObservationProxy=new Date();solarImageIsFallback=false;
+  solarObservationProxy=new Date();solarFetchedAt=solarObservationProxy.toISOString();solarImageIsFallback=false;
   updateSolarOrientationReadout();redrawDiscGrid();
-  $('solar-status').textContent='NASA SDO · image loaded (observation time stamped on photo)';
+  $('solar-status').textContent='NASA SDO HMI · latest_2048_HMIIC.jpg · fetched '+
+   sourceTimestamp(solarFetchedAt)+' ('+sourceAge(solarFetchedAt)+') · capture time unverified (check image stamp)';
+  $('solar-status').title=solarSource+' · Download time is NOT the solar observation time.';
  };
  solarPhoto.onerror=()=>{
   // A packaged offline reference is explicitly labelled as a fallback.
   if(!solarPhoto.src.endsWith('/solar-fallback.jpg')){
    solarImageIsFallback=true;
    updateSolarOrientationReadout();redrawDiscGrid();
-   $('solar-status').textContent='NASA offline reference image · not a current observation';
+   $('solar-status').textContent='NASA SDO · solar-fallback.jpg · packaged offline reference · capture date unknown · NOT current';
+   $('solar-status').title='Packaged static image: observation date unknown.';
    solarPhoto.onload=null;solarPhoto.onerror=null;solarPhoto.src='./solar-fallback.jpg';
-  }else $('solar-status').textContent='Solar image unavailable';
+  }else $('solar-status').textContent='NASA SDO · solar image unavailable; no current observation loaded';
  };
  solarPhoto.src=solarSource+'?v='+stamp;
 }

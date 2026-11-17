@@ -2,7 +2,7 @@
 const AURORA_URL='https://services.swpc.noaa.gov/json/ovation_aurora_latest.json';
 const KP_URL='https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json';
 const UPDATE_MS=5*60*1000,MAX_AGE_MS=3*60*60*1000;
-let snapshot={grid:null,forecast:null,observed:null,kp:null,kpTime:null,error:null};
+let snapshot={grid:null,forecast:null,observed:null,kp:null,kpTime:null,fetchedAt:null,error:null};
 let pending=false;
 const notify=()=>window.dispatchEvent(new Event('helioclock-space-weather'));
 const readTime=value=>{
@@ -74,6 +74,7 @@ export async function refreshSpaceWeather(){
   else{next.grid=null;next.forecast=null;next.observed=null;next.error='Aurora data unavailable'}
   if(kp.status==='fulfilled')Object.assign(next,kp.value);
   else{next.kp=null;next.kpTime=null;next.error=[next.error,'Kp unavailable'].filter(Boolean).join(' · ')}
+  next.fetchedAt=new Date().toISOString();
   snapshot=next;notify();
  }finally{pending=false}
 }

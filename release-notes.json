@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v98",
+      "summary": "Show source filenames, data dates and download timestamps for MPC comets, NASA solar images and cloud imagery, and NOAA space-weather feeds; distinguish observations from retrieval times."
+    },
+    {
       "version": "v97",
       "summary": "Fix Earth map observer and zoom controls overflowing narrow tablet dashboard cards; wrap by available panel width and verify button-label bounds in Firefox."
     },
