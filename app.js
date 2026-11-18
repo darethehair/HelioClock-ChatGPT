@@ -412,31 +412,38 @@ $('iss-refresh').addEventListener('click',refreshIssElements);
 $('iss-show').addEventListener('change',render);
 // Sky Compass and Earth Map share the same SGP4 elements and selected date.
 $('iss-sky-show').addEventListener('change',render);
-function navigateIssPass(direction){
+function navigateIssPass(direction,visibleOnly=false){
  pausePlayback();
  const status=issElementStatus(issModel,state.date);
  if(!status.valid){
   $('iss-pass-status').textContent='ISS pass search requires orbital elements within ±5 days of their epoch.';
   return;
  }
- $('iss-pass-status').textContent='Calculating ISS pass…';
- const found=findIssPass(issModel,state.date,state.lat,state.lon,direction);
+ $('iss-pass-status').textContent=visibleOnly?'Searching for a potentially visible ISS pass…':'Calculating ISS orbital pass…';
+ const found=findIssPass(issModel,state.date,state.lat,state.lon,direction,{visibleOnly});
  if(!found){
-  $('iss-pass-status').textContent='No complete ISS pass found within 48 hours of this date and element epoch.';
+  $('iss-pass-status').textContent='No complete '+(visibleOnly?'potentially visible ':'')+
+    'ISS pass found within the valid orbital-element window (up to 5 days).';
   return;
  }
- // Move to rise for forward search, and to the previous pass rise for reverse.
- state.date=new Date(found.rise.getTime()+1000);
+ // Start visible-pass playback close to its first observable segment,
+ // rather than wasting most of a pass while the sky is too bright.
+ const start=visibleOnly&&found.visibleStart?found.visibleStart:found.rise;
+ state.date=new Date(start.getTime()+1000);
  state.live=false;setDateInputs();
  const utc=d=>d.toISOString().slice(0,16).replace('T',' ')+' UTC';
  $('iss-pass-status').textContent=
+  (visibleOnly?'Visible pass · ':'Orbital pass · ')+
   'Rise '+utc(found.rise)+' · maximum '+utc(found.maximum)+' at '+
   found.maxAlt.toFixed(1)+'° · set '+utc(found.set)+
-  ' · '+(found.likelyVisible?'Potentially visible':'Not predicted naked-eye visible');
+  (found.likelyVisible?' · potential viewing '+utc(found.visibleStart)+' – '+utc(found.visibleEnd):
+   ' · unlikely naked-eye visible (illumination/sky)');
  render();
 }
 $('iss-next-pass').addEventListener('click',()=>navigateIssPass(1));
 $('iss-prev-pass').addEventListener('click',()=>navigateIssPass(-1));
+$('iss-next-visible-pass').addEventListener('click',()=>navigateIssPass(1,true));
+$('iss-prev-visible-pass').addEventListener('click',()=>navigateIssPass(-1,true));
 function worldMap(){
  const o=canvas($('earth-map'));if(!o)return;
  const twilight={
@@ -778,14 +785,15 @@ function sky(){
   $('sky').dataset.issSkyCount=String(drawn.count);
   $('sky').dataset.issSkyPosition=JSON.stringify(current&&{
    alt:current.alt,az:current.az,rangeKm:current.rangeKm,
-   sunlit:current.sunlit,likelyVisible:current.likelyVisible
+   sunlit:current.sunlit,illumination:current.illumination,likelyVisible:current.likelyVisible
   });
   $('iss-sky-status').textContent=current
    ?'ISS Alt '+current.alt.toFixed(1)+'° · Az '+current.az.toFixed(1)+'° · range '+
       Math.round(current.rangeKm)+' km · '+(current.alt<=0?'below the horizon':
-        !current.sunlit?'above horizon · in Earth shadow':
-        current.sunAlt>=-6?'above horizon · sky too bright for reliable visibility':
-        current.alt<=10?'above horizon · low altitude':'potentially visible (weather permitting)')
+        current.illumination==='shadow'?'above horizon · full Earth shadow':
+        current.illumination==='partial'?'above horizon · partial Earth shadow':
+        current.sunAlt> -6?'above horizon · twilight/daylight':
+        current.alt<10?'above horizon · low altitude':'potentially visible (weather permitting)')
    :'ISS propagation unavailable';
  }else{
   $('sky').dataset.issSkyCount='0';
