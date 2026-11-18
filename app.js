@@ -23,6 +23,7 @@ import {renderEarth,earthTextureStatus,earthCoordinatesAt,createEarthProjection}
 import {solarTrailSamples,addSolarBreadcrumb,paintSkySolarTrail,paintEarthSolarTrail} from './solar-motion-trails.js';
 import {PLAYBACK_RATES,DEFAULT_PLAYBACK_RATE,advancePlayback} from './playback-time.js';
 import {ISS_SOURCE,normalizeIssPayload,issElementStatus,issPosition,issGroundTrack,paintIssEarth} from './iss-tracking.js';
+import {issSkyPosition,issSkyTrack,paintIssSky,findIssPass} from './iss-sky.js';
 import {planetTrailDates,planetTrailCoordinates,paintPlanetSkyTrail} from './planet-motion-trails.js';
 import {cloudStatus,refreshClouds} from './clouds.js';
 import {findPlanetaryEvent,eventPlanets,eventOptions} from './planetary-events.js';
@@ -409,6 +410,33 @@ async function refreshIssElements(){
 }
 $('iss-refresh').addEventListener('click',refreshIssElements);
 $('iss-show').addEventListener('change',render);
+// Sky Compass and Earth Map share the same SGP4 elements and selected date.
+$('iss-sky-show').addEventListener('change',render);
+function navigateIssPass(direction){
+ pausePlayback();
+ const status=issElementStatus(issModel,state.date);
+ if(!status.valid){
+  $('iss-pass-status').textContent='ISS pass search requires orbital elements within ±5 days of their epoch.';
+  return;
+ }
+ $('iss-pass-status').textContent='Calculating ISS pass…';
+ const found=findIssPass(issModel,state.date,state.lat,state.lon,direction);
+ if(!found){
+  $('iss-pass-status').textContent='No complete ISS pass found within 48 hours of this date and element epoch.';
+  return;
+ }
+ // Move to rise for forward search, and to the previous pass rise for reverse.
+ state.date=new Date(found.rise.getTime()+1000);
+ state.live=false;setDateInputs();
+ const utc=d=>d.toISOString().slice(0,16).replace('T',' ')+' UTC';
+ $('iss-pass-status').textContent=
+  'Rise '+utc(found.rise)+' · maximum '+utc(found.maximum)+' at '+
+  found.maxAlt.toFixed(1)+'° · set '+utc(found.set)+
+  ' · '+(found.likelyVisible?'Potentially visible':'Not predicted naked-eye visible');
+ render();
+}
+$('iss-next-pass').addEventListener('click',()=>navigateIssPass(1));
+$('iss-prev-pass').addEventListener('click',()=>navigateIssPass(-1));
 function worldMap(){
  const o=canvas($('earth-map'));if(!o)return;
  const twilight={
@@ -735,6 +763,38 @@ function sky(){
      Y+rad*(1-alt/90)*Math.sin((az-90-state.skyHeading)*RAD)]
   }));
  }else $('sky').dataset.planetTrailCount='0';
+ const issSkyStatus=issElementStatus(issModel,state.date);
+ const issSkyEnabled=$('iss-sky-show').checked;
+ if(issSkyEnabled&&issSkyStatus.valid){
+  const current=issSkyPosition(issModel,state.date,state.lat,state.lon);
+  const track=issSkyTrack(issModel,state.date,state.lat,state.lon);
+  const drawn=paintIssSky(c,track,current,{
+   mode:state.skyProjection,width:w,belowHorizon,
+   zoom:rectSky?state.skyZoom:1,
+   project:(az,alt)=>rectSky?projectRect(az,alt,w,h,state.skyHeading):
+    [X+rad*(1-alt/90)*Math.cos((az-90-state.skyHeading)*RAD),
+     Y+rad*(1-alt/90)*Math.sin((az-90-state.skyHeading)*RAD)]
+  });
+  $('sky').dataset.issSkyCount=String(drawn.count);
+  $('sky').dataset.issSkyPosition=JSON.stringify(current&&{
+   alt:current.alt,az:current.az,rangeKm:current.rangeKm,
+   sunlit:current.sunlit,likelyVisible:current.likelyVisible
+  });
+  $('iss-sky-status').textContent=current
+   ?'ISS Alt '+current.alt.toFixed(1)+'° · Az '+current.az.toFixed(1)+'° · range '+
+      Math.round(current.rangeKm)+' km · '+(current.alt<=0?'below the horizon':
+        !current.sunlit?'above horizon · in Earth shadow':
+        current.sunAlt>=-6?'above horizon · sky too bright for reliable visibility':
+        current.alt<=10?'above horizon · low altitude':'potentially visible (weather permitting)')
+   :'ISS propagation unavailable';
+ }else{
+  $('sky').dataset.issSkyCount='0';
+  $('sky').dataset.issSkyPosition='null';
+  $('iss-sky-status').textContent=!issSkyEnabled?'ISS sky marker hidden':
+   !issModel?'ISS orbital elements unavailable':
+   'ISS sky prediction unavailable: '+issSkyStatus.ageDays.toFixed(1)+
+      ' days from element epoch (limit ±5 days)';
+ }
  $('sky').dataset.dsoInfo=JSON.stringify(dso);
  const status=skyAtlasStatus();
  $('sky-atlas-count').textContent=(status.ready?plotted||0:'Loading')+' stars'+(status.ready?' visible':' · catalog loading');
@@ -2238,7 +2298,7 @@ const compactFullscreenQuery=window.matchMedia('(max-width: 1050px)');
 const compactControlSelectors={
  'chart-panel':['.solar-chart-legend','.solar-chart-summary','.solar-time-position','.chart-footer'],
  'earth-panel':['.earth-tools','.earth-political-tools','.earth-twilight-controls','.earth-overlay-tools','.iss-map-tools','.solar-trail-tools','.map-legend'],
- 'sky-panel':['.celestial-finder','.sky-light-controls','.sky-observatory-toolbar','.sky-sidereal-toolbar','.sky-debug-tools','.sky-options','.solar-trail-tools','.planet-trail-tools','.sky-cursor-readout','.celestial-readout','.sky-legend'],
+ 'sky-panel':['.celestial-finder','.sky-light-controls','.sky-observatory-toolbar','.sky-sidereal-toolbar','.sky-debug-tools','.sky-options','.solar-trail-tools','.planet-trail-tools','.iss-sky-tools','.sky-cursor-readout','.celestial-readout','.sky-legend'],
  'moon-panel':['.eclipse-explorer','.disc-view-select','.earthshine-toggle','.moon-view-tools','.moon-orientation','.solar-observation-note','.moon-bottom'],
  'orrery-panel':['.orrery-controls','.orrery-events','.planet-legend']
 };
