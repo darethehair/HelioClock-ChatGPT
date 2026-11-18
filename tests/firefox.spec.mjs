@@ -2624,7 +2624,7 @@ test('Minor planets use hollow-circle markers; ecliptic risers also cover planet
 test('Lunar atlas labels follow zoom, filters, search, and Sun/Moon switch',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
  const overlay=page.locator('#lunar-feature-overlay');
- await expect.poll(()=>overlay.getAttribute('data-catalogue-count')).toBe('115');
+ await expect.poll(()=>overlay.getAttribute('data-catalogue-count')).toBe('500');
  await expect.poll(async()=>JSON.parse(await overlay.getAttribute('data-visible-labels')||'[]').length).toBeGreaterThan(0);
  const before=await overlay.evaluate(el=>JSON.parse(el.dataset.visibleLabels||'[]'));
  await page.locator('#moon-zoom-in').click();
