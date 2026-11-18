@@ -21,7 +21,7 @@ test('ISS sky position is observer-relative and reports illumination separately'
  assert.ok(p.rangeKm>100&&p.rangeKm<15000);
  assert.equal(typeof p.sunlit,'boolean');
  assert.equal(typeof p.likelyVisible,'boolean');
- assert.equal(p.likelyVisible, p.alt>10&&p.sunlit&&p.sunAlt< -6);
+ assert.equal(p.likelyVisible, p.alt>=10&&p.illumination==='sunlit'&&p.sunAlt<= -6);
  assert.equal(issSkyPosition(model,new Date('2030-01-01T00:00:00Z'),observer.lat,observer.lon),null);
 });
 test('ISS sky pass track follows time and current position',()=>{
@@ -43,6 +43,32 @@ test('Next and previous pass have correct chronological boundaries',()=>{
  }
  assert.ok(future.rise>when);
  assert.ok(previous.set<when);
+});
+test('Visible-pass filter distinguishes illuminated dark-sky windows from orbital-only passes',()=>{
+ const all=findIssPass(model,when,observer.lat,observer.lon,1,{hours:120});
+ assert.ok(all,'some orbital pass within validity window');
+ const visible=findIssPass(model,when,observer.lat,observer.lon,1,{hours:120,visibleOnly:true});
+ if(visible){
+  assert.ok(visible.likelyVisible);
+  assert.ok(visible.visibleStart instanceof Date);
+  assert.ok(visible.visibleEnd>=visible.visibleStart);
+  const p=issSkyPosition(model,visible.visibleStart,observer.lat,observer.lon);
+  assert.ok(p.alt>=10&&p.sunlit&&p.sunAlt<= -6);
+  assert.ok(visible.rise>=when);
+ }
+ const before=findIssPass(model,when,observer.lat,observer.lon,-1,{hours:120,visibleOnly:true});
+ if(before){
+  assert.ok(before.set<=when);
+  assert.ok(before.likelyVisible);
+  assert.ok(before.visibleStart>=before.rise&&before.visibleEnd<=before.set);
+ }
+});
+test('Pass-finding respects element validity when searching forward and backward',()=>{
+ assert.equal(findIssPass(model,new Date('2030-01-01T00:00:00Z'),observer.lat,observer.lon,1,{visibleOnly:true}),null);
+ const future=findIssPass(model,when,observer.lat,observer.lon,1);
+ assert.ok(future&&future.set>future.rise);
+ const previous=findIssPass(model,when,observer.lat,observer.lon,-1);
+ assert.ok(previous&&previous.set<when&&previous.rise<previous.set);
 });
 test('Sky track draws above-horizon points without requiring visibility',()=>{
  const track=issSkyTrack(model,when,observer.lat,observer.lon);
