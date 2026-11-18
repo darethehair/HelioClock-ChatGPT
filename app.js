@@ -584,18 +584,6 @@ function sky(){
       Y+rad*(1-alt/90)*Math.sin((az-90-state.skyHeading)*RAD)]
   }));
  }else $('sky').dataset.solarTrailCount='0';
- if(planetTrail.enabled){
-  const points=currentPlanetTrail();
-  const color={Mercury:'#cbd0d7',Venus:'#ffe1a4',Mars:'#ff9776',
-   Jupiter:'#eccda2',Saturn:'#dfc8aa',Uranus:'#a1e5ed',Neptune:'#9ba9ff'}[planetTrail.name];
-  $('sky').dataset.planetTrailCount=String(paintPlanetSkyTrail(c,points,{
-   mode:state.skyProjection,width:w,height:h,belowHorizon,
-   zoom:rectSky?state.skyZoom:1,color,dots:planetTrail.dots,line:planetTrail.line,
-   project:(az,alt)=>rectSky?projectRect(az,alt,w,h,state.skyHeading):
-    [X+rad*(1-alt/90)*Math.cos((az-90-state.skyHeading)*RAD),
-     Y+rad*(1-alt/90)*Math.sin((az-90-state.skyHeading)*RAD)]
-  }));
- }else $('sky').dataset.planetTrailCount='0';
  if($('show-ecliptic').checked)drawEcliptic(c,{
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
   mode:state.skyProjection,heading:state.skyHeading,zoom:fittedPolarZoom,
@@ -660,6 +648,18 @@ function sky(){
   showClusters:$('show-dso-clusters').checked,
   showLabels:$('show-dso-labels').checked
  });
+ if(planetTrail.enabled){
+  const points=currentPlanetTrail();
+  const color={Mercury:'#cbd0d7',Venus:'#ffe1a4',Mars:'#ff9776',
+   Jupiter:'#eccda2',Saturn:'#dfc8aa',Uranus:'#a1e5ed',Neptune:'#9ba9ff'}[planetTrail.name];
+  $('sky').dataset.planetTrailCount=String(paintPlanetSkyTrail(c,points,{
+   mode:state.skyProjection,width:w,height:h,belowHorizon,
+   zoom:rectSky?state.skyZoom:1,color,dots:planetTrail.dots,line:planetTrail.line,
+   project:(az,alt)=>rectSky?projectRect(az,alt,w,h,state.skyHeading):
+    [X+rad*(1-alt/90)*Math.cos((az-90-state.skyHeading)*RAD),
+     Y+rad*(1-alt/90)*Math.sin((az-90-state.skyHeading)*RAD)]
+  }));
+ }else $('sky').dataset.planetTrailCount='0';
  $('sky').dataset.dsoInfo=JSON.stringify(dso);
  const status=skyAtlasStatus();
  $('sky-atlas-count').textContent=(status.ready?plotted||0:'Loading')+' stars'+(status.ready?' visible':' · catalog loading');
