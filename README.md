@@ -105,6 +105,7 @@ Release highlights are curated in [`release-notes.json`](release-notes.json). Wh
 
 | Release | Highlights |
 | --- | --- |
+| **v116** | Add named playback rates from 1 simulated second to 1 fixed 365-day year per real second, bidirectional Play/Reverse, elapsed-time stepping and compact fullscreen speed selection. |
 | **v115** | Add Mercury–Neptune motion trails to Sky Compass with computed 400-day ephemeris paths, accumulated time-step breadcrumbs, star-relative or horizon frames, dots/line controls and clear; Earth Map remains Sun-only. |
 | **v114** | Add Sun motion trails to Sky Compass and all Earth projections: fixed-UTC annual analemma, manual time-step breadcrumbs, independent dots/line styling, synchronized panel controls and clear trail. |
 | **v113** | Show substantially more lunar names at low magnification by relaxing zoom eligibility and scaling collision-limited label density to the viewport, while preserving the 500-feature searchable atlas. |
