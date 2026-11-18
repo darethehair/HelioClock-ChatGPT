@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v116",
+      "summary": "Add named playback rates from 1 simulated second to 1 fixed 365-day year per real second, bidirectional Play/Reverse, elapsed-time stepping and compact fullscreen speed selection."
+    },
+    {
       "version": "v115",
       "summary": "Add Mercury–Neptune motion trails to Sky Compass with computed 400-day ephemeris paths, accumulated time-step breadcrumbs, star-relative or horizon frames, dots/line controls and clear; Earth Map remains Sun-only."
     },
