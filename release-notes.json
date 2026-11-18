@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v112",
+      "summary": "Expand the lunar atlas to 500 searchable named features: retain 115 curated landmarks, add 385 prominent near-side craters from USGS-derived nomenclature data, and maintain zoom-dependent uncluttered labels."
+    },
+    {
       "version": "v111",
       "summary": "Curated 115-feature near-side lunar atlas with zoom-aware collision-limited labels, maria/crater/other filters, searchable names, centering and selection; fixed mosaic coordinates are explicitly approximate, with libration deferred."
     },
