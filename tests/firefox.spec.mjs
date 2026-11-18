@@ -2673,6 +2673,11 @@ test('Sun analemma draws on sky and projected Earth; breadcrumb steps accumulate
 
 test('Planetary Sky Compass trails support computed and breadcrumb modes without Earth map controls',async({page})=>{
  await page.goto('http://127.0.0.1:8765/');
+ // This regression checks calculated trajectory rendering, not whether Jupiter
+ // happens to be above the real-time horizon when CI starts. Use the complete
+ // rectangular sky so all valid ephemeris points remain eligible for plotting.
+ await page.locator('[data-sky-projection="rect"]').click();
+ await expect(page.locator('#show-below-horizon')).toBeChecked();
  const sky=page.locator('#sky'),earth=page.locator('#earth-map');
  await expect(page.locator('.earth-panel #planet-trail-enabled')).toHaveCount(0);
  await page.locator('#planet-trail-enabled').check();
