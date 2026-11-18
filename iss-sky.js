@@ -79,7 +79,15 @@ export function paintIssSky(ctx,points,current,{mode,width,belowHorizon,project,
     current.illumination==='partial'?'#c5a86d':'#94d6ff';
    ctx.strokeStyle='#072138';ctx.lineWidth=1.6/zoom;
    ctx.beginPath();ctx.arc(xy[0],xy[1],5/zoom,0,Math.PI*2);ctx.fill();ctx.stroke();
-   ctx.fillStyle='#dff9ff';ctx.font=`${11/zoom}px sans-serif`;
+   if(current.likelyVisible){
+    ctx.beginPath();ctx.arc(xy[0],xy[1],9/zoom,0,Math.PI*2);
+    ctx.strokeStyle='#b8fff0';ctx.lineWidth=1.4/zoom;ctx.stroke();
+   }else if(current.illumination==='shadow'){
+    ctx.beginPath();ctx.arc(xy[0],xy[1],2/zoom,0,Math.PI*2);
+    ctx.fillStyle='#14283d';ctx.fill();
+   }
+   ctx.fillStyle=current.likelyVisible?'#c9fff2':'#dff9ff';
+   ctx.font=`${11/zoom}px sans-serif`;
    ctx.fillText('ISS',xy[0]+8/zoom,xy[1]-8/zoom);
   }
  }
