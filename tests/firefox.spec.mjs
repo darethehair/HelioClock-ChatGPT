@@ -1823,6 +1823,9 @@ test('Disc coordinate overlay shares real CSS pan and zoom transform with both p
   },subject);
   const original=await getTransforms();
   expect(original.image).toBe(original.grid);
+  // The v111 lunar atlas controls shift the stage down the document.
+  // Use viewport-visible pointer coordinates rather than a stale offscreen box.
+  await stage.scrollIntoViewIfNeeded();
   const box=await stage.boundingBox();
   const x=box.x+box.width*.5,y=box.y+box.height*.5;
   await page.mouse.move(x,y);
