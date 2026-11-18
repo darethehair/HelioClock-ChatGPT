@@ -817,10 +817,10 @@ export function findLunarFeature(query){
  return LUNAR_FEATURES.find(f=>f.name.toLocaleLowerCase()===q)||
   LUNAR_FEATURES.find(f=>f.name.toLocaleLowerCase().includes(q))||null;
 }
-// The photographed lunar east lies to image LEFT. disc-coordinates.js uses
-// east-right reference screen coordinates, so reflect longitude for labels.
+// North-up near-side lunar photograph: east-positive lunar longitudes
+// project to image right, west-negative longitudes to image left.
 export function lunarFeatureScreen(feature,geometry){
- return surfaceToScreen(feature.lat,-feature.lon,geometry);
+ return surfaceToScreen(feature.lat,feature.lon,geometry);
 }
 export function visibleLunarLabels(geometry,{zoom=1,enabled=true,maria=true,craters=true,other=true,selected=''}={},width=geometry.cx*2,height=geometry.cy*2){
  if(!enabled)return [];
