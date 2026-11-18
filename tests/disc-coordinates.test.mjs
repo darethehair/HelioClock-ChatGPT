@@ -56,3 +56,16 @@ test('Solar pole viewing tilt changes projected coordinates and round-trips',()=
   assert.ok(Math.abs(back.longitude-lon)<1e-8);
  }
 });
+
+test('Lunar atlas coordinates use west-right in the north-up photograph',()=>{
+ const g=discGeometry('moon',800,800);
+ const tycho=surfaceToScreen(-43.3,11.2,g); // image-space longitude reflects Tycho's 11.2 W
+ assert.ok(tycho);
+ const recovered=screenToSurface(tycho.x,tycho.y,g,'moon');
+ assert.ok(Math.abs(recovered.latitude+43.3)<1e-8);
+ assert.ok(Math.abs(recovered.longitude+11.2)<1e-8);
+ assert.ok(tycho.x>g.cx,'western Tycho should lie right of centre');
+ assert.ok(tycho.y>g.cy,'southern Tycho should lie below centre');
+ const solar=screenToSurface(tycho.x,tycho.y,g,'sun');
+ assert.ok(Math.abs(solar.longitude-11.2)<1e-8);
+});
