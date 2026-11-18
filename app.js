@@ -2134,8 +2134,8 @@ const dockNext=timeDock.nextSibling;
 const compactFullscreenQuery=window.matchMedia('(max-width: 1050px)');
 const compactControlSelectors={
  'chart-panel':['.solar-chart-legend','.solar-chart-summary','.solar-time-position','.chart-footer'],
- 'earth-panel':['.earth-tools','.earth-political-tools','.earth-twilight-controls','.earth-overlay-tools','.map-legend'],
- 'sky-panel':['.celestial-finder','.sky-light-controls','.sky-observatory-toolbar','.sky-sidereal-toolbar','.sky-debug-tools','.sky-options','.sky-cursor-readout','.celestial-readout','.sky-legend'],
+ 'earth-panel':['.earth-tools','.earth-political-tools','.earth-twilight-controls','.earth-overlay-tools','.solar-trail-tools','.map-legend'],
+ 'sky-panel':['.celestial-finder','.sky-light-controls','.sky-observatory-toolbar','.sky-sidereal-toolbar','.sky-debug-tools','.sky-options','.solar-trail-tools','.planet-trail-tools','.sky-cursor-readout','.celestial-readout','.sky-legend'],
  'moon-panel':['.eclipse-explorer','.disc-view-select','.earthshine-toggle','.moon-view-tools','.moon-orientation','.solar-observation-note','.moon-bottom'],
  'orrery-panel':['.orrery-controls','.orrery-events','.planet-legend']
 };
