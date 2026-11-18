@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {discGeometry,screenToSurface,surfaceToScreen,formatSurface,gridInterval} from '../disc-coordinates.js';
 import {solarDiscOrientation} from '../solar-disc-orientation.js';
-import {findLunarFeature,lunarFeatureScreen} from '../moon-features.js';
+import {LUNAR_FEATURES,findLunarFeature,lunarFeatureScreen} from '../moon-features.js';
 test('Moon grid centre and latitude/longitude reference',()=>{
  const g=discGeometry('moon',400,400);
  assert.deepEqual(screenToSurface(200,200,g),{latitude:0,longitude:0});
@@ -78,4 +78,20 @@ test('Lunar feature catalogue and north-up photo have the same east-west handedn
   assert.ok(Math.abs(recovered.latitude-lat)<1e-8,name+' latitude readout');
   assert.ok(Math.abs(recovered.longitude-lon)<1e-8,name+' longitude readout');
  }
+});
+
+test('Expanded 500-feature lunar atlas is unique, searchable and on the visible hemisphere',()=>{
+ assert.equal(LUNAR_FEATURES.length,500);
+ const names=new Set();
+ for(const feature of LUNAR_FEATURES){
+  const key=feature.name.toLocaleLowerCase();
+  assert.ok(!names.has(key),'Duplicate feature '+feature.name);
+  names.add(key);
+  assert.ok(Number.isFinite(feature.lat)&&Number.isFinite(feature.lon),feature.name);
+  assert.ok(feature.lat>=-90&&feature.lat<=90&&Math.abs(feature.lon)<=180,feature.name);
+  assert.ok(Math.cos(feature.lat*Math.PI/180)*Math.cos(feature.lon*Math.PI/180)>=0,feature.name+' is on the far side');
+  assert.equal(findLunarFeature(feature.name)?.name,feature.name);
+  assert.ok(lunarFeatureScreen(feature,discGeometry('moon',800,800)),feature.name+' must project');
+ }
+ assert.ok(LUNAR_FEATURES.filter(x=>x.type==='crater').length>400);
 });
