@@ -53,12 +53,16 @@ test('Mobile fullscreen prioritizes the chart and restores controls after exit',
  await expect(panel).toHaveClass(/mobile-plot-fullscreen/);
  await expect(page.locator('.mobile-plot-settings:visible')).toHaveCount(1);
  await expect(page.locator('.sky-panel .sky-options')).not.toBeVisible();
+ await expect(page.locator('.sky-panel .solar-trail-tools')).not.toBeVisible();
+ await expect(page.locator('.sky-panel .planet-trail-tools')).not.toBeVisible();
  const rect=await page.locator('#sky').boundingBox();
  expect(rect.height).toBeGreaterThan(550);
  const dock=await page.locator('#time-dock').boundingBox();
  expect(dock.height).toBeLessThan(60);
  await page.locator('.sky-panel .mobile-plot-settings').click();
  await expect(page.locator('.sky-panel .sky-options')).toBeVisible();
+ await expect(page.locator('.sky-panel .solar-trail-tools')).toBeVisible();
+ await expect(page.locator('.sky-panel .planet-trail-tools')).toBeVisible();
  await revealSkyControl(page,'show-radec-grid');
  await page.locator('.sky-panel #show-radec-grid').check();
  await page.locator('.sky-panel .mobile-plot-settings').click();
