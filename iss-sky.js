@@ -91,7 +91,7 @@ export function findIssPass(model,date,lat,lon,direction=1,{hours=48,stepSeconds
    }else{
     pass.push(p);
     if(exited||entered){
-     if((direction===1&&exited)||(direction===-1&&entered)){
+     if(exited){
       const chronological=direction===1?pass:pass.reverse();
       const above=chronological.filter(x=>x.alt>0);
       if(!above.length)return null;
