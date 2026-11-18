@@ -2690,3 +2690,38 @@ test('Planetary Sky Compass trails support computed and breadcrumb modes without
  await page.locator('#planet-trail-enabled').uncheck();
  await expect(sky).toHaveAttribute('data-planet-trail-count','0');
 });
+
+test('Persistent dock selects named playback rates and runs in both directions',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8765/');
+ const rate=page.locator('#dock-playback-rate');
+ await expect(rate.locator('option')).toHaveCount(7);
+ await expect(rate).toHaveValue('3600');
+ await rate.selectOption('86400');
+ await expect(rate).toHaveValue('86400');
+ await page.locator('#dock-reverse').click();
+ await expect(page.locator('#dock-reverse')).toHaveText('Ⅱ');
+ await expect(page.locator('#dock-play')).toHaveText('▶');
+ await page.locator('#dock-play').click();
+ await expect(page.locator('#dock-play')).toHaveText('Ⅱ');
+ await expect(page.locator('#dock-reverse')).toHaveText('◀');
+ await page.locator('#dock-play').click();
+ await expect(page.locator('#dock-play')).toHaveText('▶');
+ await rate.selectOption('1');
+ await expect(rate).toHaveValue('1');
+ await expect(page.locator('#play-time')).toHaveText('▶ Play');
+ expect(errors).toEqual([]);
+});
+test('Mobile fullscreen retains playback speed in expanded time dock',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('[data-fullscreen="sky-panel"]').click();
+ await expect(page.locator('.sky-panel')).toHaveClass(/mobile-plot-fullscreen/);
+ await expect(page.locator('#dock-playback-rate')).not.toBeVisible();
+ await page.locator('#dock-mobile-more').click();
+ await expect(page.locator('#dock-playback-rate')).toBeVisible();
+ await page.locator('#dock-playback-rate').selectOption('60');
+ await expect(page.locator('#dock-playback-rate')).toHaveValue('60');
+ await page.locator('#dock-mobile-more').click();
+ await expect(page.locator('#dock-playback-rate')).not.toBeVisible();
+});
