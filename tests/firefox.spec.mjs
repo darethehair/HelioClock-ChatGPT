@@ -2785,12 +2785,15 @@ test('ISS Sky Compass tracks position and previous/next passes with current orbi
   el.value='12:00';el.dispatchEvent(new Event('change',{bubbles:true}));
  });
  const sky=page.locator('#sky');
- await expect.poll(async()=>Number(await sky.getAttribute('data-iss-sky-count'))).toBeGreaterThan(30);
+ // A valid topocentric position can be below the horizon, in which case the
+ // above-horizon canvas correctly draws zero track points.
+ await expect.poll(async()=>JSON.parse(await sky.getAttribute('data-iss-sky-position')||'null')).not.toBeNull();
  await expect(page.locator('#iss-sky-status')).toContainText('ISS Alt');
  await page.locator('#iss-sky-show').uncheck();
  await expect(sky).toHaveAttribute('data-iss-sky-count','0');
  await page.locator('#iss-sky-show').check();
  await page.locator('#iss-next-pass').click();
+ await expect.poll(async()=>Number(await sky.getAttribute('data-iss-sky-count'))).toBeGreaterThan(0);
  await expect(page.locator('#iss-pass-status')).toContainText('Rise');
  await expect(page.locator('#iss-pass-status')).toContainText('maximum');
  await page.locator('#iss-prev-pass').click();
