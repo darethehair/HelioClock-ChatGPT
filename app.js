@@ -19,7 +19,8 @@ import {cometHeliocentricEcliptic,cometOrbitPath} from './comet-orbits.js';
 import {asteroidPosition,asteroidPath} from './asteroid-orbits.js';
 import {minorBodyGeometry} from './minor-body-geometry.js';
 import {LUNAR_FEATURES,findLunarFeature,lunarFeatureScreen,paintLunarLabels} from './moon-features.js';
-import {renderEarth,earthTextureStatus,earthCoordinatesAt} from './earth-renderer.js';
+import {renderEarth,earthTextureStatus,earthCoordinatesAt,createEarthProjection} from './earth-renderer.js';
+import {solarTrailSamples,addSolarBreadcrumb,paintSkySolarTrail,paintEarthSolarTrail} from './solar-motion-trails.js';
 import {cloudStatus,refreshClouds} from './clouds.js';
 import {findPlanetaryEvent,eventPlanets,eventOptions} from './planetary-events.js';
 import {findEclipseAsync} from './eclipse-events.js';
@@ -28,6 +29,37 @@ import {starsAbove} from './sky-catalog.js';
 import {RAD,PI,wrap,clamp,solar,sunHorizontal,sunEvents,moon,orbitPositions,sidereal,equatorialFromHorizontal,utcTime,durationText} from './astronomy.js';
 const $=id=>document.getElementById(id);
 const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyPanX:0,skyPanY:0,skyHeading:0,earthZoom:1,earthLon:-98.10,earthLat:49.19,earthProjection:'equal',earthMapStyle:'physical',earthTextureQuality:'2k',orreryZoom:1,moonZoom:1,discView:'moon',sunZoom:1,moonPanX:0,moonPanY:0,sunPanX:0,sunPanY:0,orbitMode:'inner',orrery3D:false,orreryTilt:55,orreryRotation:0,skyLight:'daylight',skyProjection:'polar',magLimit:3.5,stellarColors:true,usePrecession:true,playing:false};
+const solarTrail={enabled:false,mode:'analemma',dots:true,line:true,history:[],lastRecorded:null};
+function solarTrailDates(){
+ return solarTrail.mode==='analemma'?solarTrailSamples(state.date):solarTrail.history.map(ms=>new Date(ms));
+}
+function syncSolarTrailControls(){
+ for(const e of document.querySelectorAll('[data-solar-trail-enabled]'))e.checked=solarTrail.enabled;
+ for(const e of document.querySelectorAll('[data-solar-trail-mode]'))e.value=solarTrail.mode;
+ for(const e of document.querySelectorAll('[data-solar-trail-dots]'))e.checked=solarTrail.dots;
+ for(const e of document.querySelectorAll('[data-solar-trail-line]'))e.checked=solarTrail.line;
+ for(const e of document.querySelectorAll('[data-solar-trail-status]'))e.textContent=solarTrail.mode==='analemma'
+  ?'Year '+state.date.getUTCFullYear()+' · fixed '+state.date.toISOString().slice(11,16)+' UTC · 5-day sampling'
+  :solarTrail.history.length+' recorded positions · Clear to discard';
+}
+for(const el of document.querySelectorAll('[data-solar-trail-enabled]'))el.addEventListener('change',()=>{
+ solarTrail.enabled=el.checked;
+ if(solarTrail.enabled&&solarTrail.mode==='breadcrumbs'&&!state.live)solarTrail.history=addSolarBreadcrumb(solarTrail.history,state.date);
+ solarTrail.lastRecorded=state.date.getTime();syncSolarTrailControls();render();
+});
+for(const el of document.querySelectorAll('[data-solar-trail-mode]'))el.addEventListener('change',()=>{
+ solarTrail.mode=el.value==='breadcrumbs'?'breadcrumbs':'analemma';
+ if(solarTrail.mode==='breadcrumbs'&&solarTrail.enabled&&!state.live)solarTrail.history=addSolarBreadcrumb(solarTrail.history,state.date);
+ solarTrail.lastRecorded=state.date.getTime();syncSolarTrailControls();render();
+});
+for(const [field,property] of [['data-solar-trail-dots','dots'],['data-solar-trail-line','line']])
+ for(const el of document.querySelectorAll('['+field+']'))el.addEventListener('change',()=>{
+  solarTrail[property]=el.checked;syncSolarTrailControls();render();
+ });
+for(const el of document.querySelectorAll('[data-solar-trail-clear]'))el.addEventListener('click',()=>{
+ solarTrail.history=[];solarTrail.lastRecorded=state.date.getTime();
+ syncSolarTrailControls();render();
+});
 const fmt=d=>d.toISOString().slice(0,10);
 let highlightedOrreryEvent=null;
 let fitSelectedComet=false;
@@ -299,6 +331,14 @@ function worldMap(){
   earthCountryBorders:$('earth-country-borders').checked,
   earthRegionBorders:$('earth-region-borders').checked,
   earthCityLabels:$('earth-city-labels').checked});
+ if(solarTrail.enabled){
+  const dates=solarTrailDates();
+  const projection=createEarthProjection(o.w,o.h,state);
+  $('earth-map').dataset.solarTrailCount=String(paintEarthSolarTrail(o.c,dates,projection,{
+   globe:state.earthProjection==='globe',earthLon:state.earthLon,earthLat:state.earthLat,
+   dots:solarTrail.dots,line:solarTrail.line
+  }));
+ }else $('earth-map').dataset.solarTrailCount='0';
  const cloud=cloudStatus(),cloudEnabled=$('earth-clouds').checked;
  const cloudSource=cloud.status==='ready'
   ?'NASA GIBS · '+cloud.satellite+' VIIRS true-colour WMS · image dates '+cloud.day+
@@ -486,6 +526,17 @@ function sky(){
    c.stroke();c.restore();
   }
  }
+ if(solarTrail.enabled){
+  const dates=solarTrailDates();
+  $('sky').dataset.solarTrailCount=String(paintSkySolarTrail(c,dates,{
+   width:w,height:h,mode:state.skyProjection,lat:state.lat,lon:state.lon,
+   belowHorizon,zoom:rectSky?state.skyZoom:1,dots:solarTrail.dots,line:solarTrail.line,
+   project:(az,alt)=>state.skyProjection==='rect'
+    ?projectRect(az,alt,w,h,state.skyHeading)
+    :[X+rad*(1-alt/90)*Math.cos((az-90-state.skyHeading)*RAD),
+      Y+rad*(1-alt/90)*Math.sin((az-90-state.skyHeading)*RAD)]
+  }));
+ }else $('sky').dataset.solarTrailCount='0';
  if($('show-ecliptic').checked)drawEcliptic(c,{
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
   mode:state.skyProjection,heading:state.skyHeading,zoom:fittedPolarZoom,
@@ -1004,6 +1055,12 @@ function orrery(){
 function formatCoord(n,positive,negative){return Math.abs(n).toFixed(2)+'° '+(n>=0?positive:negative)}
 let almanacCurrent=null;
 function render(){
+ if(solarTrail.enabled&&solarTrail.mode==='breadcrumbs'&&!state.live&&
+    solarTrail.lastRecorded!==state.date.getTime()){
+  solarTrail.history=addSolarBreadcrumb(solarTrail.history,state.date);
+  solarTrail.lastRecorded=state.date.getTime();
+ }
+ syncSolarTrailControls();
  renderCelestialFinder();
  const s=sunHorizontal(state.date,state.lat,state.lon),m=moon(state.date,state.lat,state.lon);
  const ev=sunEvents(state.date,state.lat,state.lon);
