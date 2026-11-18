@@ -22,6 +22,7 @@ import {LUNAR_FEATURES,findLunarFeature,lunarFeatureScreen,paintLunarLabels} fro
 import {renderEarth,earthTextureStatus,earthCoordinatesAt,createEarthProjection} from './earth-renderer.js';
 import {solarTrailSamples,addSolarBreadcrumb,paintSkySolarTrail,paintEarthSolarTrail} from './solar-motion-trails.js';
 import {PLAYBACK_RATES,DEFAULT_PLAYBACK_RATE,advancePlayback} from './playback-time.js';
+import {ISS_SOURCE,normalizeIssPayload,issElementStatus,issPosition,issGroundTrack,paintIssEarth} from './iss-tracking.js';
 import {planetTrailDates,planetTrailCoordinates,paintPlanetSkyTrail} from './planet-motion-trails.js';
 import {cloudStatus,refreshClouds} from './clouds.js';
 import {findPlanetaryEvent,eventPlanets,eventOptions} from './planetary-events.js';
@@ -360,6 +361,54 @@ function setEarthObserverPickMode(enabled){
  map.classList.toggle('earth-pick-active',enabled);
  $('earth-pick-help').hidden=!enabled;
 }
+// The latest bundled CelesTrak OMM snapshot works offline. A user-initiated
+// refresh may replace it with newer data, but never discards a valid snapshot
+// when a network connection or provider is unavailable.
+let issModel=null,issSourceStatus='Loading bundled elements…',issRefreshing=false;
+const ISS_CACHE_KEY='helioclock-iss-omm-v1';
+function acceptIssPayload(data,origin){
+ const proposed=normalizeIssPayload(data);
+ if(!proposed)return false;
+ if(!issModel||proposed.epoch>issModel.epoch){
+  issModel=proposed;
+  issSourceStatus=origin;
+  try{localStorage.setItem(ISS_CACHE_KEY,JSON.stringify(data));}catch{}
+  return true;
+ }
+ return false;
+}
+async function loadIssElements(){
+ try{
+  const cached=localStorage.getItem(ISS_CACHE_KEY);
+  if(cached)acceptIssPayload(JSON.parse(cached),'Saved OMM');
+ }catch{}
+ try{
+  const reply=await fetch('./iss-elements.json',{cache:'no-store'});
+  if(!reply.ok)throw Error('HTTP '+reply.status);
+  acceptIssPayload(await reply.json(),'Bundled CelesTrak OMM');
+ }catch(error){
+  if(!issModel)issSourceStatus='No cached ISS data · '+error.message;
+ }
+ render();
+}
+async function refreshIssElements(){
+ if(issRefreshing)return;
+ issRefreshing=true;$('iss-refresh').disabled=true;
+ $('iss-status').textContent='Updating ISS orbital elements from CelesTrak…';
+ try{
+  const response=await fetch(ISS_SOURCE,{cache:'no-store'});
+  if(!response.ok)throw Error('HTTP '+response.status);
+  const records=await response.json();
+  const updated=acceptIssPayload(records,'CelesTrak live OMM');
+  if(!updated){
+   if(!normalizeIssPayload(records))throw Error('Invalid ISS orbital record');
+   issSourceStatus='Existing cached OMM is as recent as the response';
+  }
+ }catch(error){issSourceStatus=(issModel?'Using cached elements · ':'No ISS elements · ')+'update unavailable ('+error.message+')';}
+ finally{issRefreshing=false;$('iss-refresh').disabled=false;render();}
+}
+$('iss-refresh').addEventListener('click',refreshIssElements);
+$('iss-show').addEventListener('change',render);
 function worldMap(){
  const o=canvas($('earth-map'));if(!o)return;
  const twilight={
@@ -387,6 +436,31 @@ function worldMap(){
    dots:solarTrail.dots,line:solarTrail.line
   }));
  }else $('earth-map').dataset.solarTrailCount='0';
+ const issStatus=issElementStatus(issModel,state.date);
+ const issEnabled=$('iss-show').checked;
+ if(issEnabled&&issStatus.valid){
+  const center=issPosition(issModel,state.date);
+  const track=issGroundTrack(issModel,state.date);
+  const projected=paintIssEarth(o.c,o.w,o.h,createEarthProjection(o.w,o.h,state),state,track,center);
+  $('earth-map').dataset.issTrackCount=String(projected.count);
+  $('earth-map').dataset.issPosition=JSON.stringify(center&&{
+   lat:center.lat,lon:center.lon,heightKm:center.heightKm,speedKmS:center.speedKmS
+  });
+  $('iss-status').textContent=center
+   ?'ISS '+Math.abs(center.lat).toFixed(2)+'°'+(center.lat>=0?'N':'S')+
+      ' / '+Math.abs(center.lon).toFixed(2)+'°'+(center.lon>=0?'E':'W')+
+      ' · '+Math.round(center.heightKm)+' km altitude · '+center.speedKmS.toFixed(2)+' km/s'+
+      ' · epoch '+issModel.epoch.toISOString().slice(0,16).replace('T',' ')+' UTC'+
+      ' · '+issStatus.ageDays.toFixed(1)+' d from epoch · '+issSourceStatus
+   :'ISS propagation unavailable for this date';
+ }else{
+  $('earth-map').dataset.issTrackCount='0';
+  $('earth-map').dataset.issPosition='null';
+  $('iss-status').textContent=!issEnabled?'ISS ground track hidden':
+   !issModel?'ISS elements unavailable · '+issSourceStatus:
+   'ISS not plotted: date '+issStatus.ageDays.toFixed(1)+' days from element epoch ('+
+    issModel.epoch.toISOString().slice(0,10)+') · limit ±5 days; update elements or return to a nearby date';
+ }
  const cloud=cloudStatus(),cloudEnabled=$('earth-clouds').checked;
  const cloudSource=cloud.status==='ready'
   ?'NASA GIBS · '+cloud.satellite+' VIIRS true-colour WMS · image dates '+cloud.day+
@@ -2163,7 +2237,7 @@ const dockNext=timeDock.nextSibling;
 const compactFullscreenQuery=window.matchMedia('(max-width: 1050px)');
 const compactControlSelectors={
  'chart-panel':['.solar-chart-legend','.solar-chart-summary','.solar-time-position','.chart-footer'],
- 'earth-panel':['.earth-tools','.earth-political-tools','.earth-twilight-controls','.earth-overlay-tools','.solar-trail-tools','.map-legend'],
+ 'earth-panel':['.earth-tools','.earth-political-tools','.earth-twilight-controls','.earth-overlay-tools','.iss-map-tools','.solar-trail-tools','.map-legend'],
  'sky-panel':['.celestial-finder','.sky-light-controls','.sky-observatory-toolbar','.sky-sidereal-toolbar','.sky-debug-tools','.sky-options','.solar-trail-tools','.planet-trail-tools','.sky-cursor-readout','.celestial-readout','.sky-legend'],
  'moon-panel':['.eclipse-explorer','.disc-view-select','.earthshine-toggle','.moon-view-tools','.moon-orientation','.solar-observation-note','.moon-bottom'],
  'orrery-panel':['.orrery-controls','.orrery-events','.planet-legend']
@@ -2593,6 +2667,7 @@ function initializePreferences(){
  render();
 }
 initializePreferences();
+loadIssElements();
 // Firefox can restore form history after module initialization. Reassert
 // preferences after page-show so coordinates and the model never disagree.
 window.addEventListener('pageshow',()=>{
