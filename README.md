@@ -105,6 +105,7 @@ Release highlights are curated in [`release-notes.json`](release-notes.json). Wh
 
 | Release | Highlights |
 | --- | --- |
+| **v114** | Add Sun motion trails to Sky Compass and all Earth projections: fixed-UTC annual analemma, manual time-step breadcrumbs, independent dots/line styling, synchronized panel controls and clear trail. |
 | **v113** | Show substantially more lunar names at low magnification by relaxing zoom eligibility and scaling collision-limited label density to the viewport, while preserving the 500-feature searchable atlas. |
 | **v112** | Expand the lunar atlas to 500 searchable named features: retain 115 curated landmarks, add 385 prominent near-side craters from USGS-derived nomenclature data, and maintain zoom-dependent uncluttered labels. |
 | **v111** | Curated 115-feature near-side lunar atlas with zoom-aware collision-limited labels, maria/crater/other filters, searchable names, centering and selection; fixed mosaic coordinates are explicitly approximate, with libration deferred. |
