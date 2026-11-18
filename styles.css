@@ -796,3 +796,17 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 .moon-panel:fullscreen .moon-stage #lunar-feature-overlay{
  left:0;top:0;width:100%!important;height:100%!important;
 }
+
+/* Solar motion trails share compact controls in the Earth and sky panels. */
+.solar-trail-tools{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;
+ padding:9px 12px;margin:8px 0;background:rgba(16,43,68,.72);
+ border:1px solid rgba(116,162,191,.30);border-radius:7px;font-size:12px;color:#bdd3e5}
+.solar-trail-tools strong{color:#ffdc8a;font-size:12px}
+.solar-trail-tools label{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.solar-trail-tools select{max-width:225px;min-height:28px;padding:3px 6px;color:#deecfa;
+ background:#122d46;border:1px solid #496783;border-radius:5px}
+.solar-trail-tools button{min-height:28px;padding:3px 9px;color:#dfeefa;
+ background:#203c58;border:1px solid #587591;border-radius:5px;cursor:pointer}
+.solar-trail-tools [data-solar-trail-status]{font-size:11px;opacity:.85}
+@media(max-width:700px){.solar-trail-tools{gap:6px 9px;padding:7px}
+.solar-trail-tools [data-solar-trail-status]{flex-basis:100%}}
