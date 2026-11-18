@@ -2650,10 +2650,10 @@ test('Sun analemma draws on sky and projected Earth; breadcrumb steps accumulate
  const earthToggle=page.locator('.earth-panel [data-solar-trail-enabled]');
  await skyToggle.check();
  await expect(earthToggle).toBeChecked();
- await expect.poll(()=>Number(page.locator('#earth-map').getAttribute('data-solar-trail-count'))).toBeGreaterThan(60);
- await expect.poll(()=>Number(page.locator('#sky').getAttribute('data-solar-trail-count'))).toBeGreaterThan(0);
+ await expect.poll(()=>Number(await page.locator('#earth-map').getAttribute('data-solar-trail-count'))).toBeGreaterThan(60);
+ await expect.poll(()=>Number(await page.locator('#sky').getAttribute('data-solar-trail-count'))).toBeGreaterThan(0);
  await page.locator('[data-projection="globe"]').click();
- await expect.poll(()=>Number(page.locator('#earth-map').getAttribute('data-solar-trail-count'))).toBeGreaterThanOrEqual(0);
+ await expect.poll(()=>Number(await page.locator('#earth-map').getAttribute('data-solar-trail-count'))).toBeGreaterThanOrEqual(0);
  await page.locator('.sky-panel [data-solar-trail-mode]').selectOption('breadcrumbs');
  await expect(page.locator('.earth-panel [data-solar-trail-mode]')).toHaveValue('breadcrumbs');
  await page.locator('#dock-next-day').click();
