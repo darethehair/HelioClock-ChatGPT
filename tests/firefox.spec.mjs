@@ -2803,6 +2803,14 @@ test('ISS Sky Compass tracks position and previous/next passes with current orbi
  await expect(page.locator('#iss-pass-status')).toContainText('maximum');
  await page.locator('#iss-prev-pass').click();
  await expect(page.locator('#iss-pass-status')).toContainText('Rise');
+ await expect(page.locator('#iss-next-visible-pass')).toBeVisible();
+ await expect(page.locator('#iss-prev-visible-pass')).toBeVisible();
+ await page.locator('#iss-next-visible-pass').click();
+ await expect(page.locator('#iss-pass-status')).toContainText(/Visible pass|No complete potentially visible/);
+ const visibleStatus=await page.locator('#iss-pass-status').textContent();
+ if(visibleStatus.includes('Visible pass')){
+  await expect(page.locator('#iss-pass-status')).toContainText('potential viewing');
+ }
  await page.locator('#observe-date').evaluate(el=>{
   el.value='2030-11-18';el.dispatchEvent(new Event('change',{bubbles:true}));
  });
