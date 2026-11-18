@@ -1315,7 +1315,7 @@ function redrawDiscGrid(){
 }
 function updateDiscCoordinates(clientX,clientY){
  const box=discStage.getBoundingClientRect();
- const point=screenToSurface(clientX-box.left,clientY-box.top,discCoordinateGeometry());
+ const point=screenToSurface(clientX-box.left,clientY-box.top,discCoordinateGeometry(),state.discView);
  $('disc-coordinate-readout').textContent=point?formatSurface(point,state.discView):'Outside visible disc';
 }
 function updateDiscViewport(){
