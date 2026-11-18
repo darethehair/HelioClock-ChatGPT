@@ -105,6 +105,7 @@ Release highlights are curated in [`release-notes.json`](release-notes.json). Wh
 
 | Release | Highlights |
 | --- | --- |
+| **v115** | Add Mercury–Neptune motion trails to Sky Compass with computed 400-day ephemeris paths, accumulated time-step breadcrumbs, star-relative or horizon frames, dots/line controls and clear; Earth Map remains Sun-only. |
 | **v114** | Add Sun motion trails to Sky Compass and all Earth projections: fixed-UTC annual analemma, manual time-step breadcrumbs, independent dots/line styling, synchronized panel controls and clear trail. |
 | **v113** | Show substantially more lunar names at low magnification by relaxing zoom eligibility and scaling collision-limited label density to the viewport, while preserving the 500-feature searchable atlas. |
 | **v112** | Expand the lunar atlas to 500 searchable named features: retain 115 curated landmarks, add 385 prominent near-side craters from USGS-derived nomenclature data, and maintain zoom-dependent uncluttered labels. |
