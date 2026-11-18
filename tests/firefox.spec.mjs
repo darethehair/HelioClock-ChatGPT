@@ -2762,3 +2762,43 @@ test('ISS OMM is projected onto Earth and suppressed at stale simulation dates',
  await expect(page.locator('#iss-status')).toContainText('limit ±5 days');
  expect(errors).toEqual([]);
 });
+
+test('ISS Sky Compass tracks position and previous/next passes with current orbital elements',async({page})=>{
+ const elements={
+  OBJECT_NAME:'ISS (ZARYA)',OBJECT_ID:'1998-067A',EPOCH:'2026-11-18T12:00:00.000',
+  MEAN_MOTION:15.5,ECCENTRICITY:0.0005,INCLINATION:51.64,
+  RA_OF_ASC_NODE:130,ARG_OF_PERICENTER:65,MEAN_ANOMALY:280,
+  EPHEMERIS_TYPE:0,CLASSIFICATION_TYPE:'U',NORAD_CAT_ID:25544,
+  ELEMENT_SET_NO:999,REV_AT_EPOCH:55000,BSTAR:0.0001,
+  MEAN_MOTION_DOT:0.00001,MEAN_MOTION_DDOT:0
+ };
+ await page.route('**/iss-elements.json',route=>route.fulfill({
+  status:200,contentType:'application/json',
+  body:JSON.stringify({schema:1,source:'test',status:'available',elements})
+ }));
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('#observe-date').evaluate(el=>{
+  el.value='2026-11-18';el.dispatchEvent(new Event('change',{bubbles:true}));
+ });
+ await page.locator('#observe-time').evaluate(el=>{
+  el.value='12:00';el.dispatchEvent(new Event('change',{bubbles:true}));
+ });
+ const sky=page.locator('#sky');
+ await expect.poll(async()=>Number(await sky.getAttribute('data-iss-sky-count'))).toBeGreaterThan(30);
+ await expect(page.locator('#iss-sky-status')).toContainText('ISS Alt');
+ await page.locator('#iss-sky-show').uncheck();
+ await expect(sky).toHaveAttribute('data-iss-sky-count','0');
+ await page.locator('#iss-sky-show').check();
+ await page.locator('#iss-next-pass').click();
+ await expect(page.locator('#iss-pass-status')).toContainText('Rise');
+ await expect(page.locator('#iss-pass-status')).toContainText('maximum');
+ await page.locator('#iss-prev-pass').click();
+ await expect(page.locator('#iss-pass-status')).toContainText('Rise');
+ await page.locator('#observe-date').evaluate(el=>{
+  el.value='2030-11-18';el.dispatchEvent(new Event('change',{bubbles:true}));
+ });
+ await expect(sky).toHaveAttribute('data-iss-sky-count','0');
+ await expect(page.locator('#iss-sky-status')).toContainText('limit ±5 days');
+ expect(errors).toEqual([]);
+});
