@@ -810,3 +810,23 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 .solar-trail-tools [data-solar-trail-status]{font-size:11px;opacity:.85}
 @media(max-width:700px){.solar-trail-tools{gap:6px 9px;padding:7px}
 .solar-trail-tools [data-solar-trail-status]{flex-basis:100%}}
+
+/* Named simulation rates: keep the persistent dock usable on desktop and mobile. */
+.dock-playback-speed{display:flex;align-items:center;gap:5px;color:#b6c9dc;
+ font-size:10px;white-space:nowrap}
+.dock-playback-speed select{max-width:162px;min-height:32px;padding:4px 7px;
+ border:1px solid #547392;border-radius:6px;background:#122c46;
+ color:#f2d6a1;font-size:11px}
+#dock-reverse{color:#d5ddfa}
+#dock-play{color:#ffe0a2}
+@media(max-width:750px){
+ .dock-playback-speed select{max-width:130px;min-height:28px;font-size:10px}
+ .dock-playback-speed span{display:none}
+}
+.panel:fullscreen.mobile-plot-fullscreen>.time-dock .dock-playback-speed{display:none}
+.panel:fullscreen.mobile-plot-fullscreen>.time-dock.mobile-time-expanded .dock-playback-speed{
+ display:flex;align-items:center
+}
+.panel:fullscreen.mobile-plot-fullscreen>.time-dock.mobile-time-expanded{
+ max-height:155px
+}
