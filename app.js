@@ -21,6 +21,7 @@ import {minorBodyGeometry} from './minor-body-geometry.js';
 import {LUNAR_FEATURES,findLunarFeature,lunarFeatureScreen,paintLunarLabels} from './moon-features.js';
 import {renderEarth,earthTextureStatus,earthCoordinatesAt,createEarthProjection} from './earth-renderer.js';
 import {solarTrailSamples,addSolarBreadcrumb,paintSkySolarTrail,paintEarthSolarTrail} from './solar-motion-trails.js';
+import {PLAYBACK_RATES,DEFAULT_PLAYBACK_RATE,advancePlayback} from './playback-time.js';
 import {planetTrailDates,planetTrailCoordinates,paintPlanetSkyTrail} from './planet-motion-trails.js';
 import {cloudStatus,refreshClouds} from './clouds.js';
 import {findPlanetaryEvent,eventPlanets,eventOptions} from './planetary-events.js';
@@ -29,7 +30,7 @@ import {spaceWeather,auroraFresh,startSpaceWeather,refreshSpaceWeather} from './
 import {starsAbove} from './sky-catalog.js';
 import {RAD,PI,wrap,clamp,solar,sunHorizontal,sunEvents,moon,orbitPositions,sidereal,equatorialFromHorizontal,utcTime,durationText} from './astronomy.js';
 const $=id=>document.getElementById(id);
-const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyPanX:0,skyPanY:0,skyHeading:0,earthZoom:1,earthLon:-98.10,earthLat:49.19,earthProjection:'equal',earthMapStyle:'physical',earthTextureQuality:'2k',orreryZoom:1,moonZoom:1,discView:'moon',sunZoom:1,moonPanX:0,moonPanY:0,sunPanX:0,sunPanY:0,orbitMode:'inner',orrery3D:false,orreryTilt:55,orreryRotation:0,skyLight:'daylight',skyProjection:'polar',magLimit:3.5,stellarColors:true,usePrecession:true,playing:false};
+const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyPanX:0,skyPanY:0,skyHeading:0,earthZoom:1,earthLon:-98.10,earthLat:49.19,earthProjection:'equal',earthMapStyle:'physical',earthTextureQuality:'2k',orreryZoom:1,moonZoom:1,discView:'moon',sunZoom:1,moonPanX:0,moonPanY:0,sunPanX:0,sunPanY:0,orbitMode:'inner',orrery3D:false,orreryTilt:55,orreryRotation:0,skyLight:'daylight',skyProjection:'polar',magLimit:3.5,stellarColors:true,usePrecession:true,playing:false,playbackRate:DEFAULT_PLAYBACK_RATE,playbackDirection:1};
 const solarTrail={enabled:false,mode:'analemma',dots:true,line:true,history:[],lastRecorded:null};
 function solarTrailDates(){
  return solarTrail.mode==='analemma'?solarTrailSamples(state.date):solarTrail.history.map(ms=>new Date(ms));
@@ -1203,7 +1204,11 @@ function updateLocalDisplay(){
  $('dock-time-zone').textContent=v.zone+' · '+v.offsetStr;
  $('dock-date').value=p.date;$('dock-time').value=p.time;
  $('dock-scrubber').value=state.date.getHours()*60+state.date.getMinutes();
- $('dock-play').textContent=state.playing?'Ⅱ':'▶';
+ $('dock-play').textContent=state.playing&&state.playbackDirection===1?'Ⅱ':'▶';
+ $('dock-reverse').textContent=state.playing&&state.playbackDirection===-1?'Ⅱ':'◀';
+ $('play-time').textContent=state.playing&&state.playbackDirection===1?'Ⅱ Pause':'▶ Play';
+ $('reverse-time').textContent=state.playing&&state.playbackDirection===-1?'Ⅱ Pause':'◀ Reverse';
+ $('dock-playback-rate').value=String(state.playbackRate);
  $('dock-live').classList.toggle('is-live',state.live);
 }
 function selectDockLocal(){
@@ -1236,7 +1241,34 @@ $('locate').addEventListener('click',()=>{
 function shiftTime(minutes){
  state.date=new Date(state.date.getTime()+minutes*60000);state.live=false;setDateInputs();render();
 }
-function pausePlayback(){state.playing=false;$('play-time').textContent='▶ Play'}
+// Playback date advances from measured real elapsed time, rather than counting
+// timer callbacks. A hidden document suspends advancing to avoid giant jumps
+// when a mobile browser resumes after being backgrounded.
+let playbackLastTick=null;
+function pausePlayback(){state.playing=false;playbackLastTick=null;}
+function togglePlayback(direction){
+ if(state.playing&&state.playbackDirection===direction){pausePlayback();}
+ else{
+  state.playing=true;state.playbackDirection=direction;state.live=false;
+  playbackLastTick=performance.now();
+ }
+ setDateInputs();render();
+}
+function playbackTick(now=performance.now()){
+ if(!state.playing||document.hidden){playbackLastTick=null;return;}
+ if(playbackLastTick===null){playbackLastTick=now;return;}
+ const elapsed=Math.max(0,now-playbackLastTick);playbackLastTick=now;
+ const next=advancePlayback(state.date,elapsed,state.playbackRate,state.playbackDirection);
+ if(next.getTime()===state.date.getTime())return;
+ state.date=next;state.live=false;setDateInputs();render();
+}
+$('dock-playback-rate').addEventListener('change',e=>{
+ const rate=Number(e.target.value);
+ if(!PLAYBACK_RATES.some(option=>option.value===rate))return;
+ state.playbackRate=rate;playbackLastTick=performance.now();render();
+});
+$('dock-reverse').addEventListener('click',()=>togglePlayback(-1));
+$('reverse-time').addEventListener('click',()=>togglePlayback(-1));
 for(const [id,minutes] of [['step-back-day',-1440],['step-back-hour',-60],['step-back-minute',-1],['step-forward-minute',1],['step-forward-hour',60],['step-forward-day',1440]]){
  $(id).addEventListener('click',()=>{pausePlayback();shiftTime(minutes)});
 }
@@ -1246,11 +1278,8 @@ $('time-scrubber').addEventListener('input',e=>{
  state.date=new Date(Date.UTC(state.date.getUTCFullYear(),state.date.getUTCMonth(),state.date.getUTCDate(),Math.floor(minutes/60),minutes%60));
  state.live=false;setDateInputs();render();
 });
-$('play-time').addEventListener('click',()=>{
- state.playing=!state.playing;state.live=false;setDateInputs();
- $('play-time').textContent=state.playing?'Ⅱ Pause':'▶ Play';render();
-});
-setInterval(()=>{if(state.playing)shiftTime(15)},180);
+$('play-time').addEventListener('click',()=>togglePlayback(1));
+setInterval(playbackTick,200);
 function viewRange(id,key){$(id).addEventListener('input',e=>{state[key]=Number(e.target.value);render()})}
 $('sky-heading').addEventListener('input',()=>{followCelestialObject=false;renderCelestialFinder();});
 viewRange('sky-heading','skyHeading');
