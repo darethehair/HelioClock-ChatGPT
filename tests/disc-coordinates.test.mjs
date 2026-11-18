@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {discGeometry,screenToSurface,surfaceToScreen,formatSurface,gridInterval} from '../disc-coordinates.js';
 import {solarDiscOrientation} from '../solar-disc-orientation.js';
+import {findLunarFeature,lunarFeatureScreen} from '../moon-features.js';
 test('Moon grid centre and latitude/longitude reference',()=>{
  const g=discGeometry('moon',400,400);
  assert.deepEqual(screenToSurface(200,200,g),{latitude:0,longitude:0});
@@ -57,15 +58,24 @@ test('Solar pole viewing tilt changes projected coordinates and round-trips',()=
  }
 });
 
-test('Lunar atlas coordinates use west-right in the north-up photograph',()=>{
+test('Lunar feature catalogue and north-up photo have the same east-west handedness',()=>{
  const g=discGeometry('moon',800,800);
- const tycho=surfaceToScreen(-43.3,11.2,g); // image-space longitude reflects Tycho's 11.2 W
- assert.ok(tycho);
- const recovered=screenToSurface(tycho.x,tycho.y,g,'moon');
- assert.ok(Math.abs(recovered.latitude+43.3)<1e-8);
- assert.ok(Math.abs(recovered.longitude+11.2)<1e-8);
- assert.ok(tycho.x>g.cx,'western Tycho should lie right of centre');
- assert.ok(tycho.y>g.cy,'southern Tycho should lie below centre');
- const solar=screenToSurface(tycho.x,tycho.y,g,'sun');
- assert.ok(Math.abs(solar.longitude-11.2)<1e-8);
+ for(const [name,lat,lon,side] of [
+  ['Tycho',-43.3,-11.2,'left'],
+  ['Copernicus',9.7,-20.1,'left'],
+  ['Mare Crisium',17,59.1,'right'],
+  ['Oceanus Procellarum',18.4,-57.4,'left']
+ ]){
+  const feature=findLunarFeature(name);
+  assert.ok(feature,name+' exists');
+  assert.equal(feature.lat,lat);
+  assert.equal(feature.lon,lon);
+  const p=lunarFeatureScreen(feature,g);
+  assert.ok(p,name+' must be visible');
+  assert.ok(side==='left'?p.x<g.cx:p.x>g.cx,name+' must lie '+side+' of centre');
+  assert.ok(lat<0?p.y>g.cy:p.y<g.cy,name+' latitude sign');
+  const recovered=screenToSurface(p.x,p.y,g);
+  assert.ok(Math.abs(recovered.latitude-lat)<1e-8,name+' latitude readout');
+  assert.ok(Math.abs(recovered.longitude-lon)<1e-8,name+' longitude readout');
+ }
 });
