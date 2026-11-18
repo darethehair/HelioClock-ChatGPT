@@ -2617,3 +2617,26 @@ test('Minor planets use hollow-circle markers; ecliptic risers also cover planet
  await page.locator('#orrery-height-guide').uncheck();
  await expect.poll(()=>page.locator('#orrery').evaluate(el=>JSON.parse(el.dataset.planetGuides||'[]').length)).toBe(0);
 });
+
+test('Lunar atlas labels follow zoom, filters, search, and Sun/Moon switch',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ const overlay=page.locator('#lunar-feature-overlay');
+ await expect.poll(()=>overlay.getAttribute('data-catalogue-count')).toBe('115');
+ await expect.poll(async()=>JSON.parse(await overlay.getAttribute('data-visible-labels')||'[]').length).toBeGreaterThan(0);
+ const before=await overlay.evaluate(el=>JSON.parse(el.dataset.visibleLabels||'[]'));
+ await page.locator('#moon-zoom-in').click();
+ await page.locator('#moon-zoom-in').click();
+ await page.locator('#moon-zoom-in').click();
+ const after=await overlay.evaluate(el=>JSON.parse(el.dataset.visibleLabels||'[]'));
+ expect(after.length).toBeGreaterThanOrEqual(before.length);
+ await page.locator('#lunar-maria-toggle').uncheck();
+ await expect.poll(()=>overlay.evaluate(el=>JSON.parse(el.dataset.visibleLabels||'[]'))).not.toContain('Mare Imbrium');
+ await page.locator('#lunar-feature-search').fill('Copernicus');
+ await page.locator('#lunar-feature-find').click();
+ await expect(page.locator('#lunar-feature-status')).toContainText('Copernicus');
+ await expect.poll(()=>overlay.evaluate(el=>JSON.parse(el.dataset.visibleLabels||'[]'))).toContain('Copernicus');
+ await page.locator('[data-disc-view="sun"]').click();
+ await expect(overlay).toBeHidden();
+ await page.locator('[data-disc-view="moon"]').click();
+ await expect(overlay).toBeVisible();
+});

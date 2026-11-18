@@ -15,6 +15,7 @@ This is a planning backlog, not a claim that the features are implemented. Inspi
 - Search, orbit display and past/future navigation for small bodies.
 
 ## Lunar atlas
+- **v111:** Initial fixed-mosaic, zoom-dependent searchable near-side label overlay, with feature-type filters. Libration and high-precision gazetteer registration remain future work.
 - Interactive zoomable lunar surface map with named maria, craters and mountain ranges; investigate MEphemeris's Clementine imagery and lunar100.dat as historical design references.
 - Feature search, markers and labels; later link lunar illumination/terminator to the selected date and model libration where practical.
 

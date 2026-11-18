@@ -18,6 +18,7 @@ import {skyPlanets} from './sky-planets.js';
 import {cometHeliocentricEcliptic,cometOrbitPath} from './comet-orbits.js';
 import {asteroidPosition,asteroidPath} from './asteroid-orbits.js';
 import {minorBodyGeometry} from './minor-body-geometry.js';
+import {LUNAR_FEATURES,findLunarFeature,lunarFeatureScreen,paintLunarLabels} from './moon-features.js';
 import {renderEarth,earthTextureStatus,earthCoordinatesAt} from './earth-renderer.js';
 import {cloudStatus,refreshClouds} from './clouds.js';
 import {findPlanetaryEvent,eventPlanets,eventOptions} from './planetary-events.js';
@@ -1294,6 +1295,16 @@ function discCoordinateGeometry(baseOnly=false){
   baseOnly?0:sun?state.sunPanY:state.moonPanY,
   sun?0:lastMoonTilt,b0);
 }
+let selectedLunarFeature='';
+function redrawLunarLabels(){
+ const canvas=$('lunar-feature-overlay');
+ const options={zoom:state.moonZoom,enabled:state.discView==='moon'&&$('lunar-labels-toggle').checked,
+  maria:$('lunar-maria-toggle').checked,craters:$('lunar-craters-toggle').checked,
+  other:$('lunar-other-toggle').checked,selected:selectedLunarFeature};
+ const shown=paintLunarLabels(canvas,discCoordinateGeometry(),options);
+ canvas.dataset.visibleLabels=JSON.stringify(shown.map(x=>x.name));
+ canvas.dataset.catalogueCount=String(LUNAR_FEATURES.length);
+}
 function redrawDiscGrid(){
  const base=discCoordinateGeometry(true);
  const overlay=$('disc-coordinate-grid');
@@ -1315,11 +1326,14 @@ function updateDiscViewport(){
  const transform='translate('+panX+'px,'+panY+'px) scale('+zoom+')';
  el.style.transform=transform;
  $('disc-coordinate-grid').style.transform=transform;
+ // Lunar feature labels use screen-space projection, not scaled text.
+ // This keeps label font size legible while matching Moon pan/zoom/rotation.
  if(sunMode){
   solarPhoto.style.transform=transform;
   $('solar-eclipse').style.transform=transform;
  }
  redrawDiscGrid();
+ redrawLunarLabels();
  $('moon-zoom-value').textContent=zoom.toFixed(1)+'×';
 }
 function zoomDisc(factor,focus=discFocus){
@@ -1344,6 +1358,8 @@ function showDisc(which){
  state.discView=which;
  const sun=which==='sun';
  $('moon').hidden=sun;solarPhoto.hidden=!sun;
+ $('lunar-feature-controls').hidden=sun;
+ $('lunar-feature-overlay').hidden=sun;
  $('solar-eclipse').hidden=true;$('solar-eclipse-status').hidden=true;
  $('lunar-eclipse-status').hidden=sun;
  $('moon-bottom').hidden=sun;$('solar-note').hidden=!sun;
@@ -1511,6 +1527,38 @@ function refreshSolarImage(){
 }
 for(const button of document.querySelectorAll('[data-disc-view]'))
  button.addEventListener('click',()=>showDisc(button.dataset.discView));
+$('lunar-feature-options').replaceChildren(...LUNAR_FEATURES.map(f=>new Option(f.name,f.name)));
+for(const id of ['lunar-labels-toggle','lunar-maria-toggle','lunar-craters-toggle','lunar-other-toggle'])
+ $(id).addEventListener('change',redrawLunarLabels);
+function locateLunarFeature(){
+ const query=$('lunar-feature-search').value.trim(),f=findLunarFeature(query);
+ if(!f){
+  $('lunar-feature-status').textContent='Feature not found in the bundled '+LUNAR_FEATURES.length+'-name lunar atlas.';
+  return;
+ }
+ const g=discCoordinateGeometry(true),p=lunarFeatureScreen(f,g);
+ if(!p){
+  $('lunar-feature-status').textContent=f.name+' is on the far side of the fixed reference Moon; not visible in this mosaic.';
+  return;
+ }
+ selectedLunarFeature=f.name;
+ $('lunar-labels-toggle').checked=true;
+ $({'mare':'lunar-maria-toggle','crater':'lunar-craters-toggle','other':'lunar-other-toggle'}[f.type]).checked=true;
+ state.moonZoom=Math.max(state.moonZoom,2.8);
+ // Centre requested point under the stage centre after CSS zoom.
+ state.moonPanX=-(p.x-g.cx)*state.moonZoom;
+ state.moonPanY=-(p.y-g.cy)*state.moonZoom;
+ updateDiscViewport();
+ $('lunar-feature-status').textContent=f.name+' · '+f.type+' · '+Math.abs(f.lat).toFixed(1)+'°'+(f.lat>=0?'N':'S')+
+  ', '+Math.abs(f.lon).toFixed(1)+'°'+(f.lon>=0?'E':'W')+' · reference position (no libration)';
+}
+$('lunar-feature-find').addEventListener('click',locateLunarFeature);
+$('lunar-feature-search').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();locateLunarFeature()}});
+$('lunar-feature-clear').addEventListener('click',()=>{
+ selectedLunarFeature='';$('lunar-feature-search').value='';
+ $('lunar-feature-status').textContent='Selection cleared · '+LUNAR_FEATURES.length+' bundled lunar features';
+ redrawLunarLabels();
+});
 $('moon-zoom').addEventListener('input',e=>{
  const val=Number(e.target.value),key=state.discView==='sun'?'sunZoom':'moonZoom';
  zoomDisc(val/state[key],null);

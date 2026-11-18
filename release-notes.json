@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v111",
+      "summary": "Curated 115-feature near-side lunar atlas with zoom-aware collision-limited labels, maria/crater/other filters, searchable names, centering and selection; fixed mosaic coordinates are explicitly approximate, with libration deferred."
+    },
+    {
       "version": "v110",
       "summary": "Replace 100 minor-planet diamond markers with small hollow circles (selected body enlarged), and extend optional ecliptic height risers to visible planets, with numeric planet height in inspection."
     },

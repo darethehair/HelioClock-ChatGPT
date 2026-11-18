@@ -769,3 +769,30 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 .orrery-orbit-geometry{font-size:11px;line-height:1.65;color:#e0cee9;background:#151b30;
  padding:8px 11px;margin:0 0 8px;border:1px solid #554267;border-radius:7px}
 .orrery-orbit-geometry[hidden]{display:none!important}
+
+/* v111: lunar atlas labels live in screen space, sharing disc geometry rather
+   than the Moon image CSS transform (so their type stays readable at zoom). */
+.moon-stage #lunar-feature-overlay{
+ position:absolute;inset:0;width:100%;height:100%;pointer-events:none;
+ z-index:4;max-height:none;transform:none!important;
+}
+.moon-stage #lunar-feature-overlay[hidden]{display:none!important}
+.lunar-feature-controls{
+ display:flex;flex-wrap:wrap;align-items:center;gap:7px 12px;
+ margin:9px 0;color:#cfe5f6;font-size:11px;
+}
+.lunar-feature-controls label{display:inline-flex;align-items:center;gap:5px}
+.lunar-feature-controls input[type=checkbox]{accent-color:#8bd5e8}
+.lunar-feature-controls input[type=search]{
+ background:#0c1c30;border:1px solid #52728b;border-radius:5px;color:#e5f2ff;
+ padding:6px 8px;max-width:165px;
+}
+.lunar-feature-controls button{
+ background:#19344d;border:1px solid #52728b;border-radius:5px;
+ color:#e2f1ff;padding:6px 9px;cursor:pointer;
+}
+.lunar-feature-status{font-size:10px;color:#9fb9d0;margin:0 0 6px;line-height:1.5}
+.moon-panel .moon-stage #lunar-feature-overlay,
+.moon-panel:fullscreen .moon-stage #lunar-feature-overlay{
+ left:0;top:0;width:100%!important;height:100%!important;
+}
