@@ -2666,3 +2666,23 @@ test('Sun analemma draws on sky and projected Earth; breadcrumb steps accumulate
  await expect(page.locator('#sky')).toHaveAttribute('data-solar-trail-count','0');
  await expect(page.locator('#earth-map')).toHaveAttribute('data-solar-trail-count','0');
 });
+
+test('Planetary Sky Compass trails support computed and breadcrumb modes without Earth map controls',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ const sky=page.locator('#sky'),earth=page.locator('#earth-map');
+ await expect(page.locator('.earth-panel #planet-trail-enabled')).toHaveCount(0);
+ await page.locator('#planet-trail-enabled').check();
+ await expect.poll(async()=>Number(await sky.getAttribute('data-planet-trail-count'))).toBeGreaterThan(0);
+ await expect(earth).toHaveAttribute('data-solar-trail-count','0');
+ await page.locator('#planet-trail-name').selectOption('Jupiter');
+ await expect.poll(async()=>Number(await sky.getAttribute('data-planet-trail-count'))).toBeGreaterThan(0);
+ await page.locator('#planet-trail-frame').selectOption('horizon');
+ await page.locator('#planet-trail-mode').selectOption('breadcrumbs');
+ await page.locator('#dock-next-day').click();
+ await page.locator('#dock-next-day').click();
+ await expect(page.locator('#planet-trail-status')).toContainText('2 recorded positions');
+ await page.locator('#planet-trail-clear').click();
+ await expect(page.locator('#planet-trail-status')).toContainText('0 recorded positions');
+ await page.locator('#planet-trail-enabled').uncheck();
+ await expect(sky).toHaveAttribute('data-planet-trail-count','0');
+});
