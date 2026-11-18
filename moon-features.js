@@ -826,12 +826,20 @@ export function lunarFeatureScreen(feature,geometry){
 export function visibleLunarLabels(geometry,{zoom=1,enabled=true,maria=true,craters=true,other=true,selected=''}={},width=geometry.cx*2,height=geometry.cy*2){
  if(!enabled)return [];
  const allowed={mare:maria,crater:craters,other};
- const ranked=LUNAR_FEATURES.filter(f=>allowed[f.type]&&(zoom>=f.minZoom||f.name===selected))
+ // The catalogue's minZoom values originally hid most features until
+ // significant magnification. On a full-size disc, many of these fit at 1x.
+ // Keep relative prominence ordering but make the threshold less restrictive.
+ const eligibleZoom=2.9+Math.max(0,zoom-1)*1.4;
+ const ranked=LUNAR_FEATURES.filter(f=>allowed[f.type]&&(eligibleZoom>=f.minZoom||f.name===selected))
   .map(f=>({...f,point:lunarFeatureScreen(f,geometry)}))
   .filter(f=>f.point&&f.point.x>=8&&f.point.x<=width-8&&f.point.y>=8&&f.point.y<=height-8)
   .sort((a,b)=>Number(b.name===selected)-Number(a.name===selected)||a.minZoom-b.minZoom||a.name.localeCompare(b.name));
  const occupied=[],out=[];
- const maxCount=zoom<1.4?11:zoom<2?18:zoom<3?28:zoom<4?42:85;
+ // Scale the ceiling to the stage size: roomy desktop views gain labels,
+ // while small phones remain readable. Collision checks still decide which
+ // candidates can actually be drawn without overlapping.
+ const fullSizeTarget=zoom<1.4?48:zoom<2?58:zoom<3?72:zoom<4?86:110;
+ const maxCount=Math.max(12,Math.min(110,Math.round(fullSizeTarget*Math.min(1.3,Math.min(width,height)/660))));
  for(const f of ranked){
   if(out.length>=maxCount&&f.name!==selected)continue;
   const labelWidth=Math.min(168,f.name.length*6.1+8),px=f.point.x,py=f.point.y;
