@@ -21,6 +21,7 @@ import {minorBodyGeometry} from './minor-body-geometry.js';
 import {LUNAR_FEATURES,findLunarFeature,lunarFeatureScreen,paintLunarLabels} from './moon-features.js';
 import {renderEarth,earthTextureStatus,earthCoordinatesAt,createEarthProjection} from './earth-renderer.js';
 import {solarTrailSamples,addSolarBreadcrumb,paintSkySolarTrail,paintEarthSolarTrail} from './solar-motion-trails.js';
+import {planetTrailDates,planetTrailCoordinates,paintPlanetSkyTrail} from './planet-motion-trails.js';
 import {cloudStatus,refreshClouds} from './clouds.js';
 import {findPlanetaryEvent,eventPlanets,eventOptions} from './planetary-events.js';
 import {findEclipseAsync} from './eclipse-events.js';
@@ -59,6 +60,52 @@ for(const [field,property] of [['data-solar-trail-dots','dots'],['data-solar-tra
 for(const el of document.querySelectorAll('[data-solar-trail-clear]'))el.addEventListener('click',()=>{
  solarTrail.history=[];solarTrail.lastRecorded=state.date.getTime();
  syncSolarTrailControls();render();
+});
+// Planetary paths are strictly a Sky Compass overlay; the Earth map retains Sun trails.
+const planetTrail={enabled:false,name:'Mars',mode:'computed',frame:'stars',dots:true,line:true,history:[],lastRecorded:null,cacheKey:null,cache:null};
+function planetTrailSamples(){
+ return planetTrail.mode==='computed'?planetTrailDates(state.date):planetTrail.history.map(ms=>new Date(ms));
+}
+function currentPlanetTrail(){
+ const dates=planetTrailSamples();
+ // For a star-relative view freeze the chart at the current time, while
+ // still projecting each actual planet ephemeris position against that frame.
+ const key=[planetTrail.name,planetTrail.mode,planetTrail.frame,state.lat,state.lon,
+  state.date.getTime(),planetTrail.history.length,planetTrail.history.at(-1)].join('|');
+ if(key!==planetTrail.cacheKey){
+  planetTrail.cache=planetTrailCoordinates(planetTrail.name,dates,{
+   lat:state.lat,lon:state.lon,frame:planetTrail.frame,referenceDate:state.date
+  });
+  planetTrail.cacheKey=key;
+ }
+ return planetTrail.cache;
+}
+function syncPlanetTrailControls(){
+ $('planet-trail-enabled').checked=planetTrail.enabled;
+ $('planet-trail-name').value=planetTrail.name;
+ $('planet-trail-mode').value=planetTrail.mode;
+ $('planet-trail-frame').value=planetTrail.frame;
+ $('planet-trail-dots').checked=planetTrail.dots;
+ $('planet-trail-line').checked=planetTrail.line;
+ $('planet-trail-status').textContent=planetTrail.enabled?
+  planetTrail.mode==='computed'?'400 days · every 2 days · '+(planetTrail.frame==='stars'?'star-relative':'horizon')+' view':
+   planetTrail.history.length+' recorded positions · '+(planetTrail.frame==='stars'?'star-relative':'horizon')+' view':
+  'Planet trails off';
+}
+for(const [id,key] of [['planet-trail-enabled','enabled'],['planet-trail-name','name'],
+ ['planet-trail-mode','mode'],['planet-trail-frame','frame'],
+ ['planet-trail-dots','dots'],['planet-trail-line','line']]){
+ $(''+id).addEventListener('change',e=>{
+  planetTrail[key]=e.target.type==='checkbox'?e.target.checked:e.target.value;
+  if(planetTrail.enabled&&planetTrail.mode==='breadcrumbs'&&planetTrail.history.length===0&&!state.live)
+   planetTrail.history=addSolarBreadcrumb(planetTrail.history,state.date);
+  planetTrail.lastRecorded=state.date.getTime();
+  planetTrail.cacheKey=null;syncPlanetTrailControls();render();
+ });
+}
+$('planet-trail-clear').addEventListener('click',()=>{
+ planetTrail.history=[];planetTrail.lastRecorded=state.date.getTime();
+ planetTrail.cacheKey=null;syncPlanetTrailControls();render();
 });
 const fmt=d=>d.toISOString().slice(0,10);
 let highlightedOrreryEvent=null;
@@ -537,6 +584,18 @@ function sky(){
       Y+rad*(1-alt/90)*Math.sin((az-90-state.skyHeading)*RAD)]
   }));
  }else $('sky').dataset.solarTrailCount='0';
+ if(planetTrail.enabled){
+  const points=currentPlanetTrail();
+  const color={Mercury:'#cbd0d7',Venus:'#ffe1a4',Mars:'#ff9776',
+   Jupiter:'#eccda2',Saturn:'#dfc8aa',Uranus:'#a1e5ed',Neptune:'#9ba9ff'}[planetTrail.name];
+  $('sky').dataset.planetTrailCount=String(paintPlanetSkyTrail(c,points,{
+   mode:state.skyProjection,width:w,height:h,belowHorizon,
+   zoom:rectSky?state.skyZoom:1,color,dots:planetTrail.dots,line:planetTrail.line,
+   project:(az,alt)=>rectSky?projectRect(az,alt,w,h,state.skyHeading):
+    [X+rad*(1-alt/90)*Math.cos((az-90-state.skyHeading)*RAD),
+     Y+rad*(1-alt/90)*Math.sin((az-90-state.skyHeading)*RAD)]
+  }));
+ }else $('sky').dataset.planetTrailCount='0';
  if($('show-ecliptic').checked)drawEcliptic(c,{
   date:state.date,lat:state.lat,lon:state.lon,width:w,height:h,
   mode:state.skyProjection,heading:state.skyHeading,zoom:fittedPolarZoom,
@@ -1055,6 +1114,11 @@ function orrery(){
 function formatCoord(n,positive,negative){return Math.abs(n).toFixed(2)+'° '+(n>=0?positive:negative)}
 let almanacCurrent=null;
 function render(){
+ if(planetTrail.enabled&&planetTrail.mode==='breadcrumbs'&&!state.live&&planetTrail.lastRecorded!==state.date.getTime()){
+  planetTrail.history=addSolarBreadcrumb(planetTrail.history,state.date);
+  planetTrail.lastRecorded=state.date.getTime();planetTrail.cacheKey=null;
+ }
+ syncPlanetTrailControls();
  if(solarTrail.enabled&&solarTrail.mode==='breadcrumbs'&&!state.live&&
     solarTrail.lastRecorded!==state.date.getTime()){
   solarTrail.history=addSolarBreadcrumb(solarTrail.history,state.date);
