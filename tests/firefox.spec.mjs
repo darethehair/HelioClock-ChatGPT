@@ -2725,3 +2725,40 @@ test('Mobile fullscreen retains playback speed in expanded time dock',async({pag
  await page.locator('#dock-mobile-more').click();
  await expect(page.locator('#dock-playback-rate')).not.toBeVisible();
 });
+
+test('ISS OMM is projected onto Earth and suppressed at stale simulation dates',async({page})=>{
+ const elements={
+  OBJECT_NAME:'ISS (ZARYA)',OBJECT_ID:'1998-067A',EPOCH:'2026-11-18T12:00:00.000',
+  MEAN_MOTION:15.5,ECCENTRICITY:0.0005,INCLINATION:51.64,
+  RA_OF_ASC_NODE:130,ARG_OF_PERICENTER:65,MEAN_ANOMALY:280,
+  EPHEMERIS_TYPE:0,CLASSIFICATION_TYPE:'U',NORAD_CAT_ID:25544,
+  ELEMENT_SET_NO:999,REV_AT_EPOCH:55000,BSTAR:0.0001,
+  MEAN_MOTION_DOT:0.00001,MEAN_MOTION_DDOT:0
+ };
+ await page.route('**/iss-elements.json',route=>route.fulfill({
+  status:200,contentType:'application/json',
+  body:JSON.stringify({schema:1,source:'CelesTrak fixture',status:'available',elements})
+ }));
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('#observe-date').evaluate(el=>{
+  el.value='2026-11-18';el.dispatchEvent(new Event('change',{bubbles:true}));
+ });
+ await page.locator('#observe-time').evaluate(el=>{
+  el.value='12:00';el.dispatchEvent(new Event('change',{bubbles:true}));
+ });
+ const map=page.locator('#earth-map');
+ await expect.poll(async()=>Number(await map.getAttribute('data-iss-track-count'))).toBeGreaterThan(30);
+ await expect(page.locator('#iss-status')).toContainText('km altitude');
+ await page.locator('[data-projection="globe"]').click();
+ await expect.poll(async()=>Number(await map.getAttribute('data-iss-track-count'))).toBeGreaterThan(30);
+ await page.locator('#iss-show').uncheck();
+ await expect(map).toHaveAttribute('data-iss-track-count','0');
+ await page.locator('#iss-show').check();
+ await page.locator('#observe-date').evaluate(el=>{
+  el.value='2030-11-18';el.dispatchEvent(new Event('change',{bubbles:true}));
+ });
+ await expect(map).toHaveAttribute('data-iss-track-count','0');
+ await expect(page.locator('#iss-status')).toContainText('limit ±5 days');
+ expect(errors).toEqual([]);
+});
