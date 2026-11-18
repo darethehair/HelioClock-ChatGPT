@@ -105,6 +105,7 @@ Release highlights are curated in [`release-notes.json`](release-notes.json). Wh
 
 | Release | Highlights |
 | --- | --- |
+| **v118** | Add ISS to Sky Compass with observer-relative azimuth/altitude and range, a ±12-minute sky trail, approximate sunlight/twilight visibility, and previous/next horizon pass navigation; retain orbital-element freshness safeguards. |
 | **v117** | Add International Space Station tracking to Earth Map with CelesTrak OMM snapshots, satellite.js SGP4 ground-track propagation, projection-aware current marker and ±45-minute track, altitude/speed/epoch readouts, offline cache, refresh control and stale-element safeguards. |
 | **v116** | Add named playback rates from 1 simulated second to 1 fixed 365-day year per real second, bidirectional Play/Reverse, elapsed-time stepping and compact fullscreen speed selection. |
 | **v115** | Add Mercury–Neptune motion trails to Sky Compass with computed 400-day ephemeris paths, accumulated time-step breadcrumbs, star-relative or horizon frames, dots/line controls and clear; Earth Map remains Sun-only. |
