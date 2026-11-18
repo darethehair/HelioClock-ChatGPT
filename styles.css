@@ -830,3 +830,18 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 .panel:fullscreen.mobile-plot-fullscreen>.time-dock.mobile-time-expanded{
  max-height:155px
 }
+
+/* ISS overlay remains opt-in for historical time travel: never plot stale elements. */
+.iss-map-tools{display:flex;align-items:center;flex-wrap:wrap;gap:7px 12px;
+ margin:8px 0;padding:8px 11px;border-radius:7px;border:1px solid #416f83;
+ background:rgba(13,44,65,.78);font-size:11px;color:#c2dceb}
+.iss-map-tools strong{color:#9fe6ff;font-weight:700}
+.iss-map-tools label{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.iss-map-tools button{padding:6px 10px;background:#193951;color:#d4f4ff;
+ border:1px solid #508ca8;border-radius:5px;font-size:11px}
+.iss-map-tools button:disabled{opacity:.5;cursor:progress}
+.iss-map-tools small{font-size:10px;line-height:1.5;flex:1 1 330px}
+@media(max-width:700px){
+ .iss-map-tools{padding:7px;gap:6px 9px}
+ .iss-map-tools small{flex-basis:100%}
+}
