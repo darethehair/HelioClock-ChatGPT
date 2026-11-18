@@ -29,7 +29,7 @@ export function surfaceToScreen(latitude,longitude,g) {
   const ca=Math.cos(g.angle),sa=Math.sin(g.angle);
   return {x:g.cx+g.r*(x*ca-y*sa),y:g.cy+g.r*(x*sa+y*ca)};
 }
-export function screenToSurface(x,y,g,kind='sun') {
+export function screenToSurface(x,y,g) {
   const dx=(x-g.cx)/g.r,dy=(y-g.cy)/g.r;
   const ca=Math.cos(g.angle),sa=Math.sin(g.angle);
   const nx=dx*ca+dy*sa,ny=-dx*sa+dy*ca;
@@ -40,7 +40,7 @@ export function screenToSurface(x,y,g,kind='sun') {
   const north=-ny*cb+forward*sb;
   const longitude=Math.atan2(nx,ny*sb+forward*cb)*deg;
   const latitude=Math.asin(clamp(north,-1,1))*deg;
-  return {latitude:latitude===0?0:latitude,longitude:longitude===0?0:(kind==='moon'?-longitude:longitude)};
+  return {latitude:latitude===0?0:latitude,longitude:longitude===0?0:longitude};
 }
 /**
  * Grid density responds to the apparent disc diameter, not to CSS fullscreen
@@ -66,9 +66,9 @@ export function paintDiscGrid(canvas,kind,g,enabled=true,apparentRadius=g.r) {
   // Solar lines must be genuinely black rather than pale blue/gray.
   c.strokeStyle=sun?'rgba(0,0,0,.75)':'rgba(120,205,240,.47)';
   c.lineWidth=sun?.7:.6;
-  // Moon's east-positive longitudes appear to image left in the LRO mosaic.
-  // Reflect the graticule to use the same frame as lunarFeatureScreen.
-  const project=(lat,lon)=>surfaceToScreen(lat,sun?lon:-lon,g);
+  // The lunar photograph and atlas both use east-positive coordinates
+  // toward image right, matching the normal orthographic projection.
+  const project=(lat,lon)=>surfaceToScreen(lat,lon,g);
   function trace(points) {
     c.beginPath();let started=false;
     for(const [lat,lon] of points) {
