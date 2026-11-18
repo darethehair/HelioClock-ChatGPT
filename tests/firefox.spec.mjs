@@ -2643,3 +2643,26 @@ test('Lunar atlas labels follow zoom, filters, search, and Sun/Moon switch',asyn
  await page.locator('[data-disc-view="moon"]').click();
  await expect(overlay).toBeVisible();
 });
+
+test('Sun analemma draws on sky and projected Earth; breadcrumb steps accumulate',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ const skyToggle=page.locator('.sky-panel [data-solar-trail-enabled]');
+ const earthToggle=page.locator('.earth-panel [data-solar-trail-enabled]');
+ await skyToggle.check();
+ await expect(earthToggle).toBeChecked();
+ await expect.poll(()=>Number(page.locator('#earth-map').getAttribute('data-solar-trail-count'))).toBeGreaterThan(60);
+ await expect.poll(()=>Number(page.locator('#sky').getAttribute('data-solar-trail-count'))).toBeGreaterThan(0);
+ await page.locator('[data-projection="globe"]').click();
+ await expect.poll(()=>Number(page.locator('#earth-map').getAttribute('data-solar-trail-count'))).toBeGreaterThanOrEqual(0);
+ await page.locator('.sky-panel [data-solar-trail-mode]').selectOption('breadcrumbs');
+ await expect(page.locator('.earth-panel [data-solar-trail-mode]')).toHaveValue('breadcrumbs');
+ await page.locator('#dock-next-day').click();
+ await page.locator('#dock-next-day').click();
+ await expect(page.locator('.sky-panel [data-solar-trail-status]')).toContainText('2 recorded positions');
+ await page.locator('.sky-panel [data-solar-trail-clear]').click();
+ await expect(page.locator('.sky-panel [data-solar-trail-status]')).toContainText('0 recorded positions');
+ await earthToggle.uncheck();
+ await expect(skyToggle).not.toBeChecked();
+ await expect(page.locator('#sky')).toHaveAttribute('data-solar-trail-count','0');
+ await expect(page.locator('#earth-map')).toHaveAttribute('data-solar-trail-count','0');
+});
