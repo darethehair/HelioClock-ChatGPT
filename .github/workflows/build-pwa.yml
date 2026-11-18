@@ -105,6 +105,8 @@ jobs:
           node /tmp/helioclock-nearest-settlement-test.mjs
       - name: ISS OMM and SGP4 propagation regression
         run: node --test tests/iss-tracking.test.mjs
+      - name: ISS sky and pass-finding regression
+        run: node --test tests/iss-sky.test.mjs
       - name: MPC comet catalogue parser regression
         run: node --test tests/comet-catalog.test.mjs
       - name: Comet orbital position and finder regression
