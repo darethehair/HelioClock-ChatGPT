@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v118",
+      "summary": "Add ISS to Sky Compass with observer-relative azimuth/altitude and range, a ±12-minute sky trail, approximate sunlight/twilight visibility, and previous/next horizon pass navigation; retain orbital-element freshness safeguards."
+    },
+    {
       "version": "v117",
       "summary": "Add International Space Station tracking to Earth Map with CelesTrak OMM snapshots, satellite.js SGP4 ground-track propagation, projection-aware current marker and ±45-minute track, altitude/speed/epoch readouts, offline cache, refresh control and stale-element safeguards."
     },
