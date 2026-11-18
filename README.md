@@ -105,6 +105,7 @@ Release highlights are curated in [`release-notes.json`](release-notes.json). Wh
 
 | Release | Highlights |
 | --- | --- |
+| **v112** | Expand the lunar atlas to 500 searchable named features: retain 115 curated landmarks, add 385 prominent near-side craters from USGS-derived nomenclature data, and maintain zoom-dependent uncluttered labels. |
 | **v111** | Curated 115-feature near-side lunar atlas with zoom-aware collision-limited labels, maria/crater/other filters, searchable names, centering and selection; fixed mosaic coordinates are explicitly approximate, with libration deferred. |
 | **v110** | Replace 100 minor-planet diamond markers with small hollow circles (selected body enlarged), and extend optional ecliptic height risers to visible planets, with numeric planet height in inspection. |
 | **v109** | 100 searchable diameter-ranked numbered minor planets from NASA/JPL; low-cost markers, selective orbit paths, labels for the primary four and the selected body. |
