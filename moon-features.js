@@ -1,4 +1,5 @@
 import {surfaceToScreen} from './disc-coordinates.js';
+import {EXTRA_LUNAR_CRATERS} from './moon-extra-craters.js';
 // East-positive lunar coordinates, based on the IAU/USGS nomenclature
 // conventions. Curated point anchors are APPROXIMATE and the existing
 // fixed orthographic LRO photograph does not model libration.
@@ -809,7 +810,7 @@ export const LUNAR_FEATURES=[
   "lon": 4.7,
   "minZoom": 4
  }
-];
+].concat(EXTRA_LUNAR_CRATERS);
 export const LUNAR_TYPES={mare:'Maria',crater:'Craters',other:'Other'};
 export function findLunarFeature(query){
  const q=String(query||'').trim().toLocaleLowerCase();
