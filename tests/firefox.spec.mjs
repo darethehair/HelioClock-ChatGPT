@@ -246,6 +246,9 @@ test('Rectangular sky draws every 30-degree azimuth meridian visibly at 1x',asyn
  await page.goto('http://127.0.0.1:8765/');
  await page.locator('[data-sky-projection="rect"]').click();
  await page.locator('[data-sky-light="black"]').click();
+ // Grid-only pixel test: the ISS sky trail can legitimately cross the same
+ // sample pixels at current time and make the off-grid comparison brighter.
+ await page.locator('#iss-sky-show').uncheck();
  for(const id of ['show-stars','show-planets','show-sky-paths','show-ecliptic','show-milkyway-shade','show-milkyway-outline','show-galactic-center'])
   { await revealSkyControl(page,id); await page.locator('#'+id).uncheck(); }
  { await revealSkyControl(page,'show-radec-grid'); await page.locator('#show-radec-grid').uncheck(); }
