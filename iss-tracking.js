@@ -50,7 +50,12 @@ export function issGroundTrack(model,date,{halfMinutes=45,stepMinutes=2}={}){
  const positions=[];
  const half=Math.max(0,Math.min(90,Math.floor(halfMinutes)));
  const step=Math.max(1,Math.min(10,Math.floor(stepMinutes)));
- for(let minute=-half;minute<=half;minute+=step){
+ const offsets=[];
+ for(let minute=-half;minute<0;minute+=step)offsets.push(minute);
+ offsets.push(0);
+ for(let minute=step;minute<=half;minute+=step)offsets.push(minute);
+ if(offsets.at(-1)!==half)offsets.push(half);
+ for(const minute of offsets){
   const t=new Date(date.getTime()+minute*60000);
   const p=issPosition(model,t);
   if(p)positions.push({...p,offsetMinutes:minute});
