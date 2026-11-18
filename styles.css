@@ -845,3 +845,16 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
  .iss-map-tools{padding:7px;gap:6px 9px}
  .iss-map-tools small{flex-basis:100%}
 }
+
+/* ISS sky pass panel: compact on phone, moved to plot settings in fullscreen. */
+.iss-sky-tools{display:flex;align-items:center;flex-wrap:wrap;gap:8px 11px;
+ margin:8px 0;padding:8px 11px;border:1px solid #42758c;border-radius:7px;
+ background:rgba(11,39,64,.78);color:#c5dceb;font-size:11px}
+.iss-sky-tools strong{color:#9beaff;font-weight:700}
+.iss-sky-tools label{display:inline-flex;align-items:center;gap:6px}
+.iss-sky-tools button{background:#193c57;border:1px solid #4b819c;
+ border-radius:5px;color:#def7ff;font-size:11px;padding:6px 9px}
+.iss-sky-tools small{font-size:10px;line-height:1.5;flex-basis:100%}
+#iss-sky-status{color:#c1e1f3}
+#iss-pass-status{color:#c9bfe8}
+@media(max-width:700px){.iss-sky-tools{padding:7px;gap:6px 8px}}
