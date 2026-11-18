@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {discGeometry,screenToSurface,surfaceToScreen,formatSurface,gridInterval} from '../disc-coordinates.js';
 import {solarDiscOrientation} from '../solar-disc-orientation.js';
-import {LUNAR_FEATURES,findLunarFeature,lunarFeatureScreen} from '../moon-features.js';
+import {LUNAR_FEATURES,findLunarFeature,lunarFeatureScreen,visibleLunarLabels} from '../moon-features.js';
 import {EXTRA_LUNAR_CRATERS} from '../moon-extra-craters.js';
 test('Moon grid centre and latitude/longitude reference',()=>{
  const g=discGeometry('moon',400,400);
@@ -96,4 +96,21 @@ test('Expanded 500-feature lunar atlas is unique, searchable and on the visible 
   assert.ok(lunarFeatureScreen(feature,discGeometry('moon',800,800)),feature.name+' must project onto the near side');
  }
  assert.ok(LUNAR_FEATURES.filter(x=>x.type==='crater').length>400);
+});
+
+test('Lunar labels use the available viewport at 1x without crowding',()=>{
+ const wide=discGeometry('moon',1600,660),small=discGeometry('moon',360,360);
+ const largeLabels=visibleLunarLabels(wide,{zoom:1},1600,660);
+ const smallLabels=visibleLunarLabels(small,{zoom:1},360,360);
+ assert.ok(largeLabels.length>11,'desktop 1x view should show more than the original eleven labels');
+ assert.ok(largeLabels.length>smallLabels.length,'desktop should support more labels than phone');
+ for(const labels of [largeLabels,smallLabels]){
+  for(let i=0;i<labels.length;i++)for(let j=i+1;j<labels.length;j++){
+   const a=labels[i],b=labels[j];
+   assert.ok(a.labelX+Math.min(168,a.name.length*6.1+8)+4<=b.labelX ||
+    b.labelX+Math.min(168,b.name.length*6.1+8)+4<=a.labelX ||
+    a.labelY+17<=b.labelY || b.labelY+17<=a.labelY,
+    'overlapping labels: '+a.name+' and '+b.name);
+  }
+ }
 });
