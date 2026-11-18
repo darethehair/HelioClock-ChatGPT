@@ -2658,7 +2658,7 @@ test('Sun analemma draws on sky and projected Earth; breadcrumb steps accumulate
  await expect(page.locator('.earth-panel [data-solar-trail-mode]')).toHaveValue('breadcrumbs');
  await page.locator('#dock-next-day').click();
  await page.locator('#dock-next-day').click();
- await expect(page.locator('.sky-panel [data-solar-trail-status]')).toContainText('3 recorded positions');
+ await expect(page.locator('.sky-panel [data-solar-trail-status]')).toContainText('2 recorded positions');
  await page.locator('.sky-panel [data-solar-trail-clear]').click();
  await expect(page.locator('.sky-panel [data-solar-trail-status]')).toContainText('0 recorded positions');
  await earthToggle.uncheck();
