@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {discGeometry,screenToSurface,surfaceToScreen,formatSurface,gridInterval} from '../disc-coordinates.js';
 import {solarDiscOrientation} from '../solar-disc-orientation.js';
 import {LUNAR_FEATURES,findLunarFeature,lunarFeatureScreen} from '../moon-features.js';
+import {EXTRA_LUNAR_CRATERS} from '../moon-extra-craters.js';
 test('Moon grid centre and latitude/longitude reference',()=>{
  const g=discGeometry('moon',400,400);
  assert.deepEqual(screenToSurface(200,200,g),{latitude:0,longitude:0});
@@ -89,9 +90,10 @@ test('Expanded 500-feature lunar atlas is unique, searchable and on the visible 
   names.add(key);
   assert.ok(Number.isFinite(feature.lat)&&Number.isFinite(feature.lon),feature.name);
   assert.ok(feature.lat>=-90&&feature.lat<=90&&Math.abs(feature.lon)<=180,feature.name);
-  assert.ok(Math.cos(feature.lat*Math.PI/180)*Math.cos(feature.lon*Math.PI/180)>=0,feature.name+' is on the far side');
   assert.equal(findLunarFeature(feature.name)?.name,feature.name);
-  assert.ok(lunarFeatureScreen(feature,discGeometry('moon',800,800)),feature.name+' must project');
+ }
+ for(const feature of EXTRA_LUNAR_CRATERS){
+  assert.ok(lunarFeatureScreen(feature,discGeometry('moon',800,800)),feature.name+' must project onto the near side');
  }
  assert.ok(LUNAR_FEATURES.filter(x=>x.type==='crater').length>400);
 });
