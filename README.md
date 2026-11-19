@@ -20,6 +20,30 @@ This is the **independent ChatGPT edition**, created by **Darethehair with assis
 - **Solar system orrery:** Astronomy Engine heliocentric ecliptic positions of Mercury through Neptune, inner/outer viewing modes, AU rings and zoom. Optional 3D perspective supports tilt and rotation using sliders or drag gestures, including touch devices; orbital guide paths sample the planets' inclined heliocentric trajectories. **Planetary event navigator** finds previous/next opposition, conjunction, quadrature, or inner-planet greatest elongation relative to the simulated date, updates the global date/time, and shows the selected event geometry and Earth distance.
 - **Astronomical Information:** a detailed text almanac with Julian dates, sidereal time, Sun/Moon coordinates, rise/set and twilight events, major lunar phases, and upcoming events. Visible in the default dashboard, or usable as a stand-alone text-only view.
 
+### Astronomical catalogue inventory
+
+The following counts are from the **v119 standalone PWA build #766 (18 November 2026)**. They describe the catalogue entries and orbital models available to HelioClock, **not** the number of objects visible on screen at once.
+
+| Catalogue or model | Entries | Source / scope |
+| --- | ---: | --- |
+| Stars | **15,531** | Hipparcos-based D3-Celestial catalogue, magnitude ≤ 7; 3,462 have a name or designation |
+| Comets | **974** | Minor Planet Center `CometEls.txt` orbital elements |
+| Minor planets / asteroids | **100** | NASA/JPL SBDB; deliberately limited to 100 diameter-ranked numbered objects |
+| Deep-sky objects | **107** | Messier catalogue entries (galaxies, nebulae, clusters) |
+| Planets | **7** | Mercury through Neptune, excluding Earth; computed positions rather than static catalogue rows |
+| Artificial satellites | **1** | International Space Station (NORAD 25544), with CelesTrak orbital elements |
+| **Main-catalogue subtotal** | **16,720** | |
+
+Additional mapped or labelled entries:
+
+| Supplementary catalogue | Entries |
+| --- | ---: |
+| Lunar surface features (maria, craters, other landmarks) | **500** |
+| Constellation-name/centre entries | **89** |
+| **Total including supplementary entries** | **17,309** |
+
+**How to interpret these numbers:** These are *catalogue entries*, not necessarily distinct physical objects. Constellations and lunar landmarks are not separate orbiting bodies; familiar objects such as the Sun, Earth, and Moon are modelled in addition to the planetary row above. The number of selectable/searchable objects and the number drawn in a given view are smaller and depend on the view, horizon, zoom and filters. Star catalogue counts are fixed for this snapshot, while **comet and asteroid counts can change between builds** depending on source availability and catalogue refreshes. ISS position predictions also depend on the freshness of its orbital elements.
+
 ### Explore time and space
 
 The **fixed bottom time dock** remains visible while using the graphical displays, including fullscreen views. It provides local date/time controls, a time scrubber, ±minute, ±hour and ±day steps, a live-clock return, and local sidereal time. The Sky Compass also offers ±**sidereal day** steps (approximately 23h 56m 4.091s). You can choose observing latitude and longitude independently of the device's timezone.
