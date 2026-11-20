@@ -10,7 +10,8 @@ test('NASA Carman reference includes the original 19 dated sightings',()=>{
  assert.equal(fixture.observer.name,'Carman, Manitoba, Canada');
  assert.ok(fixture.observer.latitude>49&&fixture.observer.latitude<50);
  assert.ok(fixture.observer.longitude> -99&&fixture.observer.longitude< -97);
- assert.ok(fixture.timeZone.includes('UTC-05:00'));
+ assert.ok(fixture.timeZone.includes('unconfirmed'));
+ assert.equal(fixture.comparisonTimeZone,'Manitoba Standard Time (MBT), UTC-05:00');
  const slots=new Set();
  for(const pass of fixture.sightings){
   const key=pass.date+'T'+pass.localTime;
