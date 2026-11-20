@@ -107,8 +107,6 @@ jobs:
         run: node --test tests/iss-tracking.test.mjs
       - name: ISS sky and pass-finding regression
         run: node --test tests/iss-sky.test.mjs
-      - name: TEMP one-shot Morden ISS calculation comparison
-        run: node scripts/oneoff-morden-iss.mjs
       - name: MPC comet catalogue parser regression
         run: node --test tests/comet-catalog.test.mjs
       - name: Comet orbital position and finder regression
