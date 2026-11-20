@@ -129,6 +129,7 @@ Release highlights are curated in [`release-notes.json`](release-notes.json). Wh
 
 | Release | Highlights |
 | --- | --- |
+| **v120** | Correct ISS visible-pass maximum elevation to use the sunlit viewing interval rather than the full orbital arc; validated one-time against five Morden passes (start times agreed to the minute, maximum elevations within 1.3°). |
 | **v119** | Distinguish ISS orbital and potentially visible passes with dedicated previous/next controls, Sun/Earth umbra and penumbra geometry, dark-sky/altitude visibility screening, and illuminated Sky Compass marker styling. |
 | **v118** | Add ISS to Sky Compass with observer-relative azimuth/altitude and range, a ±12-minute sky trail, approximate sunlight/twilight visibility, and previous/next horizon pass navigation; retain orbital-element freshness safeguards. |
 | **v117** | Add International Space Station tracking to Earth Map with CelesTrak OMM snapshots, satellite.js SGP4 ground-track propagation, projection-aware current marker and ±45-minute track, altitude/speed/epoch readouts, offline cache, refresh control and stale-element safeguards. |
