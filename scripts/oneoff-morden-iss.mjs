@@ -22,8 +22,8 @@ for(const e of reference){
  console.log(JSON.stringify({date:e.date,reference:e.time+' UTC-5',referenceMax:e.max,referenceDuration:e.duration,
    predictedVisibleUTC:p?.visibleStart?.toISOString()||null,
    predictedVisibleLocal:p?.visibleStart?new Date(t-5*3600000).toISOString().slice(11,16):null,
-   predictedMax:p?.maxAlt??null,
+   predictedMax:p?.visibleMaxAlt??null,geometricMax:p?.maxAlt??null,
    predictedDurationMinutes:p?.visibleStart&&p?.visibleEnd?Math.round((p.visibleEnd-p.visibleStart)/60000*10)/10:null,
-   deltaMinutes:err,deltaMax:p?Math.round((p.maxAlt-e.max)*10)/10:null,
+   deltaMinutes:err,deltaMax:p?Math.round((p.visibleMaxAlt-e.max)*10)/10:null,
    note:!p?'No match within search/epoch window':'Matched earliest visible pass after anchor'}));
 }
