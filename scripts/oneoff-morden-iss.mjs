@@ -1,9 +1,10 @@
 // ONE-OFF diagnostic. Delete after examining GitHub Actions output.
 import * as satellite from 'satellite.js';
 import {findIssPass} from '../iss-sky.js';
-const tle1='1 25544U 98067A   26322.30200954  .00012483  00000-0  23055-3 0  9994';
-const tle2='2 25544  51.6316 257.4339 0007388  38.9132 321.2387 15.49454822595648';
-const model={satrec:satellite.twoline2satrec(tle1,tle2),epoch:new Date('2026-11-18T07:14:53.624Z')};
+// Verified public Space-Track-derived TLE dated 2026-11-19 (isstracker.pl; NORAD 25544).
+const tle1='1 25544U 98067A   26323.20494996  .00013991  00000-0  25715-3 0  9995';
+const tle2='2 25544  51.6318 252.9634 0007402  42.1092 318.0465 15.49480324595789';
+const model={satrec:satellite.twoline2satrec(tle1,tle2),epoch:new Date('2026-11-19T04:55:07.676Z')};
 const reference=[
  {date:'2026-11-20',time:'19:35',max:53,duration:4},
  {date:'2026-11-21',time:'18:47',max:57,duration:5},
@@ -15,8 +16,8 @@ const coord={lat:49.191944,lon:-98.100556};
 console.log('ONE-SHOT MORDEN ISS TEST: TLE epoch',model.epoch.toISOString());
 for(const e of reference){
  const referenceTime=Date.parse(e.date+'T'+e.time+':00-05:00');
- const start=new Date(referenceTime-2*3600000);
- const p=findIssPass(model,start,coord.lat,coord.lon,1,{hours:4,visibleOnly:true,stepSeconds:20});
+ const start=new Date(referenceTime-30*60000);
+ const p=findIssPass(model,start,coord.lat,coord.lon,1,{hours:2,visibleOnly:true,stepSeconds:20});
  const t=p?.visibleStart?.getTime(),err=t===undefined?null:Math.round((t-referenceTime)/60000*10)/10;
  console.log(JSON.stringify({date:e.date,reference:e.time+' UTC-5',referenceMax:e.max,referenceDuration:e.duration,
    predictedVisibleUTC:p?.visibleStart?.toISOString()||null,
