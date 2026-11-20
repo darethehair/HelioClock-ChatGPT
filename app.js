@@ -434,8 +434,11 @@ function navigateIssPass(direction,visibleOnly=false){
  const utc=d=>d.toISOString().slice(0,16).replace('T',' ')+' UTC';
  $('iss-pass-status').textContent=
   (visibleOnly?'Visible pass · ':'Orbital pass · ')+
-  'Rise '+utc(found.rise)+' · maximum '+utc(found.maximum)+' at '+
-  found.maxAlt.toFixed(1)+'° · set '+utc(found.set)+
+  'Rise '+utc(found.rise)+' · '+
+  (visibleOnly&&found.visibleMaximum?'visible maximum ':'orbital maximum ')+
+  utc(visibleOnly&&found.visibleMaximum?found.visibleMaximum:found.maximum)+' at '+
+  (visibleOnly&&found.visibleMaxAlt!==null?found.visibleMaxAlt:found.maxAlt).toFixed(1)+
+  '° · set '+utc(found.set)+
   (found.likelyVisible?' · potential viewing '+utc(found.visibleStart)+' – '+utc(found.visibleEnd):
    ' · unlikely naked-eye visible (illumination/sky)');
  render();
