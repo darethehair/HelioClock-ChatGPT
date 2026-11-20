@@ -5,13 +5,15 @@
     "latitude": 49.4991667,
     "longitude": -98.0008333
   },
-  "timeZone": "Manitoba permanent daylight time (UTC-05:00)",
+  "timeZone": "NASA displayed-time offset unconfirmed; appears to follow CST (UTC-06:00), despite Manitoba adopting MBT (UTC-05:00) on 2026-11-01",
   "notes": [
     "Reference observations are NASA published forecasts, not independent verified sightings.",
     "NASA 'Appears' and 'Disappears' refer to visibility limits, not geometric horizon crossing.",
     "A current CelesTrak OMM should not be propagated beyond HelioClock's ±5-day freshness limit; capture an epoch-appropriate snapshot before comparison.",
     "NASA minute-granularity times and durations should be compared with rounding tolerances.",
-    "Sunlight, partial shadow, atmospheric visibility and brightness criteria may differ from HelioClock."
+    "Sunlight, partial shadow, atmospheric visibility and brightness criteria may differ from HelioClock.",
+    "SpotTheISS Morden comparison supplied 2026-11-20: NASA Carman Friday 18:35 and Morden Friday 19:35 represent the same likely UTC instant if NASA is using UTC-06:00 while Morden uses UTC-05:00. NASA's displayed offset has not been independently confirmed.",
+    "Preserve original NASA clock readings; do not silently interpret them as UTC-05:00 until their display offset is verified."
   ],
   "sightings": [
     {
@@ -204,5 +206,6 @@
       "disappearsHeightDeg": 10,
       "disappearsDirection": "S"
     }
-  ]
+  ],
+  "comparisonTimeZone": "Manitoba Standard Time (MBT), UTC-05:00"
 }
