@@ -44,14 +44,6 @@ Additional mapped or labelled entries:
 
 **How to interpret these numbers:** These are *catalogue entries*, not necessarily distinct physical objects. Constellations and lunar landmarks are not separate orbiting bodies; familiar objects such as the Sun, Earth, and Moon are modelled in addition to the planetary row above. The number of selectable/searchable objects and the number drawn in a given view are smaller and depend on the view, horizon, zoom and filters. Star catalogue counts are fixed for this snapshot, while **comet and asteroid counts can change between builds** depending on source availability and catalogue refreshes. ISS position predictions also depend on the freshness of its orbital elements.
 
-### ISS sighting validation references
-
-**Primary reference — Morden, Manitoba:** The [Morden sighting fixture](tests/fixtures/spot-the-iss-morden-2026-11.json) records **five SpotTheISS visible-pass predictions for 20–23 November 2026**, using approximate Morden city-centre coordinates (49.191944° N, 98.100556° W). It preserves the displayed local times (UTC−5), maximum altitudes, apparent magnitudes, travel directions, durations and the snapshot cloud forecasts. **Future local ISS accuracy comparisons should use Morden first.**
-
-**Secondary reference — Carman, Manitoba:** The [NASA Spot the Station fixture](tests/fixtures/nasa-iss-carman-2026-11.json) preserves **19 published sightings for 18 November–1 December 2026**. Carman is useful as a nearby independent cross-check, but its viewing geometry differs from Morden. The NASA and SpotTheISS listings also differ consistently by about one hour in displayed clock times, possibly because of a timezone-display discrepancy. **NASA's display offset has not been independently confirmed**; preserve both listings' original clock readings until that is resolved.
-
-These fixtures are **development benchmarks, not hard-coded application sighting tables or proof of numerical agreement**. HelioClock calculates passes from CelesTrak orbital elements with SGP4. An actual numerical comparison must use orbital elements close to each reference date (the app currently limits propagation to **±5 days from the element epoch**) and account for local-time conversion, horizon versus visible-window boundaries, and differences in sunlight, brightness and atmospheric criteria.
-
 ### Explore time and space
 
 The **fixed bottom time dock** remains visible while using the graphical displays, including fullscreen views. It provides local date/time controls, a time scrubber, ±minute, ±hour and ±day steps, a live-clock return, and local sidereal time. The Sky Compass also offers ±**sidereal day** steps (approximately 23h 56m 4.091s). You can choose observing latitude and longitude independently of the device's timezone.
