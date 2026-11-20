@@ -44,6 +44,12 @@ Additional mapped or labelled entries:
 
 **How to interpret these numbers:** These are *catalogue entries*, not necessarily distinct physical objects. Constellations and lunar landmarks are not separate orbiting bodies; familiar objects such as the Sun, Earth, and Moon are modelled in addition to the planetary row above. The number of selectable/searchable objects and the number drawn in a given view are smaller and depend on the view, horizon, zoom and filters. Star catalogue counts are fixed for this snapshot, while **comet and asteroid counts can change between builds** depending on source availability and catalogue refreshes. ISS position predictions also depend on the freshness of its orbital elements.
 
+### ISS sighting validation reference
+
+A reproducible [NASA Spot the Station reference for Carman, Manitoba](tests/fixtures/nasa-iss-carman-2026-11.json) records **19 published sighting predictions from 18 November to 1 December 2026**, including local start time, visible duration, maximum altitude, and appearance/disappearance directions. Carman is a nearby reference for observing conditions in south-central Manitoba.
+
+This is a **benchmark fixture, not yet proof of numerical agreement**. NASA's appearance/disappearance times reflect *visibility*, which differs from geometric rise/set at the horizon. Before comparing HelioClock predictions numerically, use archived orbital elements appropriate to each date, apply local time conversion and reporting tolerances, and distinguish partial shadow and low-altitude brightness thresholds. The current ISS SGP4 elements are deliberately limited to **±5 days from their epoch**; comparing all 19 entries against one newly downloaded orbital element set would be misleading.
+
 ### Explore time and space
 
 The **fixed bottom time dock** remains visible while using the graphical displays, including fullscreen views. It provides local date/time controls, a time scrubber, ±minute, ±hour and ±day steps, a live-clock return, and local sidereal time. The Sky Compass also offers ±**sidereal day** steps (approximately 23h 56m 4.091s). You can choose observing latitude and longitude independently of the device's timezone.
