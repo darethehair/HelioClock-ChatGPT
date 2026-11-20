@@ -2,14 +2,18 @@
   "source": "SpotTheISS Morden upcoming-passes listing copied by user November 20, 2026",
   "url": "https://www.spottheiss.com/#passes",
   "observer": {
-    "name": "Morden, Manitoba, Canada"
+    "name": "Morden, Manitoba, Canada",
+    "latitude": 49.191944,
+    "longitude": -98.100556,
+    "coordinatesSource": "Natural Resources Canada, Geographical Names Board of Canada (GASBB)"
   },
   "displayedTimeZone": "CDT, UTC-05:00 as labelled by site",
   "notes": [
     "Reference listing copied from website, not an independent orbital calculation.",
     "Forecast cloud cover is time-sensitive; values below are the snapshot the user shared.",
     "Comparison with NASA Carman suggests NASA displays clock times one hour earlier; its displayed timezone has not been confirmed.",
-    "Morden passes cannot be treated as identical to Carman passes: maximum altitudes differ because observer positions differ."
+    "Morden passes cannot be treated as identical to Carman passes: maximum altitudes differ because observer positions differ.",
+    "Morden geographic reference coordinates are city-centre coordinates, not a specific observing site."
   ],
   "passes": [
     {
@@ -62,5 +66,6 @@
       "durationMinutes": 5,
       "cloudPercent": 6
     }
-  ]
+  ],
+  "benchmarkRole": "primary ISS visible-pass reference for HelioClock's Morden observing location"
 }
