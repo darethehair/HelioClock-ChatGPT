@@ -126,8 +126,13 @@ export function findIssPass(model,date,lat,lon,direction=1,{hours=120,stepSecond
    }else if(open&&prev.alt>0&&p.alt<=0){
     const set=crossing(prev,p);
     const visibleSamples=open.samples.filter(x=>x.likelyVisible);
+    // NASA/observer-facing peak is the highest point while illuminated
+    // against a dark sky, not the peak of the full geometric pass.
+    const visiblePeak=visibleSamples.reduce((best,p)=>!best||p.alt>best.alt?p:best,null);
     const pass={
      rise:open.rise,set,maximum:open.maximum,maxAlt:open.maxAlt,
+     visibleMaximum:visiblePeak?.date||null,
+     visibleMaxAlt:visiblePeak?.alt??null,
      azRise:open.samples[0].az,azSet:prev.az,
      sunlitAtMax:open.max.sunlit,
      likelyVisible:visibleSamples.length>0,
