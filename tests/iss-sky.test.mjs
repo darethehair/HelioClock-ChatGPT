@@ -52,6 +52,8 @@ test('Visible-pass filter distinguishes illuminated dark-sky windows from orbita
   assert.ok(visible.likelyVisible);
   assert.ok(visible.visibleStart instanceof Date);
   assert.ok(visible.visibleEnd>=visible.visibleStart);
+  assert.ok(visible.visibleMaximum>=visible.visibleStart&&visible.visibleMaximum<=visible.visibleEnd);
+  assert.ok(visible.visibleMaxAlt>=10&&visible.visibleMaxAlt<=visible.maxAlt);
   const p=issSkyPosition(model,visible.visibleStart,observer.lat,observer.lon);
   assert.ok(p.alt>=10&&p.sunlit&&p.sunAlt<= -6);
   assert.ok(visible.rise>=when);
