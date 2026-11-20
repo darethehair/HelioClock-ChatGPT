@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v120",
+      "summary": "Correct ISS visible-pass maximum elevation to use the sunlit viewing interval rather than the full orbital arc; validated one-time against five Morden passes (start times agreed to the minute, maximum elevations within 1.3°)."
+    },
+    {
       "version": "v119",
       "summary": "Distinguish ISS orbital and potentially visible passes with dedicated previous/next controls, Sun/Earth umbra and penumbra geometry, dark-sky/altitude visibility screening, and illuminated Sky Compass marker styling."
     },
