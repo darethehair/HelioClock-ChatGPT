@@ -1,0 +1,66 @@
+{
+  "source": "SpotTheISS Morden upcoming-passes listing copied by user November 20, 2026",
+  "url": "https://www.spottheiss.com/#passes",
+  "observer": {
+    "name": "Morden, Manitoba, Canada"
+  },
+  "displayedTimeZone": "CDT, UTC-05:00 as labelled by site",
+  "notes": [
+    "Reference listing copied from website, not an independent orbital calculation.",
+    "Forecast cloud cover is time-sensitive; values below are the snapshot the user shared.",
+    "Comparison with NASA Carman suggests NASA displays clock times one hour earlier; its displayed timezone has not been confirmed.",
+    "Morden passes cannot be treated as identical to Carman passes: maximum altitudes differ because observer positions differ."
+  ],
+  "passes": [
+    {
+      "date": "2026-11-20",
+      "localTime": "19:35",
+      "maxHeightDeg": 53,
+      "magnitude": -3.4,
+      "appearsDirection": "W",
+      "disappearsDirection": "NNE",
+      "durationMinutes": 4,
+      "cloudPercent": 100
+    },
+    {
+      "date": "2026-11-21",
+      "localTime": "18:47",
+      "maxHeightDeg": 57,
+      "magnitude": -3.4,
+      "appearsDirection": "W",
+      "disappearsDirection": "ENE",
+      "durationMinutes": 5,
+      "cloudPercent": 100
+    },
+    {
+      "date": "2026-11-21",
+      "localTime": "20:24",
+      "maxHeightDeg": 24,
+      "magnitude": -0.4,
+      "appearsDirection": "WNW",
+      "disappearsDirection": "WNW",
+      "durationMinutes": 1,
+      "cloudPercent": 100
+    },
+    {
+      "date": "2026-11-22",
+      "localTime": "19:36",
+      "maxHeightDeg": 58,
+      "magnitude": -3.7,
+      "appearsDirection": "WNW",
+      "disappearsDirection": "NNE",
+      "durationMinutes": 3,
+      "cloudPercent": 7
+    },
+    {
+      "date": "2026-11-23",
+      "localTime": "18:48",
+      "maxHeightDeg": 54,
+      "magnitude": -3.6,
+      "appearsDirection": "WNW",
+      "disappearsDirection": "ENE",
+      "durationMinutes": 5,
+      "cloudPercent": 6
+    }
+  ]
+}
