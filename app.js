@@ -11,7 +11,7 @@ import {renderSolarJourney} from './solar-hero.js';
 import {renderMoon} from './moon-renderer.js';
 import {renderMoonGlobe,lunarGlobePoint,formatLunarGlobePoint,paintLunarGlobeLabels,GLOBE_LUNAR_FEATURES} from './moon-globe.js';
 import {renderSolarEclipse} from './solar-eclipse-renderer.js';
-import {discGeometry,screenToSurface,paintDiscGrid,formatSurface} from './disc-coordinates.js';
+import {discGeometry,screenToSurface,paintDiscGrid,formatSurface,gridInterval} from './disc-coordinates.js';
 import {solarDiscOrientation} from './solar-disc-orientation.js';
 import {drawSolarYear} from './solar-chart.js';
 import {drawSkyGrid} from './sky-grid.js';
@@ -1041,7 +1041,7 @@ function drawMoon(){
  const info=state.moon3D?
   renderMoonGlobe($('moon'),state.date,state.lat,state.lon,{
    yaw:state.moonYaw,pitch:state.moonPitch,fullyLit:$('moon-3d-full-light').checked,
-   grid:state.moonGrid,gridStep:state.moonZoom>=3?10:state.moonZoom>=1.8?15:30
+   grid:state.moonGrid,gridStep:gridInterval(discCoordinateGeometry(true).r*state.moonZoom)
   }):
   renderMoon($('moon'),state.date,state.lat,state.lon,1,{showEarthshine:$('show-earthshine').checked});
  const event=info?.eclipse;
