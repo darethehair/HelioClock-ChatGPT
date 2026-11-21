@@ -51,7 +51,7 @@ export function globeInverse(x,y,z,yaw,pitch){
 
 /** Selenographic coordinates of a visible point on the 3D disc, in east-positive degrees.
  * The canvas CSS transform (pan/zoom) is accounted for by its bounding box. */
-export function lunarGlobePoint(canvas,clientX,clientY,yaw=0,pitch=0){
+export function lunarGlobePoint(canvas,clientX,clientY,yaw=0,pitch=0,roll=0){
  const rect=canvas.getBoundingClientRect();
  if(!rect.width||!rect.height)return null;
  const w=canvas.clientWidth,h=canvas.clientHeight;
@@ -60,7 +60,8 @@ export function lunarGlobePoint(canvas,clientX,clientY,yaw=0,pitch=0){
  const yCanvas=(clientY-rect.top)*h/rect.height;
  const x=(xCanvas-w/2)/(shownDiameter/2),y=(yCanvas-h/2)/(shownDiameter/2);
  const rr=x*x+y*y;if(rr>=1)return null;
- const body=globeInverse(x,y,Math.sqrt(1-rr),yaw,pitch);
+ const cr=Math.cos(roll),sr=Math.sin(roll);
+ const body=globeInverse(x*cr+y*sr,-x*sr+y*cr,Math.sqrt(1-rr),yaw,pitch);
  return {latitude:Math.asin(clamp(-body.y,-1,1))/RAD,
   longitude:Math.atan2(body.x,body.z)/RAD};
 }
@@ -72,7 +73,7 @@ export function formatLunarGlobePoint(point){
 }
 // Draw line fragments only on the camera-facing hemisphere. Both the terrain
 // and these curves use globeVector, including the far side and tilted views.
-function drawLunarGlobeGrid(ctx,width,height,diameter,yaw,pitch,step){
+function drawLunarGlobeGrid(ctx,width,height,diameter,yaw,pitch,roll,step){
  const radius=diameter/2;
  ctx.save();
  ctx.translate(width/2,height/2);
@@ -85,7 +86,8 @@ function drawLunarGlobeGrid(ctx,width,height,diameter,yaw,pitch,step){
  const project=(lat,lon)=>{
   const a=lat*RAD,b=lon*RAD;
   const v=globeVector(Math.cos(a)*Math.sin(b),-Math.sin(a),Math.cos(a)*Math.cos(b),yaw,pitch);
-  return v.z>=0?{x:v.x*radius,y:v.y*radius}:null;
+  const cr=Math.cos(roll),sr=Math.sin(roll);
+  return v.z>=0?{x:(v.x*cr-v.y*sr)*radius,y:(v.x*sr+v.y*cr)*radius}:null;
  };
  function trace(sample,count){
   ctx.beginPath();let started=false;
@@ -134,16 +136,18 @@ export const GLOBE_LUNAR_FEATURES=[...LUNAR_FEATURES.map(f=>
 /** Project selenographic surface anchors onto the visible orthographic globe.
  * Return null for sites behind the limb. Screen coordinates include CSS zoom/pan.
  */
-export function lunarGlobeFeaturePoint(feature,{width,height,yaw=0,pitch=0,zoom=1,panX=0,panY=0}){
+export function lunarGlobeFeaturePoint(feature,{width,height,yaw=0,pitch=0,roll=0,zoom=1,panX=0,panY=0}){
  const a=feature.lat*RAD,b=feature.lon*RAD;
  const v=globeVector(Math.cos(a)*Math.sin(b),-Math.sin(a),Math.cos(a)*Math.cos(b),yaw,pitch);
  if(v.z<=.025)return null;
  const radius=Math.round(Math.min(width*.82,height*.9))/2;
- return {x:width/2+panX+v.x*radius*zoom,y:height/2+panY+v.y*radius*zoom,depth:v.z};
+ const cr=Math.cos(roll),sr=Math.sin(roll);
+ return {x:width/2+panX+(v.x*cr-v.y*sr)*radius*zoom,
+  y:height/2+panY+(v.x*sr+v.y*cr)*radius*zoom,depth:v.z};
 }
 /** Draw fixed-size labels over a projected Moon, decluttered in screen space. */
 export function paintLunarGlobeLabels(canvas,{
- yaw=0,pitch=0,zoom=1,panX=0,panY=0,enabled=true,
+ yaw=0,pitch=0,roll=0,zoom=1,panX=0,panY=0,enabled=true,
  maria=true,craters=true,other=true,selected=''
 }={}){
  const width=canvas.clientWidth,height=canvas.clientHeight;
@@ -155,7 +159,7 @@ export function paintLunarGlobeLabels(canvas,{
  if(!enabled)return [];
  const allowed={mare:maria,crater:craters,other};
  const eligibleZoom=2.9+Math.max(0,zoom-1)*1.4;
- const bounds={width,height,yaw,pitch,zoom,panX,panY};
+ const bounds={width,height,yaw,pitch,roll,zoom,panX,panY};
  const candidates=GLOBE_LUNAR_FEATURES
   .filter(f=>allowed[f.type]&&(f.minZoom<=eligibleZoom||f.name===selected))
   .map(f=>({...f,point:lunarGlobeFeaturePoint(f,bounds)}))
@@ -182,7 +186,7 @@ export function paintLunarGlobeLabels(canvas,{
  return visible;
 }
 
-export function renderMoonGlobe(canvas,date,lat,lon,{yaw=0,pitch=0,fullyLit=false,grid=false,gridStep=30}={}){
+export function renderMoonGlobe(canvas,date,lat,lon,{yaw=0,pitch=0,roll=0,fullyLit=false,grid=false,gridStep=30}={}){
  const w=canvas.clientWidth,h=canvas.clientHeight;
  if(w<1||h<1)return null;
  const dpr=Math.min(window.devicePixelRatio||1,2);
@@ -205,7 +209,9 @@ export function renderMoonGlobe(canvas,date,lat,lon,{yaw=0,pitch=0,fullyLit=fals
   const y=(py+.5-r)/r;
   for(let px=0;px<diameter;px++){
    const x=(px+.5-r)/r,rr=x*x+y*y;if(rr>=1)continue;
-   const z=Math.sqrt(1-rr),body=globeInverse(x,y,z,yaw,pitch);
+   // Inverse screen roll before sampling the rotating lunar sphere.
+   const cr=Math.cos(roll),sr=Math.sin(roll);
+   const z=Math.sqrt(1-rr),body=globeInverse(x*cr+y*sr,-x*sr+y*cr,z,yaw,pitch);
    const dot=body.x*sun.x+body.y*sun.y+body.z*sun.z;
    // Match the 2D lunar atlas midtone and Earthshine curves; different NASA
    // source photographs can still retain their original tonal differences.
@@ -254,13 +260,14 @@ export function renderMoonGlobe(canvas,date,lat,lon,{yaw=0,pitch=0,fullyLit=fals
  g.putImageData(pixels,0,0);
  c.imageSmoothingEnabled=true;
  c.drawImage(scratch,(w-shownDiameter)/2,(h-shownDiameter)/2,shownDiameter,shownDiameter);
- const gridResult=grid?drawLunarGlobeGrid(c,w,h,shownDiameter,yaw,pitch,gridStep):{segments:0,labels:0};
+ const gridResult=grid?drawLunarGlobeGrid(c,w,h,shownDiameter,yaw,pitch,roll,gridStep):{segments:0,labels:0};
  canvas.dataset.globeGridSegments=String(gridResult.segments);
  canvas.dataset.globeGridLabels=String(gridResult.labels);
  canvas.dataset.globeNearPixels=String(near);
  canvas.dataset.globeFarPixels=String(far);
  canvas.dataset.globeYaw=String(yaw);
  canvas.dataset.globePitch=String(pitch);
+ canvas.dataset.globeRoll=String(roll);
  canvas.dataset.globeTextureStatus=textureStatus;
  return {illumination:m.illuminated,nearSideReady:!!(texture||nearsideBackup),farSideIllustrative:!texture,globalTextureReady:!!texture};
 }
