@@ -46,7 +46,73 @@ export function globeInverse(x,y,z,yaw,pitch){
  const y1=cp*y+sp*z,z1=-sp*y+cp*z;
  return {x:cy*x-sy*z1,y:y1,z:sy*x+cy*z1};
 }
-export function renderMoonGlobe(canvas,date,lat,lon,{yaw=0,pitch=0,fullyLit=false}={}){
+
+/** Selenographic coordinates of a visible point on the 3D disc, in east-positive degrees.
+ * The canvas CSS transform (pan/zoom) is accounted for by its bounding box. */
+export function lunarGlobePoint(canvas,clientX,clientY,yaw=0,pitch=0){
+ const rect=canvas.getBoundingClientRect();
+ if(!rect.width||!rect.height)return null;
+ const w=canvas.clientWidth,h=canvas.clientHeight;
+ const shownDiameter=Math.round(Math.min(w*.82,h*.9));
+ const xCanvas=(clientX-rect.left)*w/rect.width;
+ const yCanvas=(clientY-rect.top)*h/rect.height;
+ const x=(xCanvas-w/2)/(shownDiameter/2),y=(yCanvas-h/2)/(shownDiameter/2);
+ const rr=x*x+y*y;if(rr>=1)return null;
+ const body=globeInverse(x,y,Math.sqrt(1-rr),yaw,pitch);
+ return {latitude:Math.asin(clamp(-body.y,-1,1))/RAD,
+  longitude:Math.atan2(body.x,body.z)/RAD};
+}
+export function formatLunarGlobePoint(point){
+ if(!point)return 'Outside visible lunar globe';
+ const ns=point.latitude>=0?'N':'S',ew=point.longitude>=0?'E':'W';
+ return 'Selenographic '+Math.abs(point.latitude).toFixed(1)+'° '+ns+' · '+
+  Math.abs(point.longitude).toFixed(1)+'° '+ew;
+}
+// Draw line fragments only on the camera-facing hemisphere. Both the terrain
+// and these curves use globeVector, including the far side and tilted views.
+function drawLunarGlobeGrid(ctx,diameter,yaw,pitch,step){
+ const r=diameter/2;
+ ctx.save();ctx.translate(r,r);
+ ctx.lineWidth=Math.max(.65,diameter/350);
+ ctx.strokeStyle='rgba(115,225,255,.69)';
+ ctx.fillStyle='rgba(210,247,255,.95)';
+ ctx.font=Math.max(9,Math.min(12,diameter/29))+'px sans-serif';
+ ctx.textAlign='center';ctx.textBaseline='middle';
+ let segments=0,labels=0;
+ const project=(latitude,longitude)=>{
+  const a=latitude*RAD,b=longitude*RAD;
+  const body={x:Math.cos(a)*Math.sin(b),y:-Math.sin(a),z:Math.cos(a)*Math.cos(b)};
+  const v=globeVector(body.x,body.y,body.z,yaw,pitch);
+  return {x:v.x*r,y:v.y*r,front:v.z>0.001};
+ };
+ function curve(sample,n){
+  let previous=null;
+  for(let i=0;i<=n;i++){
+   const v=sample(i/n);
+   if(previous&&previous.front&&v.front){
+    ctx.beginPath();ctx.moveTo(previous.x,previous.y);ctx.lineTo(v.x,v.y);ctx.stroke();segments++;
+   }
+   previous=v;
+  }
+ }
+ for(let lat=-90+step;lat<90;lat+=step)curve(t=>project(lat,-180+360*t),Math.max(180,360/step*18));
+ for(let lon=-180;lon<180;lon+=step)curve(t=>project(-90+180*t,lon),Math.max(90,180/step*18));
+ // Lightweight labels; keep lettering close to the centre to avoid clutter.
+ function mark(lat,lon,label){
+  const p=project(lat,lon);
+  if(!p.front||Math.hypot(p.x,p.y)>r*.82)return;
+  const width=ctx.measureText(label).width+5;
+  ctx.fillStyle='rgba(0,0,0,.68)';ctx.fillRect(p.x-width/2,p.y-7,width,14);
+  ctx.fillStyle='rgba(210,247,255,.95)';ctx.fillText(label,p.x,p.y);labels++;
+ }
+ for(let lat=-60;lat<=60;lat+=step)if(lat!==0)mark(lat,0,Math.abs(lat)+'°'+(lat>0?'N':'S'));
+ for(let lon=-180;lon<180;lon+=step)if(lon!==0)mark(0,lon,Math.abs(lon)+'°'+(lon>0?'E':'W'));
+ mark(0,0,'0°');
+ ctx.restore();
+ return {segments,labels};
+}
+
+export function renderMoonGlobe(canvas,date,lat,lon,{yaw=0,pitch=0,fullyLit=false,grid=false,gridStep=30}={}){
  const w=canvas.clientWidth,h=canvas.clientHeight;
  if(w<1||h<1)return null;
  const dpr=Math.min(window.devicePixelRatio||1,2);
@@ -100,8 +166,11 @@ export function renderMoonGlobe(canvas,date,lat,lon,{yaw=0,pitch=0,fullyLit=fals
   }
  }
  g.putImageData(pixels,0,0);
+ const gridResult=grid?drawLunarGlobeGrid(g,diameter,yaw,pitch,gridStep):{segments:0,labels:0};
  c.imageSmoothingEnabled=true;
  c.drawImage(scratch,(w-shownDiameter)/2,(h-shownDiameter)/2,shownDiameter,shownDiameter);
+ canvas.dataset.globeGridSegments=String(gridResult.segments);
+ canvas.dataset.globeGridLabels=String(gridResult.labels);
  canvas.dataset.globeNearPixels=String(near);
  canvas.dataset.globeFarPixels=String(far);
  canvas.dataset.globeYaw=String(yaw);
