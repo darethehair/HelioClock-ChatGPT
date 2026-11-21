@@ -2920,3 +2920,30 @@ test('Local Sun Map fullscreen maximizes plot area with phone controls in drawer
  await page.locator('#local-sun-line-civil').check();
  await expect.poll(async()=>Number(await page.locator('#local-sun-map').getAttribute('data-local-sun-line-count'))).toBe(2);
 });
+
+test('Experimental 3D Moon rotates, resets and leaves classic 2D view intact',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8765/');
+ const canvas=page.locator('#moon');
+ await expect(page.locator('#moon-3d-toggle')).not.toBeChecked();
+ await expect(page.locator('#lunar-feature-controls')).toBeVisible();
+ await page.locator('#moon-3d-toggle').check();
+ await expect(page.locator('#moon-3d-status')).toContainText('ILLUSTRATIVE PLACEHOLDER');
+ await expect(page.locator('#lunar-feature-controls')).toBeHidden();
+ await expect.poll(async()=>Number(await canvas.getAttribute('data-globe-near-pixels'))).toBeGreaterThan(100);
+ const box=await page.locator('#disc-stage').boundingBox();
+ const x=box.x+box.width*.48,y=box.y+box.height*.52;
+ await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+110,y+35,{steps:5});await page.mouse.up();
+ await expect.poll(async()=>Math.abs(Number(await canvas.getAttribute('data-globe-yaw')))).toBeGreaterThan(.1);
+ await expect.poll(async()=>Number(await canvas.getAttribute('data-globe-far-pixels'))).toBeGreaterThan(100);
+ await page.locator('#moon-3d-full-light').check();
+ await expect(page.locator('#moon-source')).toContainText('FAR SIDE');
+ await page.locator('#moon-3d-home').click();
+ await expect(canvas).toHaveAttribute('data-globe-yaw','0');
+ await expect(page.locator('#moon-3d-full-light')).not.toBeChecked();
+ await page.locator('#moon-3d-toggle').uncheck();
+ await expect(page.locator('#lunar-feature-controls')).toBeVisible();
+ await expect(page.locator('#moon-3d-home')).toBeHidden();
+ await expect(page.locator('#moon-3d-toggle')).not.toBeChecked();
+ expect(errors).toEqual([]);
+});
