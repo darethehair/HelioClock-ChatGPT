@@ -129,6 +129,7 @@ Release highlights are curated in [`release-notes.json`](release-notes.json). Wh
 
 | Release | Highlights |
 | --- | --- |
+| **v130** | Align the rotatable 3D Moon's initial and restored Earth-facing presentation with the 2D Moon's parallactic horizon tilt. Apply the same screen roll to the NASA globe image, coordinate grid, feature labels and pointer mapping while preserving free yaw/pitch rotation. |
 | **v129** | Improve 2D/3D lunar visual consistency: reuse the original near-side LRO photo within the rotatable globe, smoothly blend to genuine global imagery at the limb, and match coordinate-grid stroke weight, label styling and zoom spacing. |
 | **v128** | Refine 3D Moon tonal response toward the 2D atlas and add zoom-aware, collision-avoiding labels across near and far sides, with far-side feature search rotating the globe to the selected location. |
 | **v127** | Add an optional latitude/longitude grid that rotates with the true 3D lunar surface across both hemispheres, zoom-aware grid spacing and selenographic pointer/touch readouts; the classic 2D atlas remains independent. |
