@@ -2893,6 +2893,9 @@ test('Opening banner displays precision observer coordinates after location chan
  await page.locator('#longitude').fill('-98.12519');
  await page.locator('#longitude').dispatchEvent('change');
  await expect(page.locator('#place-summary')).toHaveText('49.18371° N  ·  98.12519° W');
+ // Editing the advanced coordinate inputs scrolls the page down on a
+ // phone-sized viewport. Return to the banner before testing visibility.
+ await coordinates.scrollIntoViewIfNeeded();
  await expect(coordinates).toBeInViewport();
 });
 test('Local Sun Map fullscreen maximizes plot area with phone controls in drawer',async({page})=>{
