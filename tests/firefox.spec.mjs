@@ -2954,3 +2954,27 @@ test('Experimental 3D Moon rotates, resets and leaves classic 2D view intact',as
  await expect(page.locator('#moon-3d-toggle')).not.toBeChecked();
  expect(errors).toEqual([]);
 });
+
+test('v127 3D selenographic grid follows globe rotation and reports surface coordinates',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ const canvas=page.locator('#moon');
+ await page.locator('#moon-3d-toggle').check();
+ await expect.poll(async()=>canvas.getAttribute('data-globe-texture-status')).toBe('ready');
+ await expect(page.locator('#moon-3d-grid')).toBeChecked();
+ await expect.poll(async()=>Number(await canvas.getAttribute('data-globe-grid-segments'))).toBeGreaterThan(100);
+ await page.locator('#moon-3d-grid').uncheck();
+ await expect(canvas).toHaveAttribute('data-globe-grid-segments','0');
+ await page.locator('#moon-3d-grid').check();
+ const box=await canvas.boundingBox();
+ await page.mouse.move(box.x+box.width/2,box.y+box.height/2);
+ await expect(page.locator('#disc-coordinate-readout')).toContainText('Selenographic');
+ await expect(page.locator('#disc-coordinate-readout')).toContainText('°');
+ await page.locator('#disc-stage').scrollIntoViewIfNeeded();
+ const stage=await page.locator('#disc-stage').boundingBox();
+ const x=stage.x+stage.width*.48,y=stage.y+stage.height*.52;
+ await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+130,y,{steps:5});await page.mouse.up();
+ await expect.poll(async()=>Math.abs(Number(await canvas.getAttribute('data-globe-yaw')))).toBeGreaterThan(.1);
+ await expect.poll(async()=>Number(await canvas.getAttribute('data-globe-grid-segments'))).toBeGreaterThan(100);
+ await page.locator('#moon-3d-toggle').uncheck();
+ await expect(page.locator('#disc-grid-toggle')).toBeEnabled();
+});
