@@ -38,7 +38,8 @@ export function renderMoonGlobe(canvas,date,lat,lon,{yaw=0,pitch=0,fullyLit=fals
  const dpr=Math.min(window.devicePixelRatio||1,2);
  canvas.width=Math.max(1,Math.round(w*dpr));canvas.height=Math.max(1,Math.round(h*dpr));
  const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);
- const diameter=Math.round(Math.min(w*.82,h*.9,550)),r=diameter/2;
+ const shownDiameter=Math.round(Math.min(w*.82,h*.9));
+ const diameter=Math.max(16,Math.min(shownDiameter,340)),r=diameter/2;
  const scratch=document.createElement('canvas');scratch.width=diameter;scratch.height=diameter;
  const g=scratch.getContext('2d'),pixels=g.createImageData(diameter,diameter);
  const m=moon(date,lat,lon),tilt=moonOrientation(date,lat,lon);
@@ -81,7 +82,8 @@ export function renderMoonGlobe(canvas,date,lat,lon,{yaw=0,pitch=0,fullyLit=fals
   }
  }
  g.putImageData(pixels,0,0);
- c.drawImage(scratch,(w-diameter)/2,(h-diameter)/2);
+ c.imageSmoothingEnabled=true;
+ c.drawImage(scratch,(w-shownDiameter)/2,(h-shownDiameter)/2,shownDiameter,shownDiameter);
  canvas.dataset.globeNearPixels=String(near);
  canvas.dataset.globeFarPixels=String(far);
  canvas.dataset.globeYaw=String(yaw);
