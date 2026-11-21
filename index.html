@@ -113,8 +113,8 @@
   <button type="button" class="mobile-plot-settings" aria-label="Show local sun map controls" aria-expanded="false">⚙ Controls</button>
   <div class="panel-heading"><div><div class="section-kicker">03 / OBSERVER'S HORIZON</div><h2>Local Sun Map</h2><p>OpenStreetMap · tap to move observer · drag to pan · pinch or wheel to zoom</p></div><span class="panel-note">SUN / TWILIGHT AZIMUTHS</span></div>
   <div class="local-sun-controls" role="group" aria-label="Local Sun Map overlays">
-   <label>Overlay <select id="local-sun-mode" aria-label="Local map overlay"><option value="both">Lines and dim shading</option><option value="lines">Direction lines only</option><option value="shade">Dim shading only</option></select></label>
-   <label>Directions <select id="local-sun-twilight"><option value="simple">Sunrise / sunset</option><option value="civil">+ Civil dawn / dusk</option><option value="all" selected>+ Nautical / astronomical</option></select></label>
+   <label>Overlay <select id="local-sun-mode" aria-label="Local map overlay"><option value="both">Lines and directional shading</option><option value="lines">Direction lines only</option><option value="shade">Directional dim shading only</option></select></label>
+   <fieldset class="local-sun-directions"><legend>Direction lines</legend><label><input type="checkbox" id="local-sun-line-solar" checked> Sunrise / sunset</label><label><input type="checkbox" id="local-sun-line-civil" checked> Civil dawn / dusk</label><label><input type="checkbox" id="local-sun-line-nautical" checked> Nautical dawn / dusk</label><label><input type="checkbox" id="local-sun-line-astronomical" checked> Astronomical dawn / dusk</label></fieldset>
    <label><input type="checkbox" id="local-sun-follow" checked> Follow main observer</label>
    <button type="button" id="local-sun-center">⌖ Centre map</button>
    <button type="button" id="local-sun-adopt">Use as main observer</button>
