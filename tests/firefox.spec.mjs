@@ -2934,7 +2934,7 @@ test('Experimental 3D Moon rotates, resets and leaves classic 2D view intact',as
  await page.locator('#moon-3d-toggle').check();
  await expect.poll(async()=>canvas.getAttribute('data-globe-texture-status')).toBe('ready');
  await expect(page.locator('#moon-source')).toContainText('NASA SVS CGI Moon Kit');
- await expect(page.locator('#lunar-feature-controls')).toBeHidden();
+ await expect(page.locator('#lunar-feature-controls')).toBeVisible();
  await expect.poll(async()=>Number(await canvas.getAttribute('data-globe-near-pixels'))).toBeGreaterThan(100);
  await page.locator('#disc-stage').scrollIntoViewIfNeeded();
  const box=await page.locator('#disc-stage').boundingBox();
@@ -2979,4 +2979,25 @@ test('v127 3D selenographic grid follows globe rotation and reports surface coor
  await expect.poll(async()=>Number(await canvas.getAttribute('data-globe-grid-segments'))).toBeGreaterThan(100);
  await page.locator('#moon-3d-toggle').uncheck();
  await expect(page.locator('#disc-grid-toggle')).toBeEnabled();
+});
+
+test('3D Moon far-side feature search rotates to Tsiolkovskiy and preserves 2D atlas',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8765/');
+ const overlay=page.locator('#lunar-feature-overlay');
+ await page.locator('#moon-3d-toggle').check();
+ await page.locator('#moon-3d-full-light').check();
+ await page.locator('#lunar-feature-search').fill('Tsiolkovskiy');
+ await page.locator('#lunar-feature-find').click();
+ await expect(page.locator('#lunar-feature-status')).toContainText('centred in 3D');
+ const yaw=Number(await page.locator('#moon').getAttribute('data-globe-yaw'));
+ expect(Math.abs(yaw)).toBeGreaterThan(1);
+ await expect.poll(async()=>JSON.parse(await overlay.getAttribute('data-visible-labels'))).toContain('Tsiolkovskiy');
+ await page.locator('#lunar-labels-toggle').uncheck();
+ await expect(overlay).toHaveAttribute('data-visible-labels','[]');
+ await page.locator('#lunar-labels-toggle').check();
+ await expect.poll(async()=>JSON.parse(await overlay.getAttribute('data-visible-labels'))).toContain('Tsiolkovskiy');
+ await page.locator('#moon-3d-toggle').uncheck();
+ await expect(page.locator('#lunar-feature-controls')).toBeVisible();
+ expect(errors).toEqual([]);
 });
