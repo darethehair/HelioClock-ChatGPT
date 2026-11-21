@@ -143,8 +143,12 @@ export function createLocalSunMap({
   const anchor=screenCoords({lat,lon});
   const filtered=events.filter(e=>lineOptions[e.key.startsWith('sun')?'solar':e.key.split('-')[0]]);
   if(mode!=='shade'){
-   const extent=Math.max(w,h,300);
-   const km=clamp(extent*0.35*2**(11-z),50,9000);
+   // Match geodesic sampling to the map's current metres-per-pixel.
+   // The previous 50 km minimum produced >1,000-pixel jumps between
+   // adjacent samples at zoom 18; the discontinuity guard then discarded
+   // the entire path, so no rays appeared at street-level zoom.
+   const kmPerPixel=40075.016686*Math.cos(lat*Math.PI/180)/(TILE*2**z);
+   const km=clamp(Math.max(w,h)*kmPerPixel*1.8,0.001,9000);
    for(const e of filtered){
     const points=solarBearingPath(lat,lon,e.az,km);
     ctx.beginPath();
