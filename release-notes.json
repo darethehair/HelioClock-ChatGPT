@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v122",
+      "summary": "Replace uniform Local Sun Map dimming with observer-centred solar and twilight direction sectors, leaving the sunward map unshaded; replace additive twilight dropdown with four independent line-group checkboxes."
+    },
+    {
       "version": "v121",
       "summary": "Add a dedicated Local Sun Map with interactive OpenStreetMap tiles, movable observing point, geodesic sunrise/sunset/twilight bearings, optional graduated night shading, observer synchronization, and plot-first mobile fullscreen."
     },
