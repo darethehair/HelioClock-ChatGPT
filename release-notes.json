@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v126",
+      "summary": "Replace the experimental 3D Moon's illustrative far side with a NASA SVS CGI Moon Kit 360° LROC mosaic (2048×1024), cached for offline viewing; preserve the classic 2D atlas and provide an explicit fallback if the global texture is unavailable."
+    },
+    {
       "version": "v125",
       "summary": "First-stage rotatable 3D Moon within the existing Sun/Moon panel: mouse/touch camera orbit, existing lunar zoom/pinch controls, Earth-view reset and optional exploration lighting. The NASA near-side mosaic is reused; far-side surface detail is explicitly illustrative pending a global NASA texture. Classic 2D atlas remains the default."
     },
