@@ -2932,7 +2932,8 @@ test('Experimental 3D Moon rotates, resets and leaves classic 2D view intact',as
  await expect(page.locator('#moon-3d-toggle')).not.toBeChecked();
  await expect(page.locator('#lunar-feature-controls')).toBeVisible();
  await page.locator('#moon-3d-toggle').check();
- await expect(page.locator('#moon-3d-status')).toContainText('ILLUSTRATIVE PLACEHOLDER');
+ await expect.poll(async()=>canvas.getAttribute('data-globe-texture-status')).toBe('ready');
+ await expect(page.locator('#moon-source')).toContainText('NASA SVS CGI Moon Kit');
  await expect(page.locator('#lunar-feature-controls')).toBeHidden();
  await expect.poll(async()=>Number(await canvas.getAttribute('data-globe-near-pixels'))).toBeGreaterThan(100);
  await page.locator('#disc-stage').scrollIntoViewIfNeeded();
@@ -2941,6 +2942,7 @@ test('Experimental 3D Moon rotates, resets and leaves classic 2D view intact',as
  await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+110,y+35,{steps:5});await page.mouse.up();
  await expect.poll(async()=>Math.abs(Number(await canvas.getAttribute('data-globe-yaw')))).toBeGreaterThan(.1);
  await expect.poll(async()=>Number(await canvas.getAttribute('data-globe-far-pixels'))).toBeGreaterThan(100);
+ await expect(canvas).toHaveAttribute('data-globe-texture-status','ready');
  await page.locator('#moon-3d-full-light').check();
  await expect(page.locator('#moon-source')).toContainText('FAR SIDE');
  await page.locator('#moon-3d-home').click();
