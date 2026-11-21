@@ -2853,8 +2853,11 @@ test('Local Sun Map draws OSM tiles, solar rays, shading and movable observer',a
  const box=await stage.boundingBox();
  await stage.click({position:{x:box.width*.72,y:box.height*.43}});
  await expect(page.locator('#local-sun-follow')).not.toBeChecked();
+ await expect.poll(async()=>{
+  const current=JSON.parse(await stage.getAttribute('data-local-sun-observer'));
+  return Math.abs(current.lat-starting.lat)+Math.abs(current.lon-starting.lon);
+ }).toBeGreaterThan(.001);
  const moved=JSON.parse(await stage.getAttribute('data-local-sun-observer'));
- expect(Math.abs(moved.lat-starting.lat)+Math.abs(moved.lon-starting.lon)).toBeGreaterThan(.001);
  await page.locator('#local-sun-adopt').click();
  await expect(page.locator('#local-sun-follow')).toBeChecked();
  await expect.poll(async()=>Math.abs(Number(await page.locator('#latitude').inputValue())-moved.lat)).toBeLessThan(.001);
