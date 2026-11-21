@@ -1059,8 +1059,10 @@ function drawMoon(){
   if(state.moon3D){
    lastMoonTilt=0;
    $('moon-tilt').textContent='3D camera · yaw '+Math.round(state.moonYaw*180/Math.PI)+'° · tilt '+Math.round(state.moonPitch*180/Math.PI)+'°';
-   $('moon-source').textContent=(info.nearSideReady?'Near side: NASA LRO mosaic':'Near-side image loading')+
-     ' · FAR SIDE: illustrative placeholder, NOT mapped NASA terrain · accurate phase is approximate';
+   $('moon-source').textContent=info.globalTextureReady
+    ? 'NASA SVS CGI Moon Kit · global LROC color mosaic (near + far sides) · 3D phase model approximate'
+    : (info.nearSideReady?'Near side: NASA LRO mosaic':'Near-side image loading')+
+      ' · global map loading/unavailable; FAR SIDE placeholder is not real terrain';
   }else{
    lastMoonTilt=info.parallactic;
    $('moon-tilt').textContent='Bright limb from zenith: '+(info.fromZenith>0?'+':'')+info.fromZenith.toFixed(1)+'°';
@@ -1927,7 +1929,7 @@ function syncMoon3DControls(){
  $('lunar-feature-overlay').hidden=enabled||state.discView==='sun';
  $('disc-grid-toggle').disabled=enabled;
  $('show-earthshine').disabled=enabled;
- if(enabled)$('moon-3d-status').textContent='Drag to rotate · pinch or wheel to zoom · FAR SIDE IS AN ILLUSTRATIVE PLACEHOLDER';
+ if(enabled)$('moon-3d-status').textContent='Drag to rotate · pinch/wheel to zoom · NASA global texture when loaded; fallback far side is blank';
 }
 $('moon-3d-toggle').addEventListener('change',e=>{
  state.moon3D=e.target.checked;
@@ -2077,6 +2079,7 @@ window.addEventListener('helioclock-earth-texture-ready',render);
 startSpaceWeather();
 $('show-earthshine').addEventListener('change',render);
 window.addEventListener('helioclock-moon-texture-ready',render);
+window.addEventListener('helioclock-moon-globe-texture-ready',render);
 
 for(const button of document.querySelectorAll('[data-sky-light]')){
  button.addEventListener('click',()=>{
