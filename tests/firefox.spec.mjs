@@ -2944,7 +2944,7 @@ test('Experimental 3D Moon rotates, resets and leaves classic 2D view intact',as
  await expect.poll(async()=>Number(await canvas.getAttribute('data-globe-far-pixels'))).toBeGreaterThan(100);
  await expect(canvas).toHaveAttribute('data-globe-texture-status','ready');
  await page.locator('#moon-3d-full-light').check();
- await expect(page.locator('#moon-source')).toContainText('FAR SIDE');
+ await expect(page.locator('#moon-source')).toContainText('global LROC color mosaic (near + far sides)');
  await page.locator('#moon-3d-home').click();
  await expect(canvas).toHaveAttribute('data-globe-yaw','0');
  await expect(page.locator('#moon-3d-full-light')).not.toBeChecked();
