@@ -26,13 +26,14 @@ export function lunarGlobeTextureStatus(){return textureStatus}
 /**
  * NASA texture is centred on 0° E, with north at the top.
  * A globe body normal (x,y,z) has 0° longitude on the +Z Earth-facing
- * meridian. +X points toward lunar WEST on the observer's screen;
- * lunar east is to image left. -Y points toward the north lunar pole.
+ * meridian. NASA's 0°-centred map places the eastern hemisphere to
+ * the RIGHT of the centre (e.g. Mare Crisium at ~59° E); +X maps right.
+ * -Y points toward the north lunar pole.
  */
 export function lunarGlobeUv({x,y,z}){
  const longitude=Math.atan2(x,z);
  const latitude=Math.asin(clamp(-y,-1,1));
- return {u:(.5-longitude/TAU+1)%1,v:clamp(.5-latitude/Math.PI,0,1)};
+ return {u:(.5+longitude/TAU+1)%1,v:clamp(.5-latitude/Math.PI,0,1)};
 }
 export function globeVector(x,y,z,yaw,pitch){
  const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
