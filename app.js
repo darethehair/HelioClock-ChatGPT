@@ -9,7 +9,7 @@ import {drawSkyDSOs} from './sky-dso.js';
 import {drawConstellationNames} from './sky-constellation-labels.js';
 import {renderSolarJourney} from './solar-hero.js';
 import {renderMoon} from './moon-renderer.js';
-import {renderMoonGlobe} from './moon-globe.js';
+import {renderMoonGlobe,lunarGlobePoint,formatLunarGlobePoint} from './moon-globe.js';
 import {renderSolarEclipse} from './solar-eclipse-renderer.js';
 import {discGeometry,screenToSurface,paintDiscGrid,formatSurface} from './disc-coordinates.js';
 import {solarDiscOrientation} from './solar-disc-orientation.js';
@@ -34,7 +34,7 @@ import {spaceWeather,auroraFresh,startSpaceWeather,refreshSpaceWeather} from './
 import {starsAbove} from './sky-catalog.js';
 import {RAD,PI,wrap,clamp,solar,sunHorizontal,sunEvents,moon,orbitPositions,sidereal,equatorialFromHorizontal,utcTime,durationText} from './astronomy.js';
 const $=id=>document.getElementById(id);
-const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyPanX:0,skyPanY:0,skyHeading:0,earthZoom:1,earthLon:-98.10,earthLat:49.19,earthProjection:'equal',earthMapStyle:'physical',earthTextureQuality:'2k',orreryZoom:1,moonZoom:1,moon3D:false,moonYaw:0,moonPitch:0,discView:'moon',sunZoom:1,moonPanX:0,moonPanY:0,sunPanX:0,sunPanY:0,orbitMode:'inner',orrery3D:false,orreryTilt:55,orreryRotation:0,skyLight:'daylight',skyProjection:'polar',magLimit:3.5,stellarColors:true,usePrecession:true,playing:false,playbackRate:DEFAULT_PLAYBACK_RATE,playbackDirection:1};
+const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyPanX:0,skyPanY:0,skyHeading:0,earthZoom:1,earthLon:-98.10,earthLat:49.19,earthProjection:'equal',earthMapStyle:'physical',earthTextureQuality:'2k',orreryZoom:1,moonZoom:1,moon3D:false,moonYaw:0,moonPitch:0,moonGrid:true,discView:'moon',sunZoom:1,moonPanX:0,moonPanY:0,sunPanX:0,sunPanY:0,orbitMode:'inner',orrery3D:false,orreryTilt:55,orreryRotation:0,skyLight:'daylight',skyProjection:'polar',magLimit:3.5,stellarColors:true,usePrecession:true,playing:false,playbackRate:DEFAULT_PLAYBACK_RATE,playbackDirection:1};
 const solarTrail={enabled:false,mode:'analemma',dots:true,line:true,history:[],lastRecorded:null};
 function solarTrailDates(){
  return solarTrail.mode==='analemma'?solarTrailSamples(state.date):solarTrail.history.map(ms=>new Date(ms));
@@ -1040,7 +1040,8 @@ function drawMoon(){
  }
  const info=state.moon3D?
   renderMoonGlobe($('moon'),state.date,state.lat,state.lon,{
-   yaw:state.moonYaw,pitch:state.moonPitch,fullyLit:$('moon-3d-full-light').checked
+   yaw:state.moonYaw,pitch:state.moonPitch,fullyLit:$('moon-3d-full-light').checked,
+   grid:state.moonGrid,gridStep:state.moonZoom>=3?10:state.moonZoom>=1.8?15:30
   }):
   renderMoon($('moon'),state.date,state.lat,state.lon,1,{showEarthshine:$('show-earthshine').checked});
  const event=info?.eclipse;
@@ -1668,7 +1669,10 @@ function redrawDiscGrid(){
   !(state.discView==='sun'&&!$('solar-eclipse').hidden),base.r*zoom);
 }
 function updateDiscCoordinates(clientX,clientY){
- if(state.discView==='moon'&&state.moon3D){$('disc-coordinate-readout').textContent='3D exploratory globe · coordinates and lunar feature labels available in 2D';return}
+ if(state.discView==='moon'&&state.moon3D){
+  const point=lunarGlobePoint($('moon'),clientX,clientY,state.moonYaw,state.moonPitch);
+  $('disc-coordinate-readout').textContent=formatLunarGlobePoint(point);return;
+ }
  const box=discStage.getBoundingClientRect();
  const point=screenToSurface(clientX-box.left,clientY-box.top,discCoordinateGeometry(),state.discView);
  $('disc-coordinate-readout').textContent=point?formatSurface(point,state.discView):'Outside visible disc';
@@ -1924,12 +1928,13 @@ function syncMoon3DControls(){
  const enabled=state.moon3D;
  $('moon-3d-home').hidden=!enabled;
  $('moon-3d-light-label').hidden=!enabled;
+ $('moon-3d-grid-label').hidden=!enabled;
  $('moon-3d-status').hidden=!enabled;
  $('lunar-feature-controls').hidden=enabled||state.discView==='sun';
  $('lunar-feature-overlay').hidden=enabled||state.discView==='sun';
  $('disc-grid-toggle').disabled=enabled;
  $('show-earthshine').disabled=enabled;
- if(enabled)$('moon-3d-status').textContent='Drag to rotate · pinch/wheel to zoom · NASA global texture when loaded; fallback far side is blank';
+ if(enabled)$('moon-3d-status').textContent='Drag to rotate · pinch/wheel to zoom · selenographic grid and pointer coordinates (east-positive)';
 }
 $('moon-3d-toggle').addEventListener('change',e=>{
  state.moon3D=e.target.checked;
@@ -1942,6 +1947,7 @@ $('moon-3d-home').addEventListener('click',()=>{
  render();
 });
 $('moon-3d-full-light').addEventListener('change',render);
+$('moon-3d-grid').addEventListener('change',e=>{state.moonGrid=e.target.checked;render()});
 $('moon-zoom-in').addEventListener('click',()=>zoomDisc(1.25));
 $('moon-zoom-out').addEventListener('click',()=>zoomDisc(.8));
 $('disc-reset').addEventListener('click',resetDisc);
@@ -1960,6 +1966,7 @@ function discTouchCentre(){
 }
 discStage.addEventListener('pointermove',e=>{
  discFocus={x:e.clientX,y:e.clientY};
+ updateDiscCoordinates(e.clientX,e.clientY);
  const previous=discPointers.get(e.pointerId);
  if(!previous)return;
  discPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
@@ -1994,7 +2001,8 @@ function finishDiscPointer(e){
 }
 for(const name of ['pointerup','pointercancel','lostpointercapture'])
  discStage.addEventListener(name,finishDiscPointer);
-discStage.addEventListener('pointerleave',()=>{discFocus=null});
+discStage.addEventListener('pointerleave',()=>{discFocus=null;if(state.discView==='moon'&&state.moon3D)$('disc-coordinate-readout').textContent='Move over the globe or tap to inspect selenographic coordinates'});
+discStage.addEventListener('pointerup',e=>{if(state.discView==='moon'&&state.moon3D)updateDiscCoordinates(e.clientX,e.clientY)});
 $('disc-grid-toggle').addEventListener('change',redrawDiscGrid);
 window.addEventListener('resize',redrawDiscGrid);
 discStage.addEventListener('wheel',e=>{
