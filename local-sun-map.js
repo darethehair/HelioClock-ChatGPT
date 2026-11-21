@@ -1,5 +1,5 @@
-import {solar,sidereal,RAD} from './astronomy.js';
-import {solarDirectionEvents,solarBearingPath,solarShadeOpacity} from './local-sun-geometry.js';
+import {sunEvents,sunHorizontal} from './astronomy.js';
+import {solarDirectionEvents,solarBearingPath,localSolarSectors} from './local-sun-geometry.js';
 
 // Small self-contained Web Mercator slippy map. Standard OSM raster tiles,
 // requested only for the viewport (no API key, bulk download or prefetch).
@@ -23,8 +23,9 @@ export function createLocalSunMap({
  container,tileLayer,shadeCanvas,raysCanvas,observerDot,output,onObserverChange
 }){
  let lat=49.19,lon=-98.10,mapCenter={lat,lon},z=11;
- let mode='both',twilight='all',mapInitialized=false;
- let date=new Date(),tileSignature='',shadeKey='',eventsKey='',events=[];
+ let mode='both',mapInitialized=false;
+ let lineOptions={solar:true,civil:true,nautical:true,astronomical:true};
+ let date=new Date(),tileSignature='',eventsKey='',events=[];
  let activePointers=new Map(),drag=null,pinch=null,scheduled=false;
  const renderLater=()=>{
   if(scheduled)return;
@@ -109,24 +110,27 @@ export function createLocalSunMap({
  function shadeMap(w,h){
   const ctx=setCanvas(shadeCanvas,w,h);
   if(mode==='lines')return;
-  // Resample at modest resolution and interpolate the full canvas. The
-  // sidereal/declination calculation is shared across all map samples.
-  const coarse=document.createElement('canvas');
-  const nx=clamp(Math.ceil(w/20),12,75),ny=clamp(Math.ceil(h/20),10,50);
-  coarse.width=nx;coarse.height=ny;
-  const work=coarse.getContext('2d'),data=work.createImageData(nx,ny);
-  const sun=solar(date),lst=sidereal(date,0),decl=sun.decl*RAD;
-  const sinDec=Math.sin(decl),cosDec=Math.cos(decl);
-  for(let y=0;y<ny;y++)for(let x=0;x<nx;x++){
-   const place=mapCoords((x+.5)*w/nx,(y+.5)*h/ny);
-   const phi=place.lat*RAD,hAngle=(lst+place.lon-sun.ra)*RAD;
-   const altitude=Math.asin(clamp(Math.sin(phi)*sinDec+Math.cos(phi)*cosDec*Math.cos(hAngle),-1,1))/RAD;
-   const alpha=solarShadeOpacity(altitude);
-   const i=(y*nx+x)*4;
-   data.data[i]=8;data.data[i+1]=17;data.data[i+2]=39;data.data[i+3]=Math.round(alpha*255);
+  ensureEvents();
+  const ev=sunEvents(date,lat,lon);
+  if(!ev.noon||!events.length)return;
+  const noonAz=sunHorizontal(ev.noon,lat,lon).az;
+  const sectors=localSolarSectors(events,noonAz);
+  const anchor=screenCoords({lat,lon});
+  const reach=Math.hypot(w,h)+Math.hypot(anchor.x,anchor.y)+30;
+  // Angular shading makes the *directional compass* readable at any
+  // street-map zoom. It deliberately does not pretend that nearby streets
+  // have different day/night states.
+  const rad=Math.PI/180;
+  for(const band of sectors){
+   const arc=((band.end-band.start)%360+360)%360;
+   ctx.beginPath();ctx.moveTo(anchor.x,anchor.y);
+   ctx.arc(anchor.x,anchor.y,reach,(band.start-90)*rad,
+    (band.start+arc-90)*rad);
+   ctx.closePath();
+   ctx.fillStyle='rgba(8,17,39,'+band.opacity+')';
+   ctx.fill();
   }
-  work.putImageData(data,0,0);
-  ctx.imageSmoothingEnabled=true;ctx.drawImage(coarse,0,0,w,h);
+  container.dataset.localSunShadeSectors=String(sectors.length);
  }
  function ensureEvents(){
   const key=[date.toISOString().slice(0,10),lat.toFixed(5),lon.toFixed(5)].join('/');
@@ -137,7 +141,7 @@ export function createLocalSunMap({
   const ctx=setCanvas(raysCanvas,w,h);
   ensureEvents();
   const anchor=screenCoords({lat,lon});
-  const filtered=events.filter(e=>twilight==='all'||(twilight==='civil'&&!/^(nautical|astronomical)/.test(e.key))||e.key==='sunrise'||e.key==='sunset');
+  const filtered=events.filter(e=>lineOptions[e.key.startsWith('sun')?'solar':e.key.split('-')[0]]);
   if(mode!=='shade'){
    const extent=Math.max(w,h,300);
    const km=clamp(extent*0.35*2**(11-z),50,9000);
@@ -230,7 +234,7 @@ export function createLocalSunMap({
   draw:renderLater,
   setDate(value){if(+date!==+value){date=value;renderLater()}},
   setMode(value){mode=value;renderLater()},
-  setTwilight(value){twilight=value;renderLater()},
+  setLineOption(group,enabled){if(group in lineOptions){lineOptions[group]=!!enabled;renderLater()}},
   setObserver:updateObserver,
   getObserver:()=>({lat,lon}),
   centerOnObserver(){setCenter({lat,lon})},
