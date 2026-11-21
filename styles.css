@@ -920,3 +920,14 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 .local-sun-panel:fullscreen .local-sun-map-stage>.local-sun-map-overlay{
  width:100%!important;height:100%!important;max-height:none!important;
 }
+
+/* Independent local solar bearing groups, including narrow-screen drawer. */
+.local-sun-directions{display:flex;align-items:center;flex-wrap:wrap;gap:7px 13px;
+ margin:0;padding:5px 9px;border:1px solid #46647d;border-radius:7px;min-width:0}
+.local-sun-directions legend{padding:0 4px;color:#d2e7fa;font-size:10px}
+.local-sun-directions label{white-space:nowrap;cursor:pointer;gap:5px}
+.local-sun-directions input{margin:0;accent-color:#f4c475}
+@media(max-width:700px){
+ .local-sun-directions{width:100%;gap:9px 12px;box-sizing:border-box}
+ .local-sun-directions label{font-size:11px}
+}
