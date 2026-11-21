@@ -12,7 +12,7 @@ function project(lat,lon,z){
 }
 function unproject(x,y,z){
  const scale=TILE*2**z;
- return {lon:((x/scale+0.5)%1+1)%1*360-180,
+ return {lon:((x/scale)%1+1)%1*360-180,
   lat:Math.atan(Math.sinh(Math.PI*(1-2*clamp(y/scale,0,1))))*180/Math.PI};
 }
 const directionalColors={sunrise:'#eab94a',sunset:'#e27945',
