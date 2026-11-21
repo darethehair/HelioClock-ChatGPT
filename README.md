@@ -129,6 +129,7 @@ Release highlights are curated in [`release-notes.json`](release-notes.json). Wh
 
 | Release | Highlights |
 | --- | --- |
+| **v129** | Improve 2D/3D lunar visual consistency: reuse the original near-side LRO photo within the rotatable globe, smoothly blend to genuine global imagery at the limb, and match coordinate-grid stroke weight, label styling and zoom spacing. |
 | **v128** | Refine 3D Moon tonal response toward the 2D atlas and add zoom-aware, collision-avoiding labels across near and far sides, with far-side feature search rotating the globe to the selected location. |
 | **v127** | Add an optional latitude/longitude grid that rotates with the true 3D lunar surface across both hemispheres, zoom-aware grid spacing and selenographic pointer/touch readouts; the classic 2D atlas remains independent. |
 | **v126** | Replace the experimental 3D Moon's illustrative far side with a NASA SVS CGI Moon Kit 360° LROC mosaic (2048×1024), cached for offline viewing; preserve the classic 2D atlas and provide an explicit fallback if the global texture is unavailable. |
