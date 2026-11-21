@@ -258,12 +258,24 @@ jobs:
           fi
           python3 - <<'PY'
           from pathlib import Path
-          from PIL import Image
+          from struct import unpack
           p=Path('dist/lroc-global-2k.jpg')
-          assert p.stat().st_size>100000 and p.read_bytes()[:2]==bytes.fromhex('ffd8'), 'Global LROC JPEG missing'
-          with Image.open(p) as img:
-              assert img.size==(2048,1024),f'Unexpected LROC global map dimensions: {img.size}'
-          print('NASA 360-degree lunar texture verified:',p.stat().st_size,'bytes')
+          data=p.read_bytes()
+          assert len(data)>100000 and data[:2]==bytes.fromhex('ffd8'), 'Global LROC JPEG missing'
+          i=2
+          dims=None
+          while i<len(data)-10:
+              if data[i]!=0xff:
+                  i+=1;continue
+              marker=data[i+1]
+              if marker in (0xd8,0xd9) or 0xd0<=marker<=0xd7:
+                  i+=2;continue
+              length=unpack('>H',data[i+2:i+4])[0]
+              if marker in (0xc0,0xc1,0xc2,0xc3):
+                  dims=unpack('>HH',data[i+5:i+9]);break
+              i+=2+length
+          assert dims==(1024,2048),f'Unexpected LROC global map dimensions: {dims}'
+          print('NASA 360-degree lunar texture verified:',len(data),'bytes')
           PY
       - name: Save global LROC texture for later offline builds
         uses: actions/cache/save@v4
