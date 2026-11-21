@@ -71,10 +71,10 @@ export function clockwiseArcContains(start,end,bearing){
 export function localSolarSectors(events,noonAzimuth){
  const by=Object.fromEntries(events.map(e=>[e.key,e]));
  const pairs=[
-  ['sunrise','sunset',0],
-  ['civil-dawn','civil-dusk',.13],
-  ['nautical-dawn','nautical-dusk',.24],
-  ['astronomical-dawn','astronomical-dusk',.38]
+  ['sunrise','sunset',.13],
+  ['civil-dawn','civil-dusk',.15],
+  ['nautical-dawn','nautical-dusk',.18],
+  ['astronomical-dawn','astronomical-dusk',.24]
  ];
  const result=[];
  for(const [rise,set,opacity] of pairs){
