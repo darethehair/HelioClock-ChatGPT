@@ -1325,7 +1325,7 @@ function render(){
  $('utc-clock').textContent=state.date.toISOString().slice(11,19)+' UTC';
  updateLocalDisplay();
  $('date-label').textContent=state.date.toLocaleDateString('en-CA',{year:'numeric',month:'long',day:'numeric',timeZone:'UTC'}).toUpperCase();
- $('place-summary').textContent=formatCoord(state.lat,'N','S')+'  ·  '+formatCoord(state.lon,'E','W');
+ $('place-summary').textContent=Math.abs(state.lat).toFixed(5)+'° '+(state.lat>=0?'N':'S')+'  ·  '+Math.abs(state.lon).toFixed(5)+'° '+(state.lon>=0?'E':'W');
  $('sunrise').textContent=ev.polar?(ev.polar==='day'?'ALL DAY':'NO SUNRISE'):utcTime(ev.sunrise);
  $('sunset').textContent=ev.polar?(ev.polar==='day'?'ALL DAY':'NO SUNSET'):utcTime(ev.sunset);
  $('solar-noon').textContent=utcTime(ev.noon);
