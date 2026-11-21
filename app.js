@@ -473,7 +473,9 @@ function renderLocalSunMap(){
  map.draw();
 }
 $('local-sun-mode').addEventListener('change',e=>ensureLocalSunMap().setMode(e.target.value));
-$('local-sun-twilight').addEventListener('change',e=>ensureLocalSunMap().setTwilight(e.target.value));
+for(const group of ['solar','civil','nautical','astronomical']){
+ $('local-sun-line-'+group).addEventListener('change',e=>ensureLocalSunMap().setLineOption(group,e.target.checked));
+}
 $('local-sun-follow').addEventListener('change',e=>{
  if(e.target.checked)ensureLocalSunMap().setObserver({lat:state.lat,lon:state.lon},{center:true,notify:false});
  persistPrefs();
