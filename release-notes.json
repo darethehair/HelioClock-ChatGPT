@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v128",
+      "summary": "Refine 3D Moon tonal response toward the 2D atlas and add zoom-aware, collision-avoiding labels across near and far sides, with far-side feature search rotating the globe to the selected location."
+    },
+    {
       "version": "v127",
       "summary": "Add an optional latitude/longitude grid that rotates with the true 3D lunar surface across both hemispheres, zoom-aware grid spacing and selenographic pointer/touch readouts; the classic 2D atlas remains independent."
     },
