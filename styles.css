@@ -914,3 +914,9 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
  .local-sun-controls{gap:7px}
  .local-sun-controls select{max-width:190px}
 }
+
+/* Existing generic fullscreen canvas height does not apply to stacked map
+   overlays: each canvas must exactly cover its slippy-map viewport. */
+.local-sun-panel:fullscreen .local-sun-map-stage>.local-sun-map-overlay{
+ width:100%!important;height:100%!important;max-height:none!important;
+}
