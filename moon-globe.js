@@ -194,7 +194,10 @@ export function renderMoonGlobe(canvas,date,lat,lon,{yaw=0,pitch=0,fullyLit=fals
    const x=(px+.5-r)/r,rr=x*x+y*y;if(rr>=1)continue;
    const z=Math.sqrt(1-rr),body=globeInverse(x,y,z,yaw,pitch);
    const dot=body.x*sun.x+body.y*sun.y+body.z*sun.z;
-   const diffuse=fullyLit?1.03:.025+1.13*Math.pow(Math.max(0,dot),.83);
+   // Match the 2D lunar atlas midtone and Earthshine curves; different NASA
+   // source photographs can still retain their original tonal differences.
+   const diffuse=fullyLit?1.03:
+    Math.min(1.18,(.025+.045*Math.pow(1-m.illuminated,2))+1.10*Math.pow(Math.max(0,dot),.86));
    const limb=Math.min(1,(1-Math.sqrt(rr))*r);
    const i=(py*diameter+px)*4;
    let red=183,green=185,blue=190;
