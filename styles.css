@@ -954,3 +954,18 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
  .hero-observer-label{font-size:9px}
  .hero .hero-observer-value{font-size:14px;letter-spacing:0}
 }
+
+/* v125: optional exploratory lunar globe, keeping original 2D atlas intact. */
+.moon-3d-controls{
+ display:flex;align-items:center;gap:7px 12px;flex-wrap:wrap;
+ padding:7px 9px;margin:3px 0 8px;border:1px solid #476985;
+ border-radius:8px;background:#10243b;color:#d2e7f9;font-size:11px
+}
+.moon-3d-controls[hidden],.moon-3d-controls [hidden]{display:none!important}
+.moon-3d-controls label{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.moon-3d-controls input{accent-color:#eac183}
+.moon-3d-controls button{border:1px solid #6083a4;border-radius:6px;background:#20415d;
+ padding:6px 9px;color:#e7f4ff;font-size:11px}
+#moon-3d-status{width:100%;color:#ffcf91;line-height:1.45;font-size:10px}
+.moon-panel .moon-stage:has(#moon:not([hidden])){touch-action:none}
+.moon-panel:fullscreen.mobile-plot-fullscreen>.moon-3d-controls{display:none}
