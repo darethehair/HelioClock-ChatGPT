@@ -9,7 +9,7 @@ import {drawSkyDSOs} from './sky-dso.js';
 import {drawConstellationNames} from './sky-constellation-labels.js';
 import {renderSolarJourney} from './solar-hero.js';
 import {renderMoon} from './moon-renderer.js';
-import {renderMoonGlobe,lunarGlobePoint,formatLunarGlobePoint} from './moon-globe.js';
+import {renderMoonGlobe,lunarGlobePoint,formatLunarGlobePoint,paintLunarGlobeLabels,GLOBE_LUNAR_FEATURES} from './moon-globe.js';
 import {renderSolarEclipse} from './solar-eclipse-renderer.js';
 import {discGeometry,screenToSurface,paintDiscGrid,formatSurface} from './disc-coordinates.js';
 import {solarDiscOrientation} from './solar-disc-orientation.js';
@@ -1653,10 +1653,13 @@ function discCoordinateGeometry(baseOnly=false){
 let selectedLunarFeature='';
 function redrawLunarLabels(){
  const canvas=$('lunar-feature-overlay');
- const options={zoom:state.moonZoom,enabled:state.discView==='moon'&&!state.moon3D&&$('lunar-labels-toggle').checked,
+ const options={zoom:state.moonZoom,enabled:state.discView==='moon'&&$('lunar-labels-toggle').checked,
   maria:$('lunar-maria-toggle').checked,craters:$('lunar-craters-toggle').checked,
   other:$('lunar-other-toggle').checked,selected:selectedLunarFeature};
- const shown=paintLunarLabels(canvas,discCoordinateGeometry(),options);
+ const shown=state.moon3D&&state.discView==='moon'?
+  paintLunarGlobeLabels(canvas,{...options,yaw:state.moonYaw,pitch:state.moonPitch,
+   panX:state.moonPanX,panY:state.moonPanY}):
+  paintLunarLabels(canvas,discCoordinateGeometry(),options);
  canvas.dataset.visibleLabels=JSON.stringify(shown.map(x=>x.name));
  canvas.dataset.catalogueCount=String(LUNAR_FEATURES.length);
 }
@@ -1718,8 +1721,8 @@ function showDisc(which){
  const sun=which==='sun';
  $('moon').hidden=sun;solarPhoto.hidden=!sun;
  $('moon-3d-controls').hidden=sun;
- $('lunar-feature-controls').hidden=sun||state.moon3D;
- $('lunar-feature-overlay').hidden=sun||state.moon3D;
+ $('lunar-feature-controls').hidden=sun;
+ $('lunar-feature-overlay').hidden=sun;
  $('solar-eclipse').hidden=true;$('solar-eclipse-status').hidden=true;
  $('lunar-eclipse-status').hidden=sun;
  $('moon-bottom').hidden=sun;$('solar-note').hidden=!sun;
@@ -1887,13 +1890,32 @@ function refreshSolarImage(){
 }
 for(const button of document.querySelectorAll('[data-disc-view]'))
  button.addEventListener('click',()=>showDisc(button.dataset.discView));
-$('lunar-feature-options').replaceChildren(...LUNAR_FEATURES.map(f=>new Option(f.name,f.name)));
+$('lunar-feature-options').replaceChildren(...GLOBE_LUNAR_FEATURES.map(f=>new Option(f.name,f.name)));
+const findAllLunarFeatures=query=>{
+ const q=String(query||'').trim().toLowerCase();
+ return GLOBE_LUNAR_FEATURES.find(f=>f.name.toLowerCase()===q)||
+  GLOBE_LUNAR_FEATURES.find(f=>f.name.toLowerCase().includes(q))||null;
+};
 for(const id of ['lunar-labels-toggle','lunar-maria-toggle','lunar-craters-toggle','lunar-other-toggle'])
  $(id).addEventListener('change',redrawLunarLabels);
 function locateLunarFeature(){
- const query=$('lunar-feature-search').value.trim(),f=findLunarFeature(query);
+ const query=$('lunar-feature-search').value.trim(),f=state.moon3D?findAllLunarFeatures(query):findLunarFeature(query);
  if(!f){
-  $('lunar-feature-status').textContent='Feature not found in the bundled '+LUNAR_FEATURES.length+'-name lunar atlas.';
+  $('lunar-feature-status').textContent='Feature not found in the bundled '+GLOBE_LUNAR_FEATURES.length+'-name lunar atlas.';
+  return;
+ }
+ if(state.moon3D){
+  selectedLunarFeature=f.name;
+  $('lunar-labels-toggle').checked=true;
+  $({'mare':'lunar-maria-toggle','crater':'lunar-craters-toggle','other':'lunar-other-toggle'}[f.type]).checked=true;
+  // Rotate the requested selenographic point to the camera-facing centre.
+  state.moonYaw=-f.lon*Math.PI/180;
+  state.moonPitch=clamp(-f.lat*Math.PI/180,-Math.PI/2,Math.PI/2);
+  state.moonPanX=state.moonPanY=0;
+  state.moonZoom=Math.max(state.moonZoom,1.8);
+  render();
+  $('lunar-feature-status').textContent=f.name+' · '+f.type+' · '+Math.abs(f.lat).toFixed(1)+'°'+(f.lat>=0?'N':'S')+
+   ', '+Math.abs(f.lon).toFixed(1)+'°'+(f.lon>=0?'E':'W')+' · centred in 3D';
   return;
  }
  const g=discCoordinateGeometry(true),p=lunarFeatureScreen(f,g);
@@ -1916,7 +1938,7 @@ $('lunar-feature-find').addEventListener('click',locateLunarFeature);
 $('lunar-feature-search').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();locateLunarFeature()}});
 $('lunar-feature-clear').addEventListener('click',()=>{
  selectedLunarFeature='';$('lunar-feature-search').value='';
- $('lunar-feature-status').textContent='Selection cleared · '+LUNAR_FEATURES.length+' bundled lunar features';
+ $('lunar-feature-status').textContent='Selection cleared · '+GLOBE_LUNAR_FEATURES.length+' bundled lunar features';
  redrawLunarLabels();
 });
 $('moon-zoom').addEventListener('input',e=>{
@@ -1930,8 +1952,8 @@ function syncMoon3DControls(){
  $('moon-3d-light-label').hidden=!enabled;
  $('moon-3d-grid-label').hidden=!enabled;
  $('moon-3d-status').hidden=!enabled;
- $('lunar-feature-controls').hidden=enabled||state.discView==='sun';
- $('lunar-feature-overlay').hidden=enabled||state.discView==='sun';
+ $('lunar-feature-controls').hidden=state.discView==='sun';
+ $('lunar-feature-overlay').hidden=state.discView==='sun';
  $('disc-grid-toggle').disabled=enabled;
  $('show-earthshine').disabled=enabled;
  if(enabled)$('moon-3d-status').textContent='Drag to rotate · pinch/wheel to zoom · selenographic grid and pointer coordinates (east-positive)';
