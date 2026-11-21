@@ -3001,3 +3001,20 @@ test('3D Moon far-side feature search rotates to Tsiolkovskiy and preserves 2D a
  await expect(page.locator('#lunar-feature-controls')).toBeVisible();
  expect(errors).toEqual([]);
 });
+
+test('3D Moon matches 2D grid cadence and keeps text and strokes readable',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ const canvas=page.locator('#moon');
+ await page.locator('#moon-3d-toggle').check();
+ await page.locator('#moon-3d-full-light').check();
+ await expect.poll(async()=>canvas.getAttribute('data-globe-texture-status')).toBe('ready');
+ await expect.poll(async()=>Number(await canvas.getAttribute('data-globe-grid-labels'))).toBeGreaterThan(0);
+ const before=Number(await canvas.getAttribute('data-globe-grid-segments'));
+ expect(before).toBeGreaterThan(100);
+ await page.locator('#moon-3d-grid').uncheck();
+ await expect(canvas).toHaveAttribute('data-globe-grid-segments','0');
+ await page.locator('#moon-3d-grid').check();
+ await expect.poll(async()=>Number(await canvas.getAttribute('data-globe-grid-segments'))).toBeGreaterThan(100);
+ await page.locator('#moon-3d-toggle').uncheck();
+ await expect(page.locator('#disc-grid-toggle')).toBeEnabled();
+});
