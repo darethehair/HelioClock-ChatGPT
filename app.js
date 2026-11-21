@@ -32,7 +32,7 @@ import {findPlanetaryEvent,eventPlanets,eventOptions} from './planetary-events.j
 import {findEclipseAsync} from './eclipse-events.js';
 import {spaceWeather,auroraFresh,startSpaceWeather,refreshSpaceWeather} from './space-weather.js';
 import {starsAbove} from './sky-catalog.js';
-import {RAD,PI,wrap,clamp,solar,sunHorizontal,sunEvents,moon,orbitPositions,sidereal,equatorialFromHorizontal,utcTime,durationText} from './astronomy.js';
+import {RAD,PI,wrap,clamp,solar,sunHorizontal,sunEvents,moon,moonOrientation,orbitPositions,sidereal,equatorialFromHorizontal,utcTime,durationText} from './astronomy.js';
 const $=id=>document.getElementById(id);
 const state={lat:49.19,lon:-98.10,date:new Date(),live:true,skyZoom:1,skyPanX:0,skyPanY:0,skyHeading:0,earthZoom:1,earthLon:-98.10,earthLat:49.19,earthProjection:'equal',earthMapStyle:'physical',earthTextureQuality:'2k',orreryZoom:1,moonZoom:1,moon3D:false,moonYaw:0,moonPitch:0,moonGrid:true,discView:'moon',sunZoom:1,moonPanX:0,moonPanY:0,sunPanX:0,sunPanY:0,orbitMode:'inner',orrery3D:false,orreryTilt:55,orreryRotation:0,skyLight:'daylight',skyProjection:'polar',magLimit:3.5,stellarColors:true,usePrecession:true,playing:false,playbackRate:DEFAULT_PLAYBACK_RATE,playbackDirection:1};
 const solarTrail={enabled:false,mode:'analemma',dots:true,line:true,history:[],lastRecorded:null};
@@ -1040,7 +1040,8 @@ function drawMoon(){
  }
  const info=state.moon3D?
   renderMoonGlobe($('moon'),state.date,state.lat,state.lon,{
-   yaw:state.moonYaw,pitch:state.moonPitch,fullyLit:$('moon-3d-full-light').checked,
+   yaw:state.moonYaw,pitch:state.moonPitch,roll:moonHorizonRoll(),
+   fullyLit:$('moon-3d-full-light').checked,
    grid:state.moonGrid,gridStep:gridInterval(discCoordinateGeometry(true).r*state.moonZoom)
   }):
   renderMoon($('moon'),state.date,state.lat,state.lon,1,{showEarthshine:$('show-earthshine').checked});
@@ -1059,7 +1060,7 @@ function drawMoon(){
  if(info){
   if(state.moon3D){
    lastMoonTilt=0;
-   $('moon-tilt').textContent='3D camera · yaw '+Math.round(state.moonYaw*180/Math.PI)+'° · tilt '+Math.round(state.moonPitch*180/Math.PI)+'°';
+   $('moon-tilt').textContent='3D camera · yaw '+Math.round(state.moonYaw*180/Math.PI)+'° · tilt '+Math.round(state.moonPitch*180/Math.PI)+'° · horizon roll '+Math.round(moonHorizonRoll()/RAD)+'°';
    $('moon-source').textContent=info.globalTextureReady
     ? 'NASA SVS CGI Moon Kit · global LROC color mosaic (near + far sides) · 3D phase model approximate'
     : (info.nearSideReady?'Near side: NASA LRO mosaic':'Near-side image loading')+
@@ -1650,6 +1651,9 @@ function discCoordinateGeometry(baseOnly=false){
   baseOnly?0:sun?state.sunPanY:state.moonPanY,
   sun?0:lastMoonTilt,b0);
 }
+// Roll is the 2D atlas' horizon-aligned parallactic angle, in radians.
+// It is not a yaw or pitch: the displayed near side stays Earth-facing.
+function moonHorizonRoll(){return moonOrientation(state.date,state.lat,state.lon).parallactic*RAD}
 let selectedLunarFeature='';
 function redrawLunarLabels(){
  const canvas=$('lunar-feature-overlay');
@@ -1657,7 +1661,7 @@ function redrawLunarLabels(){
   maria:$('lunar-maria-toggle').checked,craters:$('lunar-craters-toggle').checked,
   other:$('lunar-other-toggle').checked,selected:selectedLunarFeature};
  const shown=state.moon3D&&state.discView==='moon'?
-  paintLunarGlobeLabels(canvas,{...options,yaw:state.moonYaw,pitch:state.moonPitch,
+  paintLunarGlobeLabels(canvas,{...options,yaw:state.moonYaw,pitch:state.moonPitch,roll:moonHorizonRoll(),
    panX:state.moonPanX,panY:state.moonPanY}):
   paintLunarLabels(canvas,discCoordinateGeometry(),options);
  canvas.dataset.visibleLabels=JSON.stringify(shown.map(x=>x.name));
@@ -1673,7 +1677,7 @@ function redrawDiscGrid(){
 }
 function updateDiscCoordinates(clientX,clientY){
  if(state.discView==='moon'&&state.moon3D){
-  const point=lunarGlobePoint($('moon'),clientX,clientY,state.moonYaw,state.moonPitch);
+  const point=lunarGlobePoint($('moon'),clientX,clientY,state.moonYaw,state.moonPitch,moonHorizonRoll());
   $('disc-coordinate-readout').textContent=formatLunarGlobePoint(point);return;
  }
  const box=discStage.getBoundingClientRect();
@@ -1956,7 +1960,7 @@ function syncMoon3DControls(){
  $('lunar-feature-overlay').hidden=state.discView==='sun';
  $('disc-grid-toggle').disabled=enabled;
  $('show-earthshine').disabled=enabled;
- if(enabled)$('moon-3d-status').textContent='Drag to rotate · pinch/wheel to zoom · selenographic grid and pointer coordinates (east-positive)';
+ if(enabled)$('moon-3d-status').textContent='Horizon-aligned like 2D · drag to rotate · pinch/wheel to zoom · east-positive selenographic coordinates';
 }
 $('moon-3d-toggle').addEventListener('change',e=>{
  state.moon3D=e.target.checked;
