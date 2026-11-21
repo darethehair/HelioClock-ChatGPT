@@ -3018,3 +3018,26 @@ test('3D Moon matches 2D grid cadence and keeps text and strokes readable',async
  await page.locator('#moon-3d-toggle').uncheck();
  await expect(page.locator('#disc-grid-toggle')).toBeEnabled();
 });
+
+test('v130 3D Moon starts with exactly the 2D horizon rotation and retains it on reset',async({page})=>{
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('#disc-grid-toggle').check();
+ const reference=Number(await page.locator('#disc-coordinate-grid').getAttribute('data-rotation-degrees'));
+ expect(Number.isFinite(reference)).toBeTruthy();
+ await page.locator('#moon-3d-toggle').check();
+ const globe=page.locator('#moon');
+ const initial=Number(await globe.getAttribute('data-globe-roll'))*180/Math.PI;
+ expect(Math.abs(initial-reference)).toBeLessThan(.02);
+ await page.locator('#disc-stage').scrollIntoViewIfNeeded();
+ const stage=await page.locator('#disc-stage').boundingBox();
+ const x=stage.x+stage.width*.48,y=stage.y+stage.height*.52;
+ await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+110,y+35,{steps:6});await page.mouse.up();
+ await expect.poll(async()=>Math.abs(Number(await globe.getAttribute('data-globe-yaw')))).toBeGreaterThan(.1);
+ await page.locator('#moon-3d-home').click();
+ await expect(globe).toHaveAttribute('data-globe-yaw','0');
+ await expect(globe).toHaveAttribute('data-globe-pitch','0');
+ const restored=Number(await globe.getAttribute('data-globe-roll'))*180/Math.PI;
+ expect(Math.abs(restored-reference)).toBeLessThan(.02);
+ await page.locator('#moon-3d-toggle').uncheck();
+ await expect.poll(async()=>Number(await page.locator('#disc-coordinate-grid').getAttribute('data-rotation-degrees'))).toBeCloseTo(reference,2);
+});
