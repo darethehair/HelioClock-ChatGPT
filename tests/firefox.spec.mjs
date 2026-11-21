@@ -2881,6 +2881,20 @@ test('Local Sun Map rays remain painted at street-level maximum zoom',async({pag
   return count;
  })).toBeGreaterThan(500);
 });
+test('Opening banner displays precision observer coordinates after location changes',async({page})=>{
+ await page.setViewportSize({width:420,height:850});
+ await page.route('https://tile.openstreetmap.org/**',route=>route.abort());
+ await page.goto('http://127.0.0.1:8765/');
+ const coordinates=page.locator('.hero-observer-coordinates');
+ await expect(coordinates).toBeVisible();
+ await expect(page.locator('#place-summary')).toContainText('49.19000° N');
+ await expect(page.locator('#place-summary')).toContainText('98.10000° W');
+ await page.locator('#latitude').fill('49.18371');
+ await page.locator('#longitude').fill('-98.12519');
+ await page.locator('#longitude').dispatchEvent('change');
+ await expect(page.locator('#place-summary')).toHaveText('49.18371° N  ·  98.12519° W');
+ await expect(coordinates).toBeInViewport();
+});
 test('Local Sun Map fullscreen maximizes plot area with phone controls in drawer',async({page})=>{
  await page.setViewportSize({width:420,height:850});
  await page.route('https://tile.openstreetmap.org/**',route=>route.abort());
