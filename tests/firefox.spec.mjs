@@ -2863,6 +2863,24 @@ test('Local Sun Map draws OSM tiles, solar rays, shading and movable observer',a
  await expect.poll(async()=>Math.abs(Number(await page.locator('#latitude').inputValue())-moved.lat)).toBeLessThan(.001);
  expect(errors).toEqual([]);
 });
+test('Local Sun Map rays remain painted at street-level maximum zoom',async({page})=>{
+ await page.route('https://tile.openstreetmap.org/**',route=>route.abort());
+ await page.goto('http://127.0.0.1:8765/');
+ const panel=page.locator('.local-sun-panel');
+ await panel.locator('[data-fullscreen="local-sun-panel"]').click();
+ await page.locator('#local-sun-mode').selectOption('lines');
+ const stage=page.locator('#local-sun-map');
+ // Zoom all the way to the maximum tile resolution.
+ for(let i=0;i<9;i++)await page.locator('#local-sun-zoom-in').click();
+ await expect(stage).toHaveAttribute('data-local-sun-zoom','18');
+ await expect.poll(async()=>stage.locator('canvas#local-sun-rays').evaluate(canvas=>{
+  const ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;
+  const image=ctx.getImageData(0,0,w,h).data;
+  let count=0;
+  for(let i=3;i<image.length;i+=4)if(image[i]>0)count++;
+  return count;
+ })).toBeGreaterThan(500);
+});
 test('Local Sun Map fullscreen maximizes plot area with phone controls in drawer',async({page})=>{
  await page.setViewportSize({width:420,height:850});
  await page.route('https://tile.openstreetmap.org/**',route=>route.abort());
