@@ -129,6 +129,7 @@ Release highlights are curated in [`release-notes.json`](release-notes.json). Wh
 
 | Release | Highlights |
 | --- | --- |
+| **v123** | Keep sunrise, sunset and twilight direction lines visible at street-level maximum zoom by scaling geodesic ray sampling to the map resolution; add a canvas-pixel browser regression. |
 | **v122** | Replace uniform Local Sun Map dimming with observer-centred solar and twilight direction sectors, leaving the sunward map unshaded; replace additive twilight dropdown with four independent line-group checkboxes. |
 | **v121** | Add a dedicated Local Sun Map with interactive OpenStreetMap tiles, movable observing point, geodesic sunrise/sunset/twilight bearings, optional graduated night shading, observer synchronization, and plot-first mobile fullscreen. |
 | **v120** | Correct ISS visible-pass maximum elevation to use the sunlit viewing interval rather than the full orbital arc; validated one-time against five Morden passes (start times agreed to the minute, maximum elevations within 1.3°). |
