@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v129",
+      "summary": "Improve 2D/3D lunar visual consistency: reuse the original near-side LRO photo within the rotatable globe, smoothly blend to genuine global imagery at the limb, and match coordinate-grid stroke weight, label styling and zoom spacing."
+    },
+    {
       "version": "v128",
       "summary": "Refine 3D Moon tonal response toward the 2D atlas and add zoom-aware, collision-avoiding labels across near and far sides, with far-side feature search rotating the globe to the selected location."
     },
