@@ -527,7 +527,7 @@ test('dashboard controls work in Firefox',async({page})=>{
  await expect(page.locator('#local-clock')).not.toHaveText('—');
  await expect(page.locator('#dock-time-zone')).toContainText('UTC');
  await expect(page.locator('#dock-local-time')).not.toHaveText('—');
- await expect(page.locator('.panel-fullscreen')).toHaveCount(7);
+ await expect(page.locator('.panel-fullscreen')).toHaveCount(8);
  // Milky Way overlay layers are independent and modify actual sky pixels.
  await page.locator('[data-sky-projection="rect"]').click();
  await page.locator('[data-sky-light="black"]').click();
@@ -844,7 +844,7 @@ test('Version 23 single Earth map clips all raster imagery to the world outline'
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:8765/');
  await page.locator('[data-panel-visibility="earth"]').check();
- for(const key of ['hero','chart','sky','moon','orrery','details','almanac']){
+ for(const key of ['hero','chart','localSun','sky','moon','orrery','details','almanac']){
   await page.locator('[data-panel-visibility="'+key+'"]').uncheck();
  }
  await expect(page.locator('.dashboard')).toHaveClass(/single-panel/);
