@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v124",
+      "summary": "Make current observer latitude and longitude prominent on the opening banner, displayed to five decimal places and updated whenever the observing point changes, with compact mobile styling."
+    },
+    {
       "version": "v123",
       "summary": "Keep sunrise, sunset and twilight direction lines visible at street-level maximum zoom by scaling geodesic ray sampling to the map resolution; add a canvas-pixel browser regression."
     },
