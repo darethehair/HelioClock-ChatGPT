@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v121",
+      "summary": "Add a dedicated Local Sun Map with interactive OpenStreetMap tiles, movable observing point, geodesic sunrise/sunset/twilight bearings, optional graduated night shading, observer synchronization, and plot-first mobile fullscreen."
+    },
+    {
       "version": "v120",
       "summary": "Correct ISS visible-pass maximum elevation to use the sunlit viewing interval rather than the full orbital arc; validated one-time against five Morden passes (start times agreed to the minute, maximum elevations within 1.3°)."
     },
