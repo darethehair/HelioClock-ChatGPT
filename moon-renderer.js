@@ -101,3 +101,6 @@ export function renderMoon(canvas,when,latitude,longitude,zoom=1,{showEarthshine
  c.restore();
  return {...tilt,photoLoaded:loading==='ready',illumination:m.illuminated,eclipse};
 }
+
+// Shared with the exploratory 3D globe. This asset only depicts the near side.
+export function lunarNearsideTexture(){return lunarPhoto;}
