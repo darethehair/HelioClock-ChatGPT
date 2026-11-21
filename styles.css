@@ -931,3 +931,26 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
  .local-sun-directions{width:100%;gap:9px 12px;box-sizing:border-box}
  .local-sun-directions label{font-size:11px}
 }
+
+/* Banner observation coordinates: conspicuous but compact on phone screens. */
+.hero .hero-observer-coordinates{
+ display:inline-flex;align-items:center;flex-wrap:wrap;gap:6px 13px;
+ max-width:100%;margin:8px 0 2px;padding:8px 12px;
+ border:1px solid #b4d4e26b;border-radius:9px;
+ background:linear-gradient(105deg,#07182ccf,#163650b8);
+ box-shadow:0 2px 14px #07142267;color:#f2f7fe;
+}
+.hero-observer-label{
+ font-size:10px;letter-spacing:1px;font-weight:700;color:#a9cddd;
+ white-space:nowrap;
+}
+.hero .hero-observer-value{
+ font-size:clamp(14px,1.5vw,18px);font-weight:700;
+ color:#ffe2a1;font-variant-numeric:tabular-nums;
+ letter-spacing:.18px;white-space:nowrap;
+}
+@media(max-width:500px){
+ .hero .hero-observer-coordinates{padding:7px 10px;gap:4px 9px}
+ .hero-observer-label{font-size:9px}
+ .hero .hero-observer-value{font-size:14px;letter-spacing:0}
+}
