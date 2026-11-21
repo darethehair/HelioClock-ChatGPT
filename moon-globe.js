@@ -2,24 +2,36 @@ import {clamp,moon,moonOrientation} from './astronomy.js';
 import {lunarNearsideTexture} from './moon-renderer.js';
 
 const RAD=Math.PI/180,TAU=2*Math.PI;
-const frac=n=>n-Math.floor(n);
-const noise=(x,y)=>frac(Math.sin(x*127.1+y*311.7)*43758.5453);
-// Placeholder terrain, unmistakably illustrative and NOT a far-side survey.
-function provisionalFarSide(x,y,z){
- const lat=Math.asin(clamp(y,-1,1)),lon=Math.atan2(x,-z);
- let v=174+12*Math.sin(19*lon+8*lat)*Math.cos(16*lat);
- v+=7*Math.sin(53*lon+31*lat)+5*Math.sin(97*lon-79*lat);
- for(let i=0;i<21;i++){
-  const a=noise(i+11,6)*TAU,b=(noise(i+31,13)-.5)*Math.PI;
-  const dx=(lon-a+Math.PI*3)%TAU-Math.PI,dy=lat-b;
-  const dist=Math.hypot(dx*Math.cos(lat),dy);
-  const radius=.035+noise(i+12,44)*.085;
-  if(dist<radius){
-   const f=dist/radius;
-   v+=f>.74?24*(1-(f-.74)/.26):f<.38?-19*(1-f/.38):0;
-  }
+// NASA SVS CGI Moon Kit, LROC global albedo map, centered at 0° longitude.
+// An equirectangular 360° texture contains the near side AND the far side.
+let lunarGlobalTexture=null,textureStatus='loading';
+const globalImage=new Image();
+globalImage.onload=()=>{
+ try{
+  const cv=document.createElement('canvas');
+  cv.width=globalImage.naturalWidth;cv.height=globalImage.naturalHeight;
+  if(cv.width<1024||cv.height<512)throw Error('Global Moon texture unexpectedly small');
+  const cx=cv.getContext('2d',{willReadFrequently:true});cx.drawImage(globalImage,0,0);
+  lunarGlobalTexture=cx.getImageData(0,0,cv.width,cv.height);
+  textureStatus='ready';
+ }catch(error){
+  console.warn('3D lunar global texture could not be decoded',error);
+  textureStatus='unavailable';
  }
- return clamp(v,92,225);
+ window.dispatchEvent(new Event('helioclock-moon-globe-texture-ready'));
+};
+globalImage.onerror=()=>{textureStatus='unavailable';window.dispatchEvent(new Event('helioclock-moon-globe-texture-ready'))};
+globalImage.src='./lroc-global-2k.jpg';
+export function lunarGlobeTextureStatus(){return textureStatus}
+/**
+ * NASA texture is centred on 0° E, with north at the top.
+ * A globe body normal (x,y,z) has 0° longitude on the +Z Earth-facing
+ * meridian. +X points toward 90° E, -Y toward the north lunar pole.
+ */
+export function lunarGlobeUv({x,y,z}){
+ const longitude=Math.atan2(x,z);
+ const latitude=Math.asin(clamp(-y,-1,1));
+ return {u:(.5+longitude/TAU+1)%1,v:clamp(.5-latitude/Math.PI,0,1)};
 }
 export function globeVector(x,y,z,yaw,pitch){
  const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
@@ -48,8 +60,8 @@ export function renderMoonGlobe(canvas,date,lat,lon,{yaw=0,pitch=0,fullyLit=fals
  const angle=tilt.brightLimb*RAD;
  // Sun direction in body-space at home view: match current 2D lunar phase.
  const sun={x:-Math.sin(angle)*side,y:-Math.cos(angle)*side,z:cosine};
- const texture=lunarNearsideTexture();
- const fallbackR=180;
+ const texture=lunarGlobalTexture;
+ const nearsideBackup=lunarNearsideTexture();
  let near=0,far=0;
  for(let py=0;py<diameter;py++){
   const y=(py+.5-r)/r;
@@ -61,19 +73,23 @@ export function renderMoonGlobe(canvas,date,lat,lon,{yaw=0,pitch=0,fullyLit=fals
    const limb=Math.min(1,(1-Math.sqrt(rr))*r);
    const i=(py*diameter+px)*4;
    let red=183,green=185,blue=190;
-   if(body.z>=0){
-    near++;
-    if(texture){
-     // Orthographic near-side photo: lunar north up, matching 2D.
-     const sx=clamp(Math.round((body.x+1)*.5*(texture.width-1)),0,texture.width-1);
-     const sy=clamp(Math.round((body.y+1)*.5*(texture.height-1)),0,texture.height-1);
-     const si=(sy*texture.width+sx)*4;
-     red=texture.data[si];green=texture.data[si+1];blue=texture.data[si+2];
-    }
+   if(body.z>=0)near++;else far++;
+   if(texture){
+    const {u,v}=lunarGlobeUv(body);
+    const sx=Math.min(texture.width-1,Math.floor(u*texture.width));
+    const sy=Math.min(texture.height-1,Math.floor(v*(texture.height-1)));
+    const si=(sy*texture.width+sx)*4;
+    red=texture.data[si];green=texture.data[si+1];blue=texture.data[si+2];
+   }else if(body.z>=0&&nearsideBackup){
+    // Safe fallback: the historical 2D near-side texture, never falsely
+    // projected onto the unknown far-side hemisphere.
+    const sx=clamp(Math.round((body.x+1)*.5*(nearsideBackup.width-1)),0,nearsideBackup.width-1);
+    const sy=clamp(Math.round((body.y+1)*.5*(nearsideBackup.height-1)),0,nearsideBackup.height-1);
+    const si=(sy*nearsideBackup.width+sx)*4;
+    red=nearsideBackup.data[si];green=nearsideBackup.data[si+1];blue=nearsideBackup.data[si+2];
    }else{
-    far++;
-    const grey=provisionalFarSide(body.x,body.y,body.z);
-    red=grey;green=grey*.99;blue=grey*.96;
+    // Plain placeholder if the complete global asset could not be loaded.
+    red=128;green=127;blue=124;
    }
    pixels.data[i]=clamp(red*diffuse,0,255);
    pixels.data[i+1]=clamp(green*diffuse,0,255);
@@ -88,5 +104,6 @@ export function renderMoonGlobe(canvas,date,lat,lon,{yaw=0,pitch=0,fullyLit=fals
  canvas.dataset.globeFarPixels=String(far);
  canvas.dataset.globeYaw=String(yaw);
  canvas.dataset.globePitch=String(pitch);
- return {illumination:m.illuminated,nearSideReady:!!texture,farSideIllustrative:true};
+ canvas.dataset.globeTextureStatus=textureStatus;
+ return {illumination:m.illuminated,nearSideReady:!!(texture||nearsideBackup),farSideIllustrative:!texture,globalTextureReady:!!texture};
 }
