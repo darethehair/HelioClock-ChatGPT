@@ -115,7 +115,8 @@ function drawLunarGlobeGrid(ctx,diameter,yaw,pitch,step){
 }
 
 
-export const GLOBE_LUNAR_FEATURES=[...LUNAR_FEATURES,
+export const GLOBE_LUNAR_FEATURES=[...LUNAR_FEATURES.map(f=>
+ Math.abs(f.lon)>90?{...f,minZoom:Math.min(f.minZoom,1.5)}:f),
  ...FAR_SIDE_LUNAR_FEATURES.filter(f=>!LUNAR_FEATURES.some(existing=>existing.name===f.name))];
 
 /** Project selenographic surface anchors onto the visible orthographic globe.
