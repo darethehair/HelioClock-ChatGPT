@@ -60,3 +60,32 @@ export function solarShadeOpacity(alt){
  if(alt>=-18)return .52;
  return .69;
 }
+
+// Local-horizon direction fan. Bearings are measured clockwise from true north.
+// The azimuthal darkness sector is deliberately a compass aid, NOT a claim that
+// the geographical area within a wedge is literally in Earth's shadow.
+export function clockwiseArcContains(start,end,bearing){
+ const wrap=x=>((x%360)+360)%360;
+ return wrap(bearing-start)<=wrap(end-start);
+}
+export function localSolarSectors(events,noonAzimuth){
+ const by=Object.fromEntries(events.map(e=>[e.key,e]));
+ const pairs=[
+  ['sunrise','sunset',0],
+  ['civil-dawn','civil-dusk',.13],
+  ['nautical-dawn','nautical-dusk',.24],
+  ['astronomical-dawn','astronomical-dusk',.38]
+ ];
+ const result=[];
+ for(const [rise,set,opacity] of pairs){
+  if(!by[rise]||!by[set])continue;
+  // Night is the side of the compass opposite the Sun's noonward arc.
+  const noonOnClockwise=clockwiseArcContains(by[rise].az,by[set].az,noonAzimuth);
+  result.push({
+   key:rise.replace(/-dawn$/,'')||'solar',opacity,
+   start:noonOnClockwise?by[set].az:by[rise].az,
+   end:noonOnClockwise?by[rise].az:by[set].az
+  });
+ }
+ return result;
+}
