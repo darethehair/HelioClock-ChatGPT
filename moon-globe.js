@@ -1,5 +1,7 @@
 import {clamp,moon,moonOrientation} from './astronomy.js';
 import {lunarNearsideTexture} from './moon-renderer.js';
+import {LUNAR_FEATURES} from './moon-features.js';
+import {FAR_SIDE_LUNAR_FEATURES} from './moon-farside-features.js';
 
 const RAD=Math.PI/180,TAU=2*Math.PI;
 // NASA SVS CGI Moon Kit, LROC global albedo map, centered at 0° longitude.
@@ -110,6 +112,61 @@ function drawLunarGlobeGrid(ctx,diameter,yaw,pitch,step){
  mark(0,0,'0°');
  ctx.restore();
  return {segments,labels};
+}
+
+
+export const GLOBE_LUNAR_FEATURES=[...LUNAR_FEATURES,
+ ...FAR_SIDE_LUNAR_FEATURES.filter(f=>!LUNAR_FEATURES.some(existing=>existing.name===f.name))];
+
+/** Project selenographic surface anchors onto the visible orthographic globe.
+ * Return null for sites behind the limb. Screen coordinates include CSS zoom/pan.
+ */
+export function lunarGlobeFeaturePoint(feature,{width,height,yaw=0,pitch=0,zoom=1,panX=0,panY=0}){
+ const a=feature.lat*RAD,b=feature.lon*RAD;
+ const v=globeVector(Math.cos(a)*Math.sin(b),-Math.sin(a),Math.cos(a)*Math.cos(b),yaw,pitch);
+ if(v.z<=.025)return null;
+ const radius=Math.round(Math.min(width*.82,height*.9))/2;
+ return {x:width/2+panX+v.x*radius*zoom,y:height/2+panY+v.y*radius*zoom,depth:v.z};
+}
+/** Draw fixed-size labels over a projected Moon, decluttered in screen space. */
+export function paintLunarGlobeLabels(canvas,{
+ yaw=0,pitch=0,zoom=1,panX=0,panY=0,enabled=true,
+ maria=true,craters=true,other=true,selected=''
+}={}){
+ const width=canvas.clientWidth,height=canvas.clientHeight;
+ if(width<1||height<1)return [];
+ const dpr=Math.min(window.devicePixelRatio||1,2);
+ canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);
+ const ctx=canvas.getContext('2d');
+ ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,width,height);
+ if(!enabled)return [];
+ const allowed={mare:maria,crater:craters,other};
+ const eligibleZoom=2.9+Math.max(0,zoom-1)*1.4;
+ const bounds={width,height,yaw,pitch,zoom,panX,panY};
+ const candidates=GLOBE_LUNAR_FEATURES
+  .filter(f=>allowed[f.type]&&(f.minZoom<=eligibleZoom||f.name===selected))
+  .map(f=>({...f,point:lunarGlobeFeaturePoint(f,bounds)}))
+  .filter(f=>f.point&&f.point.x>=8&&f.point.x<=width-8&&f.point.y>=8&&f.point.y<=height-8)
+  .sort((a,b)=>Number(b.name===selected)-Number(a.name===selected)||a.minZoom-b.minZoom||a.name.localeCompare(b.name));
+ const maxCount=Math.max(12,Math.min(105,Math.round((zoom<1.5?28:zoom<3?48:72)*Math.min(1.3,Math.min(width,height)/500))));
+ const occupied=[],visible=[];
+ ctx.save();ctx.font='10.5px sans-serif';ctx.textBaseline='top';ctx.lineJoin='round';
+ for(const f of candidates){
+  const active=f.name===selected;
+  if(visible.length>=maxCount&&!active)continue;
+  const labelWidth=ctx.measureText(f.name).width;
+  const x=clamp(f.point.x+7,5,width-labelWidth-5);
+  const y=clamp(f.point.y-15,5,height-16);
+  const rect={left:x,right:x+labelWidth,top:y,bottom:y+13};
+  if(!active&&occupied.some(o=>rect.left<o.right+5&&rect.right+5>o.left&&rect.top<o.bottom+4&&rect.bottom+4>o.top))continue;
+  occupied.push(rect);visible.push(f);
+  ctx.beginPath();ctx.arc(f.point.x,f.point.y,active?3.4:1.8,0,TAU);
+  ctx.fillStyle=active?'#ffd586':'#d9eafd';ctx.fill();
+  ctx.lineWidth=2.5;ctx.strokeStyle='#06121ce8';ctx.strokeText(f.name,x,y);
+  ctx.fillStyle=active?'#ffe2a8':'#e2f0fb';ctx.fillText(f.name,x,y);
+ }
+ ctx.restore();
+ return visible;
 }
 
 export function renderMoonGlobe(canvas,date,lat,lon,{yaw=0,pitch=0,fullyLit=false,grid=false,gridStep=30}={}){
