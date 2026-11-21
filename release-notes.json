@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v125",
+      "summary": "First-stage rotatable 3D Moon within the existing Sun/Moon panel: mouse/touch camera orbit, existing lunar zoom/pinch controls, Earth-view reset and optional exploration lighting. The NASA near-side mosaic is reused; far-side surface detail is explicitly illustrative pending a global NASA texture. Classic 2D atlas remains the default."
+    },
+    {
       "version": "v124",
       "summary": "Make current observer latitude and longitude prominent on the opening banner, displayed to five decimal places and updated whenever the observing point changes, with compact mobile styling."
     },
