@@ -72,44 +72,56 @@ export function formatLunarGlobePoint(point){
 }
 // Draw line fragments only on the camera-facing hemisphere. Both the terrain
 // and these curves use globeVector, including the far side and tilted views.
-function drawLunarGlobeGrid(ctx,diameter,yaw,pitch,step){
- const r=diameter/2;
- ctx.save();ctx.translate(r,r);
- ctx.lineWidth=Math.max(.65,diameter/350);
- ctx.strokeStyle='rgba(115,225,255,.69)';
- ctx.fillStyle='rgba(210,247,255,.95)';
- ctx.font=Math.max(9,Math.min(12,diameter/29))+'px sans-serif';
- ctx.textAlign='center';ctx.textBaseline='middle';
+function drawLunarGlobeGrid(ctx,width,height,diameter,yaw,pitch,step){
+ const radius=diameter/2;
+ ctx.save();
+ ctx.translate(width/2,height/2);
+ ctx.beginPath();ctx.arc(0,0,radius,0,TAU);ctx.clip();
+ // Use the same line weight and transparency as disc-coordinates.js in 2D.
+ // Paint at final display resolution, NOT on the upscaled 340-pixel texture.
+ ctx.lineWidth=.6;
+ ctx.strokeStyle='rgba(120,205,240,.47)';
  let segments=0,labels=0;
- const project=(latitude,longitude)=>{
-  const a=latitude*RAD,b=longitude*RAD;
-  const body={x:Math.cos(a)*Math.sin(b),y:-Math.sin(a),z:Math.cos(a)*Math.cos(b)};
-  const v=globeVector(body.x,body.y,body.z,yaw,pitch);
-  return {x:v.x*r,y:v.y*r,front:v.z>0.001};
+ const project=(lat,lon)=>{
+  const a=lat*RAD,b=lon*RAD;
+  const v=globeVector(Math.cos(a)*Math.sin(b),-Math.sin(a),Math.cos(a)*Math.cos(b),yaw,pitch);
+  return v.z>=0?{x:v.x*radius,y:v.y*radius}:null;
  };
- function curve(sample,n){
-  let previous=null;
-  for(let i=0;i<=n;i++){
-   const v=sample(i/n);
-   if(previous&&previous.front&&v.front){
-    ctx.beginPath();ctx.moveTo(previous.x,previous.y);ctx.lineTo(v.x,v.y);ctx.stroke();segments++;
-   }
-   previous=v;
+ function trace(sample,count){
+  ctx.beginPath();let started=false;
+  for(let i=0;i<=count;i++){
+   const p=sample(i/count);
+   if(!p){started=false;continue}
+   if(!started){ctx.moveTo(p.x,p.y);started=true}
+   else{ctx.lineTo(p.x,p.y);segments++}
   }
+  ctx.stroke();
  }
- for(let lat=-90+step;lat<90;lat+=step)curve(t=>project(lat,-180+360*t),Math.max(180,360/step*18));
- for(let lon=-180;lon<180;lon+=step)curve(t=>project(-90+180*t,lon),Math.max(90,180/step*18));
- // Lightweight labels; keep lettering close to the centre to avoid clutter.
- function mark(lat,lon,label){
+ for(let lat=-90+step;lat<90;lat+=step)trace(t=>project(lat,-180+360*t),720);
+ for(let lon=-180;lon<180;lon+=step)trace(t=>project(-90+180*t,lon),360);
+ ctx.restore();
+ // The label style, cadence, and position match paintDiscGrid in the 2D atlas.
+ ctx.save();ctx.translate(width/2,height/2);
+ ctx.font=(radius>=210?'11px':'10px')+' sans-serif';
+ ctx.textAlign='center';ctx.textBaseline='middle';
+ ctx.strokeStyle='rgba(1,10,18,.92)';ctx.fillStyle='#d8f4ff';ctx.lineWidth=2.6;
+ function annotate(lat,lon,text,dx=0,dy=0){
   const p=project(lat,lon);
-  if(!p.front||Math.hypot(p.x,p.y)>r*.82)return;
-  const width=ctx.measureText(label).width+5;
-  ctx.fillStyle='rgba(0,0,0,.68)';ctx.fillRect(p.x-width/2,p.y-7,width,14);
-  ctx.fillStyle='rgba(210,247,255,.95)';ctx.fillText(label,p.x,p.y);labels++;
+  if(!p)return;
+  const x=p.x+dx,y=p.y+dy;
+  if(Math.abs(x)>width/2-14||Math.abs(y)>height/2-10)return;
+  ctx.strokeText(text,x,y);ctx.fillText(text,x,y);labels++;
  }
- for(let lat=-60;lat<=60;lat+=step)if(lat!==0)mark(lat,0,Math.abs(lat)+'°'+(lat>0?'N':'S'));
- for(let lon=-180;lon<180;lon+=step)if(lon!==0)mark(0,lon,Math.abs(lon)+'°'+(lon>0?'E':'W'));
- mark(0,0,'0°');
+ const labelStep=radius>=210?30:60;
+ annotate(0,0,'0°',0,-9);
+ for(let lon=labelStep;lon<=75;lon+=labelStep){
+  annotate(0,lon,lon+'°E',0,-10);
+  annotate(0,-lon,lon+'°W',0,-10);
+ }
+ for(let lat=labelStep;lat<=75;lat+=labelStep){
+  annotate(lat,0,lat+'°N',24,0);
+  annotate(-lat,0,lat+'°S',24,0);
+ }
  ctx.restore();
  return {segments,labels};
 }
@@ -209,6 +221,19 @@ export function renderMoonGlobe(canvas,date,lat,lon,{yaw=0,pitch=0,fullyLit=fals
     const sy=Math.min(texture.height-1,Math.floor(v*(texture.height-1)));
     const si=(sy*texture.width+sx)*4;
     red=texture.data[si];green=texture.data[si+1];blue=texture.data[si+2];
+    if(body.z>0.12&&nearsideBackup){
+     // The classic 2D view uses this exact orthographic LRO photo. Reuse
+     // its colours on the Earth-facing hemisphere to align contrast.
+     // Fade to the genuine global mosaic near the limb, keeping the far side
+     // intact and avoiding an abrupt image-source seam when rotating.
+     const nx=clamp(Math.round((body.x+1)*.5*(nearsideBackup.width-1)),0,nearsideBackup.width-1);
+     const ny=clamp(Math.round((body.y+1)*.5*(nearsideBackup.height-1)),0,nearsideBackup.height-1);
+     const ni=(ny*nearsideBackup.width+nx)*4;
+     const t=clamp((body.z-.12)/.3,0,1),blend=t*t*(3-2*t);
+     red=red*(1-blend)+nearsideBackup.data[ni]*blend;
+     green=green*(1-blend)+nearsideBackup.data[ni+1]*blend;
+     blue=blue*(1-blend)+nearsideBackup.data[ni+2]*blend;
+    }
    }else if(body.z>=0&&nearsideBackup){
     // Safe fallback: the historical 2D near-side texture, never falsely
     // projected onto the unknown far-side hemisphere.
@@ -227,9 +252,9 @@ export function renderMoonGlobe(canvas,date,lat,lon,{yaw=0,pitch=0,fullyLit=fals
   }
  }
  g.putImageData(pixels,0,0);
- const gridResult=grid?drawLunarGlobeGrid(g,diameter,yaw,pitch,gridStep):{segments:0,labels:0};
  c.imageSmoothingEnabled=true;
  c.drawImage(scratch,(w-shownDiameter)/2,(h-shownDiameter)/2,shownDiameter,shownDiameter);
+ const gridResult=grid?drawLunarGlobeGrid(c,w,h,shownDiameter,yaw,pitch,gridStep):{segments:0,labels:0};
  canvas.dataset.globeGridSegments=String(gridResult.segments);
  canvas.dataset.globeGridLabels=String(gridResult.labels);
  canvas.dataset.globeNearPixels=String(near);
