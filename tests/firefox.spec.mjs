@@ -2965,6 +2965,8 @@ test('v127 3D selenographic grid follows globe rotation and reports surface coor
  await page.locator('#moon-3d-grid').uncheck();
  await expect(canvas).toHaveAttribute('data-globe-grid-segments','0');
  await page.locator('#moon-3d-grid').check();
+ // The Moon panel is below the dashboard: mouse movement only fires after scrolling it onscreen.
+ await page.locator('#disc-stage').scrollIntoViewIfNeeded();
  const box=await canvas.boundingBox();
  await page.mouse.move(box.x+box.width/2,box.y+box.height/2);
  await expect(page.locator('#disc-coordinate-readout')).toContainText('Selenographic');
