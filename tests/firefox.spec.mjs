@@ -2840,6 +2840,16 @@ test('Local Sun Map draws OSM tiles, solar rays, shading and movable observer',a
  await expect(stage).toHaveAttribute('data-local-sun-line-count','0');
  await page.locator('#local-sun-mode').selectOption('both');
  await expect.poll(async()=>Number(await stage.getAttribute('data-local-sun-line-count'))).toBeGreaterThan(0);
+ await expect(stage).toHaveAttribute('data-local-sun-shade-sectors','4');
+ // The directional fan must not darken the entire street map: at this
+ // Northern-Hemisphere winter date the sunward southern sector stays clear.
+ const pixels=await page.locator('#local-sun-shading').evaluate(canvas=>{
+  const c=canvas.getContext('2d'),w=canvas.width,h=canvas.height;
+  return {north:c.getImageData(Math.floor(w/2),Math.floor(h*.14),1,1).data[3],
+   south:c.getImageData(Math.floor(w/2),Math.floor(h*.85),1,1).data[3]};
+ });
+ expect(pixels.north).toBeGreaterThan(40);
+ expect(pixels.south).toBe(0);
  const box=await stage.boundingBox();
  await stage.click({position:{x:box.width*.72,y:box.height*.43}});
  await expect(page.locator('#local-sun-follow')).not.toBeChecked();
@@ -2863,6 +2873,12 @@ test('Local Sun Map fullscreen maximizes plot area with phone controls in drawer
  await expect(page.locator('.local-sun-panel .local-sun-controls')).not.toBeVisible();
  await page.locator('.local-sun-panel .mobile-plot-settings').click();
  await expect(page.locator('.local-sun-panel .local-sun-controls')).toBeVisible();
- await page.locator('#local-sun-twilight').selectOption('simple');
+ await page.locator('#local-sun-line-civil').uncheck();
+ await page.locator('#local-sun-line-nautical').uncheck();
+ await page.locator('#local-sun-line-astronomical').uncheck();
+ await expect.poll(async()=>Number(await page.locator('#local-sun-map').getAttribute('data-local-sun-line-count'))).toBe(2);
+ await page.locator('#local-sun-line-solar').uncheck();
+ await expect.poll(async()=>Number(await page.locator('#local-sun-map').getAttribute('data-local-sun-line-count'))).toBe(0);
+ await page.locator('#local-sun-line-civil').check();
  await expect.poll(async()=>Number(await page.locator('#local-sun-map').getAttribute('data-local-sun-line-count'))).toBe(2);
 });
