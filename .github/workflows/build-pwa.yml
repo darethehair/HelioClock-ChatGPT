@@ -442,6 +442,13 @@ jobs:
           path: dist/
           if-no-files-found: error
           retention-days: 30
+      - name: Upload tested site for GitHub Pages
+        # Reuse exactly the same tested dist/ as the ZIP and Cloudflare.
+        # Only main pushes publish; manual runs remain ZIP-only.
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/
       - name: Deploy tested assets to Cloudflare Pages
         # Manual workflow_dispatch runs are ZIP-only, even when started on main.
         # Only a push to main may publish to Cloudflare Pages.
@@ -467,3 +474,18 @@ jobs:
             exit 0
           fi
           npx --yes wrangler@4 pages deploy dist --project-name=helioclock-chatgpt --branch=main
+
+  deploy-github-pages:
+    needs: [change-scope, package]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.change-scope.outputs.full_build == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy tested HelioClock site to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
