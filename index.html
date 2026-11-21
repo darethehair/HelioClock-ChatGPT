@@ -108,6 +108,28 @@
 </div><div class="iss-map-tools" role="group" aria-label="ISS orbital tracking"><strong>🛰 ISS · NORAD 25544</strong><label><input type="checkbox" id="iss-show" checked> Ground track ±45 min</label><button type="button" id="iss-refresh" title="Download current CelesTrak OMM elements">↻ Update orbit</button><small id="iss-status" role="status" aria-live="polite">Loading orbital elements…</small></div>
 <div class="solar-trail-tools" role="group" aria-label="Solar motion trails"><strong>☀ Motion trails</strong><label><input type="checkbox" data-solar-trail-enabled> Show</label><label>Mode <select data-solar-trail-mode aria-label="Solar trail mode"><option value="analemma">Analemma · full year</option><option value="breadcrumbs">Breadcrumbs · time steps</option></select></label><label><input type="checkbox" data-solar-trail-dots checked> Dots</label><label><input type="checkbox" data-solar-trail-line checked> Join line</label><button type="button" data-solar-trail-clear>Clear</button><small data-solar-trail-status role="status">Fixed UTC clock time · 5-day sampling</small></div>
 <div id="earth-pick-help" class="earth-pick-help" role="status" hidden>Crosshair mode: tap or click the desired observing location. Press Escape or Cancel to leave without changing it.</div><div class="earth-map-stage"><canvas id="earth-map" aria-label="World map showing daylight and twilight by solar geometry"></canvas><span class="earth-map-credit">NASA Blue Marble · Black Marble 2016 · Natural Earth boundaries · NOAA OVATION</span></div><div class="map-legend"><span><i style="background:#f0b765"></i> Day</span><span><i style="background:#7087b4"></i> Civil</span><span><i style="background:#475780"></i> Nautical</span><span><i style="background:#253250"></i> Astronomical</span><span><i style="background:#101b31"></i> Night</span><span><i style="background:#ffd580"></i> Sun zenith ○</span><span><i style="background:#daacff"></i> Sun nadir ◇</span><span><i style="background:#ffdb78"></i> Eclipse shadow / central track</span></div></section>
+ <section class="panel local-sun-panel">
+  <button class="panel-fullscreen" type="button" data-fullscreen="local-sun-panel" aria-label="Fullscreen local sun map" title="Fullscreen (Esc to return)">⛶ Expand</button>
+  <button type="button" class="mobile-plot-settings" aria-label="Show local sun map controls" aria-expanded="false">⚙ Controls</button>
+  <div class="panel-heading"><div><div class="section-kicker">03 / OBSERVER'S HORIZON</div><h2>Local Sun Map</h2><p>OpenStreetMap · tap to move observer · drag to pan · pinch or wheel to zoom</p></div><span class="panel-note">SUN / TWILIGHT AZIMUTHS</span></div>
+  <div class="local-sun-controls" role="group" aria-label="Local Sun Map overlays">
+   <label>Overlay <select id="local-sun-mode" aria-label="Local map overlay"><option value="both">Lines and dim shading</option><option value="lines">Direction lines only</option><option value="shade">Dim shading only</option></select></label>
+   <label>Directions <select id="local-sun-twilight"><option value="simple">Sunrise / sunset</option><option value="civil">+ Civil dawn / dusk</option><option value="all" selected>+ Nautical / astronomical</option></select></label>
+   <label><input type="checkbox" id="local-sun-follow" checked> Follow main observer</label>
+   <button type="button" id="local-sun-center">⌖ Centre map</button>
+   <button type="button" id="local-sun-adopt">Use as main observer</button>
+  </div>
+  <div class="local-sun-map-stage" id="local-sun-map" role="group" aria-label="Interactive OpenStreetMap with sunrise sunset and twilight direction lines">
+   <div class="local-sun-map-tiles" id="local-sun-tiles"></div>
+   <canvas id="local-sun-shading" class="local-sun-map-overlay" aria-hidden="true"></canvas>
+   <canvas id="local-sun-rays" class="local-sun-map-overlay" aria-hidden="true"></canvas>
+   <span class="local-sun-observer" id="local-sun-observer" aria-label="Local observing point" title="Drag this marker or tap elsewhere to set the observing point">⌖</span>
+   <div class="local-sun-map-zoom"><button type="button" id="local-sun-zoom-in" aria-label="Zoom local map in">+</button><button type="button" id="local-sun-zoom-out" aria-label="Zoom local map out">−</button></div>
+   <div class="local-sun-attribution">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a></div>
+  </div>
+  <div class="local-sun-readout" id="local-sun-readout" role="status">Choose a location to display solar bearings.</div>
+  <div class="local-sun-help">Map tiles require internet · no API key · Sun directions assume a level astronomical horizon (no terrain obstruction)</div>
+ </section>
  <section class="panel sky-panel"><button class="panel-fullscreen" type="button" data-fullscreen="sky-panel" aria-label="Fullscreen sky panel" title="Fullscreen (Esc to return)">⛶ Expand</button><button type="button" class="mobile-plot-settings" aria-label="Show sky controls" aria-expanded="false">⚙ Controls</button><div class="panel-heading"><div><div class="section-kicker">03 / YOUR HORIZON</div><h2>Sky compass</h2><p>Local horizon · zoom toward the pointer · drag to pan when magnified</p></div><span class="panel-note">AZ / ALT</span></div><details class="celestial-finder" aria-label="Celestial object finder"><summary>⌕ Find a celestial object <span>Stars · planets · comets · Messier · constellations</span></summary><div class="celestial-finder-body"><label for="celestial-search-input">Object name or catalogue number</label><input id="celestial-search-input" type="search" placeholder="e.g. Sirius, Jupiter, Halley, M31" autocomplete="off"><button id="celestial-clear-selection" type="button" hidden>× Clear selection</button><div id="celestial-search-results" class="celestial-search-results" aria-live="polite">Enter a name to search the offline catalogue.</div><div id="celestial-search-detail" class="celestial-search-detail" aria-live="polite"></div><small id="asteroid-catalog-status" class="data-provenance" role="status">Checking JPL asteroid elements…</small><small id="comet-catalog-status" class="data-provenance" role="status">Checking bundled MPC CometEls.txt…</small></div></details>
 <div class="sky-light-controls" role="group" aria-label="Sky illumination mode">
  <button type="button" data-sky-light="daylight" class="selected" aria-pressed="true">☀ Daylight sky</button>
@@ -203,6 +225,7 @@
   <label><input type="checkbox" data-panel-visibility="hero" checked> Solar summary</label>
   <label><input type="checkbox" data-panel-visibility="chart" checked> Daylight year</label>
   <label><input type="checkbox" data-panel-visibility="earth" checked> Earth map</label>
+  <label><input type="checkbox" data-panel-visibility="localSun" checked> Local Sun Map</label>
   <label><input type="checkbox" data-panel-visibility="sky" checked> Sky compass</label>
   <label><input type="checkbox" data-panel-visibility="moon" checked> Sun / Moon</label>
   <label><input type="checkbox" data-panel-visibility="orrery" checked> Orrery</label>
