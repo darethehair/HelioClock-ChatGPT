@@ -2931,6 +2931,7 @@ test('Experimental 3D Moon rotates, resets and leaves classic 2D view intact',as
  await expect(page.locator('#moon-3d-status')).toContainText('ILLUSTRATIVE PLACEHOLDER');
  await expect(page.locator('#lunar-feature-controls')).toBeHidden();
  await expect.poll(async()=>Number(await canvas.getAttribute('data-globe-near-pixels'))).toBeGreaterThan(100);
+ await page.locator('#disc-stage').scrollIntoViewIfNeeded();
  const box=await page.locator('#disc-stage').boundingBox();
  const x=box.x+box.width*.48,y=box.y+box.height*.52;
  await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+110,y+35,{steps:5});await page.mouse.up();
