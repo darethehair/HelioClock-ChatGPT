@@ -237,6 +237,39 @@ jobs:
           assert p.read_bytes()[:2] == bytes.fromhex('ffd8'), 'Invalid JPEG lunar mosaic'
           print('LRO lunar photo:',p.stat().st_size,'bytes')
           PY
+      # Offline global LROC surface imagery for the rotatable lunar globe.
+      # A real 360-degree map, rather than reusing the near-side image.
+      - name: Restore NASA global lunar texture
+        uses: actions/cache/restore@v4
+        with:
+          path: /tmp/helioclock-lroc-global-2k.jpg
+          key: helioclock-lroc-global-2k-nasa-svs-v1
+      - name: Package verified NASA CGI Moon Kit global map
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -s /tmp/helioclock-lroc-global-2k.jpg ]; then
+            cp /tmp/helioclock-lroc-global-2k.jpg dist/lroc-global-2k.jpg
+          else
+            curl --fail --location --retry 3 --max-time 90 --silent --show-error \
+              https://svs.gsfc.nasa.gov/vis/a000000/a004700/a004720/lroc_color_2k.jpg \
+              --output dist/lroc-global-2k.jpg
+            cp dist/lroc-global-2k.jpg /tmp/helioclock-lroc-global-2k.jpg
+          fi
+          python3 - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+          p=Path('dist/lroc-global-2k.jpg')
+          assert p.stat().st_size>100000 and p.read_bytes()[:2]==bytes.fromhex('ffd8'), 'Global LROC JPEG missing'
+          with Image.open(p) as img:
+              assert img.size==(2048,1024),f'Unexpected LROC global map dimensions: {img.size}'
+          print('NASA 360-degree lunar texture verified:',p.stat().st_size,'bytes')
+          PY
+      - name: Save global LROC texture for later offline builds
+        uses: actions/cache/save@v4
+        with:
+          path: /tmp/helioclock-lroc-global-2k.jpg
+          key: helioclock-lroc-global-2k-nasa-svs-v1
       # Keep a previously validated solar photograph available when NASA's
       # realtime image endpoint temporarily refuses connections.
       - name: Restore cached offline solar reference
