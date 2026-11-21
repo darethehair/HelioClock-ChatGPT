@@ -2821,3 +2821,48 @@ test('ISS Sky Compass tracks position and previous/next passes with current orbi
  await expect(page.locator('#iss-sky-status')).toContainText('limit ±5 days');
  expect(errors).toEqual([]);
 });
+
+test('Local Sun Map draws OSM tiles, solar rays, shading and movable observer',async({page})=>{
+ const transparentPng=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO/9eJ0AAAAASUVORK5CYII=','base64');
+ await page.route('https://tile.openstreetmap.org/**',route=>route.fulfill({
+  status:200,contentType:'image/png',body:transparentPng
+ }));
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8765/');
+ const panel=page.locator('.local-sun-panel'),stage=page.locator('#local-sun-map');
+ await expect(panel).toBeVisible();
+ await expect.poll(async()=>Number(await stage.getAttribute('data-local-sun-event-count'))).toBeGreaterThan(0);
+ await expect.poll(async()=>Number(await stage.getAttribute('data-local-sun-line-count'))).toBeGreaterThan(0);
+ await expect.poll(async()=>Number(await stage.getAttribute('data-local-sun-tiles'))).toBeGreaterThan(0);
+ await expect(page.locator('#local-sun-readout')).toContainText('Sunrise');
+ const starting=JSON.parse(await stage.getAttribute('data-local-sun-observer'));
+ await page.locator('#local-sun-mode').selectOption('shade');
+ await expect(stage).toHaveAttribute('data-local-sun-line-count','0');
+ await page.locator('#local-sun-mode').selectOption('both');
+ await expect.poll(async()=>Number(await stage.getAttribute('data-local-sun-line-count'))).toBeGreaterThan(0);
+ const box=await stage.boundingBox();
+ await stage.click({position:{x:box.width*.72,y:box.height*.43}});
+ await expect(page.locator('#local-sun-follow')).not.toBeChecked();
+ const moved=JSON.parse(await stage.getAttribute('data-local-sun-observer'));
+ expect(Math.abs(moved.lat-starting.lat)+Math.abs(moved.lon-starting.lon)).toBeGreaterThan(.001);
+ await page.locator('#local-sun-adopt').click();
+ await expect(page.locator('#local-sun-follow')).toBeChecked();
+ await expect.poll(async()=>Math.abs(Number(await page.locator('#latitude').inputValue())-moved.lat)).toBeLessThan(.001);
+ expect(errors).toEqual([]);
+});
+test('Local Sun Map fullscreen maximizes plot area with phone controls in drawer',async({page})=>{
+ await page.setViewportSize({width:420,height:850});
+ await page.route('https://tile.openstreetmap.org/**',route=>route.abort());
+ await page.goto('http://127.0.0.1:8765/');
+ await page.locator('[data-fullscreen="local-sun-panel"]').click();
+ const panel=page.locator('.local-sun-panel');
+ await expect.poll(()=>page.evaluate(()=>document.fullscreenElement?.classList.contains('local-sun-panel'))).toBe(true);
+ await expect(panel).toHaveClass(/mobile-plot-fullscreen/);
+ const map=await page.locator('#local-sun-map').boundingBox();
+ expect(map.height).toBeGreaterThan(650);
+ await expect(page.locator('.local-sun-panel .local-sun-controls')).not.toBeVisible();
+ await page.locator('.local-sun-panel .mobile-plot-settings').click();
+ await expect(page.locator('.local-sun-panel .local-sun-controls')).toBeVisible();
+ await page.locator('#local-sun-twilight').selectOption('simple');
+ await expect.poll(async()=>Number(await page.locator('#local-sun-map').getAttribute('data-local-sun-line-count'))).toBe(2);
+});
