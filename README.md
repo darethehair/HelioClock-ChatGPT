@@ -2,7 +2,7 @@
 
 **A personal astronomical observatory for the Sun, Moon, Earth, stars, and planets — in your browser.**
 
-[**Launch HelioClock**](https://helioclock-chatgpt.pages.dev/) · [**GitHub Pages mirror (enable in Settings)**](https://darethehair.github.io/HelioClock-ChatGPT/) · [**Download the standalone PWA**](https://github.com/darethehair/HelioClock-ChatGPT/actions/workflows/build-pwa.yml) · [**Source repository**](https://github.com/darethehair/HelioClock-ChatGPT)
+[**Launch on Cloudflare Pages**](https://helioclock-chatgpt.pages.dev/) · [**Launch on GitHub Pages**](https://darethehair.github.io/HelioClock-ChatGPT/) · [**Download the standalone PWA**](https://github.com/darethehair/HelioClock-ChatGPT/actions/workflows/build-pwa.yml) · [**Source repository**](https://github.com/darethehair/HelioClock-ChatGPT)
 
 HelioClock combines live astronomical information with interactive, time-traveling views of the sky and solar system. Explore the current sky, move to another date, change your observing location, and examine how sunlight, the Moon, planets, and stars change.
 
