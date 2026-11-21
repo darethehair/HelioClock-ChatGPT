@@ -858,3 +858,59 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 #iss-sky-status{color:#c1e1f3}
 #iss-pass-status{color:#c9bfe8}
 @media(max-width:700px){.iss-sky-tools{padding:7px;gap:6px 8px}}
+
+/* Local Sun Map v121: street-level OSM, retained global time dock. */
+.local-sun-panel{background:linear-gradient(155deg,#17334c,#0d1c32)}
+.local-sun-controls{display:flex;flex-wrap:wrap;align-items:center;gap:9px 13px;
+ margin:0 0 12px;font-size:11px;color:#c6d5e5}
+.local-sun-controls label{display:inline-flex;align-items:center;gap:6px}
+.local-sun-controls select,.local-sun-controls button{
+ font:inherit;border:1px solid #52758f;border-radius:6px;background:#193650;
+ color:#e5f3ff;padding:6px 9px}
+.local-sun-controls input{accent-color:#f0bd64}
+.local-sun-map-stage{position:relative;height:335px;width:100%;
+ overflow:hidden;isolation:isolate;background:#cddfd4;border-radius:9px;
+ touch-action:none;cursor:grab;user-select:none}
+.local-sun-map-stage:active{cursor:grabbing}
+.local-sun-map-tiles{position:absolute;inset:0;pointer-events:none;z-index:0}
+.local-sun-tile{position:absolute;display:block;width:256px;height:256px;
+ max-width:none;pointer-events:none;user-select:none}
+.local-sun-tile.tile-error{background:rgba(117,133,142,.25)}
+.local-sun-map-overlay{position:absolute;inset:0;width:100%;height:100%;
+ pointer-events:none;z-index:1}
+#local-sun-rays{z-index:2}
+.local-sun-observer{position:absolute;z-index:4;transform:translate(-50%,-50%);
+ display:grid;place-items:center;width:30px;height:30px;border-radius:50%;
+ border:3px solid white;background:#367ee3;box-shadow:0 1px 9px #08213a;
+ font-size:19px;color:white;cursor:move;touch-action:none;pointer-events:auto}
+.local-sun-map-zoom{position:absolute;z-index:6;right:9px;top:9px;
+ display:flex;flex-direction:column;gap:5px}
+.local-sun-map-zoom button{width:35px;height:35px;border-radius:7px;
+ border:1px solid #94a4b1;background:#edf3f7ef;color:#19374b;font-weight:700;font-size:22px}
+.local-sun-attribution{position:absolute;z-index:6;right:6px;bottom:4px;
+ font-size:9px;color:#243746;background:#ffffffbd;padding:2px 5px;border-radius:2px}
+.local-sun-attribution a{color:#174d78}
+.local-sun-readout{margin-top:9px;font-size:11px;color:#c4e6fa;line-height:1.6}
+.local-sun-help{font-size:10px;color:#9bb0c6;margin-top:5px}
+.local-sun-panel:fullscreen{display:flex;flex-direction:column;
+ overflow:hidden;gap:0;padding:44px 6px 83px!important;height:100dvh}
+.local-sun-panel:fullscreen .panel-heading{display:none}
+.local-sun-panel:fullscreen .local-sun-controls{margin:0 95px 8px 0;flex:0 0 auto}
+.local-sun-panel:fullscreen .local-sun-map-stage{
+ flex:1 1 0;min-height:0;height:100%!important;width:100%;border-radius:3px}
+.local-sun-panel:fullscreen .local-sun-readout{flex:0 0 auto;margin-top:4px}
+.local-sun-panel:fullscreen .local-sun-help{display:none}
+@media(max-width:1050px){
+ .local-sun-panel:fullscreen.mobile-plot-fullscreen{
+  padding:42px 3px 52px!important}
+ .local-sun-panel:fullscreen.mobile-plot-fullscreen>.local-sun-map-stage{
+  flex:1 1 0;min-height:0;width:100%;height:100%!important;
+  margin:0;border-radius:2px}
+ .local-sun-panel:fullscreen.mobile-plot-fullscreen>.local-sun-readout,
+ .local-sun-panel:fullscreen.mobile-plot-fullscreen>.local-sun-help{display:none}
+}
+@media(max-width:650px){
+ .local-sun-panel .local-sun-map-stage{height:390px}
+ .local-sun-controls{gap:7px}
+ .local-sun-controls select{max-width:190px}
+}
