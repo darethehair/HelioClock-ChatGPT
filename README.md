@@ -129,6 +129,7 @@ Release highlights are curated in [`release-notes.json`](release-notes.json). Wh
 
 | Release | Highlights |
 | --- | --- |
+| **v124** | Make current observer latitude and longitude prominent on the opening banner, displayed to five decimal places and updated whenever the observing point changes, with compact mobile styling. |
 | **v123** | Keep sunrise, sunset and twilight direction lines visible at street-level maximum zoom by scaling geodesic ray sampling to the map resolution; add a canvas-pixel browser regression. |
 | **v122** | Replace uniform Local Sun Map dimming with observer-centred solar and twilight direction sectors, leaving the sunward map unshaded; replace additive twilight dropdown with four independent line-group checkboxes. |
 | **v121** | Add a dedicated Local Sun Map with interactive OpenStreetMap tiles, movable observing point, geodesic sunrise/sunset/twilight bearings, optional graduated night shading, observer synchronization, and plot-first mobile fullscreen. |
