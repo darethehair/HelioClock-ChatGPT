@@ -1024,7 +1024,11 @@ test('Version 25 Sun and Moon use the same zoomable pannable fullscreen stage',a
  await page.locator('[data-disc-view="moon"]').click();
  await expect(page.locator('#moon')).toBeVisible();
  await expect(page.locator('#solar-photo')).toBeHidden();
- await page.mouse.move(fx,fy);
+ // Fullscreen entry/exit and switching discs can shift the Moon stage.
+ // Re-locate it instead of reusing the solar-stage coordinates from earlier.
+ await stage.scrollIntoViewIfNeeded();
+ const moonBox=await stage.boundingBox();
+ await page.mouse.move(moonBox.x+moonBox.width*.75,moonBox.y+moonBox.height*.38);
  await page.mouse.wheel(0,-120);
  await expect(page.locator('#moon-zoom-value')).not.toHaveText('1.0×');
  await expect(page.locator('#moon')).toHaveAttribute('style',/scale\(1\./);
