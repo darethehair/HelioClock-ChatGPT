@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {solarDirectionEvents,bearingDestination,solarBearingPath,solarShadeOpacity} from '../local-sun-geometry.js';
+import {solarDirectionEvents,bearingDestination,solarBearingPath,solarShadeOpacity,localSolarSectors,clockwiseArcContains} from '../local-sun-geometry.js';
 
 test('Local Sun Map finds real rise/set and twilight azimuths from Morden',()=>{
  const e=solarDirectionEvents(new Date('2026-11-20T18:00:00Z'),49.19,-98.10);
@@ -35,4 +35,24 @@ test('Night dimming increases monotonically through three twilight bands',()=>{
  assert.equal(alts[0],0);
  assert.ok(alts.every((value,i)=>i===0||value>=alts[i-1]));
  assert.ok(alts.at(-1)>.6);
+});
+
+test('local direction shading leaves solar-noon quadrant undimmed',()=>{
+ const events=solarDirectionEvents(new Date('2026-11-21T18:00:00Z'),49.19,-98.10);
+ const sectors=localSolarSectors(events,180);
+ assert.equal(sectors.length,4);
+ for(const sector of sectors){
+  assert.ok(clockwiseArcContains(sector.start,sector.end,0),'dark side includes north');
+  assert.ok(!clockwiseArcContains(sector.start,sector.end,180),'sunward side is clear');
+  assert.ok(sector.opacity>0);
+ }
+});
+test('southern-hemisphere night sector uses opposite compass side',()=>{
+ const events=solarDirectionEvents(new Date('2026-11-21T18:00:00Z'),-37,145);
+ const sectors=localSolarSectors(events,0);
+ assert.equal(sectors.length,4);
+ for(const sector of sectors){
+  assert.ok(clockwiseArcContains(sector.start,sector.end,180),'night side faces south');
+  assert.ok(!clockwiseArcContains(sector.start,sector.end,0),'sunward north is clear');
+ }
 });
