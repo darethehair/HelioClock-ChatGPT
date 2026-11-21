@@ -20,6 +20,7 @@ import {asteroidPosition,asteroidPath} from './asteroid-orbits.js';
 import {minorBodyGeometry} from './minor-body-geometry.js';
 import {LUNAR_FEATURES,findLunarFeature,lunarFeatureScreen,paintLunarLabels} from './moon-features.js';
 import {renderEarth,earthTextureStatus,earthCoordinatesAt,createEarthProjection} from './earth-renderer.js';
+import {createLocalSunMap} from './local-sun-map.js';
 import {solarTrailSamples,addSolarBreadcrumb,paintSkySolarTrail,paintEarthSolarTrail} from './solar-motion-trails.js';
 import {PLAYBACK_RATES,DEFAULT_PLAYBACK_RATE,advancePlayback} from './playback-time.js';
 import {ISS_SOURCE,normalizeIssPayload,issElementStatus,issPosition,issGroundTrack,paintIssEarth} from './iss-tracking.js';
@@ -447,6 +448,47 @@ $('iss-next-pass').addEventListener('click',()=>navigateIssPass(1));
 $('iss-prev-pass').addEventListener('click',()=>navigateIssPass(-1));
 $('iss-next-visible-pass').addEventListener('click',()=>navigateIssPass(1,true));
 $('iss-prev-visible-pass').addEventListener('click',()=>navigateIssPass(-1,true));
+// The local geographical map is independent of the global Earth sunlight map.
+let localSunMap=null;
+function ensureLocalSunMap(){
+ if(localSunMap)return localSunMap;
+ localSunMap=createLocalSunMap({
+  container:$('local-sun-map'),tileLayer:$('local-sun-tiles'),
+  shadeCanvas:$('local-sun-shading'),raysCanvas:$('local-sun-rays'),
+  observerDot:$('local-sun-observer'),output:$('local-sun-readout'),
+  onObserverChange:()=>{$('local-sun-follow').checked=false;persistPrefs()}
+ });
+ localSunMap.setObserver({lat:state.lat,lon:state.lon},{center:true,notify:false});
+ return localSunMap;
+}
+function renderLocalSunMap(){
+ if(document.querySelector('.local-sun-panel').hidden)return;
+ const map=ensureLocalSunMap();
+ if($('local-sun-follow').checked){
+  const point=map.getObserver();
+  if(Math.abs(point.lat-state.lat)>1e-6||Math.abs(point.lon-state.lon)>1e-6)
+   map.setObserver({lat:state.lat,lon:state.lon},{center:true,notify:false});
+ }
+ map.setDate(state.date);
+ map.draw();
+}
+$('local-sun-mode').addEventListener('change',e=>ensureLocalSunMap().setMode(e.target.value));
+$('local-sun-twilight').addEventListener('change',e=>ensureLocalSunMap().setTwilight(e.target.value));
+$('local-sun-follow').addEventListener('change',e=>{
+ if(e.target.checked)ensureLocalSunMap().setObserver({lat:state.lat,lon:state.lon},{center:true,notify:false});
+ persistPrefs();
+});
+$('local-sun-center').addEventListener('click',()=>ensureLocalSunMap().centerOnObserver());
+$('local-sun-zoom-in').addEventListener('click',()=>ensureLocalSunMap().zoom(1));
+$('local-sun-zoom-out').addEventListener('click',()=>ensureLocalSunMap().zoom(-1));
+$('local-sun-adopt').addEventListener('click',()=>{
+ const point=ensureLocalSunMap().getObserver();
+ state.lat=point.lat;state.lon=point.lon;
+ state.earthLat=point.lat;state.earthLon=point.lon;
+ $('latitude').value=point.lat.toFixed(5);$('longitude').value=point.lon.toFixed(5);
+ $('local-sun-follow').checked=true;
+ notice('Main observer set from Local Sun Map');render();persistPrefs();
+});
 function worldMap(){
  const o=canvas($('earth-map'));if(!o)return;
  const twilight={
@@ -1314,6 +1356,7 @@ function render(){
  $('dock-sidereal').textContent=sidTime;
  if(!document.querySelector('.chart-panel').hidden)daylightChart();
  if(!document.querySelector('.earth-panel').hidden)worldMap();
+ if(!document.querySelector('.local-sun-panel').hidden)renderLocalSunMap();
  if(!document.querySelector('.sky-panel').hidden)sky();
  if(!document.querySelector('.moon-panel').hidden)drawMoon();
  if(!document.querySelector('.orrery-panel').hidden)orrery();
@@ -2309,6 +2352,7 @@ const compactFullscreenQuery=window.matchMedia('(max-width: 1050px)');
 const compactControlSelectors={
  'chart-panel':['.solar-chart-legend','.solar-chart-summary','.solar-time-position','.chart-footer'],
  'earth-panel':['.earth-tools','.earth-political-tools','.earth-twilight-controls','.earth-overlay-tools','.iss-map-tools','.solar-trail-tools','.map-legend'],
+ 'local-sun-panel':['.local-sun-controls','.local-sun-readout','.local-sun-help'],
  'sky-panel':['.celestial-finder','.sky-light-controls','.sky-observatory-toolbar','.sky-sidereal-toolbar','.sky-debug-tools','.sky-options','.solar-trail-tools','.planet-trail-tools','.iss-sky-tools','.sky-cursor-readout','.celestial-readout','.sky-legend'],
  'moon-panel':['.eclipse-explorer','.disc-view-select','.earthshine-toggle','.moon-view-tools','.moon-orientation','.solar-observation-note','.moon-bottom'],
  'orrery-panel':['.orrery-controls','.orrery-events','.planet-legend']
@@ -2418,10 +2462,10 @@ loadBuildMeta();
 
 /** Dashboard profiles store only named panel visibility flags; never hide controls. */
 const panelVisibility={
- hero:'.hero,.stat-strip',chart:'.chart-panel',earth:'.earth-panel',sky:'.sky-panel',
+ hero:'.hero,.stat-strip',chart:'.chart-panel',earth:'.earth-panel',localSun:'.local-sun-panel',sky:'.sky-panel',
  moon:'.moon-panel',orrery:'.orrery-panel',details:'.details-panel',almanac:'.almanac-panel'
 };
-const defaultLayout={hero:true,chart:true,earth:true,sky:true,moon:true,orrery:true,details:true,almanac:true};
+const defaultLayout={hero:true,chart:true,earth:true,localSun:true,sky:true,moon:true,orrery:true,details:true,almanac:true};
 // Upgrade old layouts once; previous builds never displayed the almanac by default.
 const migratingAlmanacLayout=localStorage.getItem('helioclock-layout-v45')===null;
 let activeLayout={...defaultLayout};
@@ -2495,7 +2539,7 @@ const PREF_CHECKBOXES=['orrery-3d','orrery-ecliptic-mesh','orrery-show-asteroids
  'show-planets','show-altaz-grid','show-radec-grid',
  'earth-twilight-civil','earth-twilight-nautical',
  'earth-twilight-astronomical','earth-twilight-night','earth-city-lights','earth-aurora','earth-clouds',
- 'earth-country-borders','earth-region-borders','earth-city-labels'];
+ 'earth-country-borders','earth-region-borders','earth-city-labels','local-sun-follow'];
 const PREF_CHOICES={
  earthProjection:['equal','globe','mercator'],
  earthMapStyle:['physical','hybrid','political'],
