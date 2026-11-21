@@ -88,7 +88,7 @@ export function createLocalSunMap({
    let img=[...tileLayer.children].find(el=>el.dataset.key===key);
    if(!img){
     img=document.createElement('img');img.alt='';img.draggable=false;
-    img.loading='eager';img.decoding='async';img.className='local-sun-tile';
+    img.loading='lazy';img.decoding='async';img.className='local-sun-tile';
     img.dataset.key=key;img.dataset.x=String(x);img.dataset.y=String(y);
     img.src='https://tile.openstreetmap.org/'+identity+'.png';
     img.addEventListener('error',()=>{img.classList.add('tile-error')});
@@ -159,9 +159,11 @@ export function createLocalSunMap({
   }
   observerDot.style.left=anchor.x+'px';observerDot.style.top=anchor.y+'px';
   observerDot.style.display=anchor.x> -30&&anchor.x<w+30&&anchor.y> -30&&anchor.y<h+30?'block':'none';
-  const summary=filtered.map(e=>e.label+' '+Math.round(e.az)+'°').join(' · ');
-  output.textContent=lat.toFixed(4)+'° N/S, '+lon.toFixed(4)+'° E/W · '+summary+
-   ' · UTC event times in main observatory';
+  const degrees=(value,positive,negative)=>Math.abs(value).toFixed(4)+'° '+(value>=0?positive:negative);
+  const browserTime=d=>d.toLocaleTimeString('en-CA',{hour:'2-digit',minute:'2-digit'});
+  const summaryWithTimes=filtered.map(e=>e.label+' '+Math.round(e.az)+'° ('+browserTime(e.date)+')').join(' · ');
+  output.textContent=degrees(lat,'N','S')+' · '+degrees(lon,'E','W')+' · '+summaryWithTimes+
+   ' · Times use device timezone';
   container.dataset.localSunLineCount=String(mode==='shade'?0:filtered.length);
   container.dataset.localSunEventCount=String(events.length);
   container.dataset.localSunObserver=JSON.stringify({lat,lon});
