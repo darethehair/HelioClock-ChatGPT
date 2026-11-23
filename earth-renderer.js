@@ -378,7 +378,9 @@ export function renderEarth(context,width,height,date,state){
   }
   context.restore();
  }
- if(political){
+ // City labels are independent of the political base-map style.
+ // The Cities & labels checkbox must also work on Physical maps.
+ if(political||showCities){
   const renderedNames=new Set();
   const nearSide=point=>!globe||geoDistance(point,[earthLon,earthLat])<Math.PI/2-.005;
   const candidate=(text,longitude,latitude,kind)=>{
@@ -414,7 +416,7 @@ export function renderEarth(context,width,height,date,state){
   };
   // Show country labels at wide zoom and city names at closer zoom.
   // Administrative subdivisions retain borders, never text labels.
-  if(earthZoom<2.2)for(const [name,longitude,latitude] of countries)candidate(name,longitude,latitude,'country');
+  if(political&&earthZoom<2.2)for(const [name,longitude,latitude] of countries)candidate(name,longitude,latitude,'country');
   if(showCities){
    // Progressively reveal more settlements. At broad zoom show world
    // cities; around continents include state capitals and regional centers;
