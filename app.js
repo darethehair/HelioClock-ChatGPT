@@ -2436,7 +2436,7 @@ const compactControlSelectors={
  'local-sun-panel':['.local-sun-controls','.local-sun-readout','.local-sun-help'],
  'sky-panel':['.celestial-finder','.sky-light-controls','.sky-observatory-toolbar','.sky-sidereal-toolbar','.sky-debug-tools','.sky-options','.solar-trail-tools','.planet-trail-tools','.iss-sky-tools','.sky-cursor-readout','.celestial-readout','.sky-legend'],
  'moon-panel':['.eclipse-explorer','.disc-view-select','.moon-3d-controls','.earthshine-toggle','.moon-view-tools','.lunar-feature-controls','.lunar-feature-status','.moon-orientation','.solar-observation-note','.moon-bottom'],
- 'orrery-panel':['.orrery-controls','.orrery-events','.planet-legend']
+ 'orrery-panel':['.orrery-controls','.orrery-events','.orrery-minor-body-controls','.orrery-comet-tools','.orrery-inspection','.orrery-orbit-geometry','.planet-legend']
 };
 let mobileFullscreenRestore=[],mobileFullscreenPanel=null,mobileDrawer=null;
 function restoreMobileFullscreenControls(){
