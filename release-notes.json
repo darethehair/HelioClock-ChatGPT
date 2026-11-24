@@ -2,6 +2,10 @@
   "description": "Curated HelioClock release highlights; add one entry whenever the application version changes. README milestone table is generated from these entries.",
   "releases": [
     {
+      "version": "v131",
+      "summary": "Restore city labels on Physical Earth maps, consolidate Moon and Orrery controls in compact fullscreen, and show previous/next lunar perigee and apogee with geocentric distance trend in the Astronomical Almanac."
+    },
+    {
       "version": "v130",
       "summary": "Align the rotatable 3D Moon's initial and restored Earth-facing presentation with the 2D Moon's parallactic horizon tilt. Apply the same screen roll to the NASA globe image, coordinate grid, feature labels and pointer mapping while preserving free yaw/pitch rotation."
     },
