@@ -18,6 +18,39 @@ function transit(body,obs,start,end,angle){
   const d=event?.time?.date;return d&&d>=start&&d<end?d:null;
  }catch{return null}
 }
+// Lunar apsides are geocentric events, independent of the observer's location.
+// Keep one daily ephemeris search cached while live time updates every second.
+const apsisCache={day:null,events:null};
+export function lunarApsides(date){
+ const day=Math.floor(date.getTime()/86400000);
+ if(apsisCache.day!==day){
+  const events=[];
+  // Two months before through two months after the selected date cover
+  // the previous and next occurrence of each alternating apsis.
+  let apsis=Astro.SearchLunarApsis(new Date(date.getTime()-70*86400000));
+  for(let i=0;i<12;i++){
+   events.push({kind:apsis.kind===Astro.ApsisKind.Pericenter?'Perigee':'Apogee',
+    date:apsis.time.date,distanceKm:apsis.dist_km});
+   apsis=Astro.NextLunarApsis(apsis);
+  }
+  apsisCache.day=day;apsisCache.events=events;
+ }
+ const find=(kind,after)=>apsisCache.events
+  .filter(e=>e.kind===kind&&(after?e.date>=date:e.date<date))
+  .sort((a,b)=>after?a.date-b.date:b.date-a.date)[0]||null;
+ return {previousPerigee:find('Perigee',false),nextPerigee:find('Perigee',true),
+  previousApogee:find('Apogee',false),nextApogee:find('Apogee',true)};
+}
+export function lunarDistanceTrend(date){
+ // Geocentric distances avoid the observer's diurnal parallax making
+ // the Moon appear to approach/recede as Earth rotates.
+ const delta=60*60*1000;
+ const before=Astro.EclipticGeoMoon(new Date(date.getTime()-delta)).dist;
+ const after=Astro.EclipticGeoMoon(new Date(date.getTime()+delta)).dist;
+ const differenceKm=(after-before)*149597870.7;
+ return Math.abs(differenceKm)<1?'At turning point':differenceKm<0?'Approaching Earth':'Receding from Earth';
+}
+const apsisText=e=>e?stamp(e.date)+' · '+Math.round(e.distanceKm).toLocaleString('en-CA')+' km':'—';
 function phases(date){
  let event=Astro.SearchMoonQuarter(date),out=[];
  for(let i=0;i<4;i++){
@@ -61,6 +94,7 @@ export function calculateAlmanac(date,lat,lon){
  const minutes=-date.getTimezoneOffset();
  const offset='UTC'+(minutes>=0?'+':'−')+pad(Math.floor(Math.abs(minutes)/60))+':'+pad(Math.abs(minutes)%60);
  const quarter=phases(date);
+ const apsides=lunarApsides(date),lunarTrend=lunarDistanceTrend(date);
  const next=[...quarter,...d.seasons.filter(e=>e.date>=date)].sort((a,b)=>a.date-b.date).slice(0,5);
  const status=s.alt>=0?'Daylight':s.alt>=-6?'Civil twilight':s.alt>=-12?'Nautical twilight':s.alt>=-18?'Astronomical twilight':'Astronomical night';
  let season='Winter';
@@ -69,7 +103,7 @@ export function calculateAlmanac(date,lat,lon){
  const daylight=d.sunRise&&d.sunSet&&d.sunSet>d.sunRise?Math.round((d.sunSet-d.sunRise)/60000)+' minutes':'No ordinary rise/set';
  const yearStart=new Date(date.getFullYear(),0,1);
  const dayOfYear=(date-yearStart)/86400000+1;
- const a={...d,date,lat,lon,s,m,zone,zoneName,offset,quarter,next,status,season,daylight,dayOfYear};
+ const a={...d,date,lat,lon,s,m,zone,zoneName,offset,quarter,next,status,season,daylight,dayOfYear,apsides,lunarTrend};
  a.report=report(a);
  return a;
 }
@@ -85,7 +119,11 @@ function report(a){
   'SUN: upper '+clock(a.sunUpper)+' lower '+clock(a.sunLower)+'   '+a.status+'; daylight '+a.daylight,
   'MOON: altitude '+deg(m.alt)+' azimuth '+m.az.toFixed(2)+'°  RISE '+clock(a.moonRise)+' SET '+clock(a.moonSet),
   'MOON: upper '+clock(a.moonUpper)+' lower '+clock(a.moonLower)+'   '+m.name,
-  'MOON: '+(m.illuminated*100).toFixed(1)+'% illuminated; distance '+Math.round(m.distanceKm)+' km; age approx '+m.age.toFixed(1)+' days',
+  'MOON: '+(m.illuminated*100).toFixed(1)+'% illuminated; distance '+Math.round(m.distanceKm)+' km ('+a.lunarTrend+'); age approx '+m.age.toFixed(1)+' days',
+  'PREVIOUS PERIGEE: '+apsisText(a.apsides.previousPerigee),
+  'NEXT PERIGEE: '+apsisText(a.apsides.nextPerigee),
+  'PREVIOUS APOGEE: '+apsisText(a.apsides.previousApogee),
+  'NEXT APOGEE: '+apsisText(a.apsides.nextApogee),
   '',
   'TWILIGHT:',
   ...a.twilight.map(t=>t.name+': dawn '+clock(t.dawn)+' dusk '+clock(t.dusk)+' (Sun centre '+t.alt+'°)'),
@@ -123,7 +161,11 @@ export function almanacHTML(a){
   row('Upper / lower transit',clock(a.moonUpper)+' / '+clock(a.moonLower))+
   row('Phase',m.name)+row('Illuminated',(m.illuminated*100).toFixed(1)+'%')+
   row('Approx. lunar age',m.age.toFixed(1)+' days')+
-  row('Distance',Math.round(m.distanceKm).toLocaleString('en-CA')+' km')+
+  row('Distance',Math.round(m.distanceKm).toLocaleString('en-CA')+' km · '+a.lunarTrend)+
+  row('Previous perigee',apsisText(a.apsides.previousPerigee))+
+  row('Next perigee',apsisText(a.apsides.nextPerigee))+
+  row('Previous apogee',apsisText(a.apsides.previousApogee))+
+  row('Next apogee',apsisText(a.apsides.nextApogee))+
   row('Angular diameter',(2*Math.atan2(1737.4,m.distanceKm)*180/Math.PI*60).toFixed(1)+' arcmin')+
   a.quarter.map(e=>row(e.title,stamp(e.date))).join(''));
  const twilight=group('Twilight & darkness','◐',
