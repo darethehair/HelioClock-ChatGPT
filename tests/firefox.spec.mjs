@@ -381,6 +381,10 @@ test('dashboard controls work in Firefox',async({page})=>{
  await page.locator('[data-sky-light="daylight"]').click();
  await page.locator('[data-fullscreen="sky-panel"]').click();
  await expect.poll(()=>page.evaluate(()=>!!document.fullscreenElement)).toBe(true);
+ // v132 hides optional settings on entry: explicitly open the desktop drawer
+ // before exercising their existing visual and astronomy assertions.
+ await page.locator('.sky-panel .mobile-plot-settings').click();
+ await expect(page.locator('.sky-panel .sky-options')).toBeVisible();
  const countStarPixels=async()=>{
   await page.locator('#show-stars').check();
   await page.locator('#sky').evaluate(el=>{
@@ -2872,6 +2876,9 @@ test('Local Sun Map rays remain painted at street-level maximum zoom',async({pag
  await page.goto('http://127.0.0.1:8765/');
  const panel=page.locator('.local-sun-panel');
  await panel.locator('[data-fullscreen="local-sun-panel"]').click();
+ // The local-map zoom buttons are intentionally in the hideable drawer.
+ await panel.locator('.mobile-plot-settings').click();
+ await expect(page.locator('#local-sun-zoom-in')).toBeVisible();
  await page.locator('#local-sun-mode').selectOption('lines');
  const stage=page.locator('#local-sun-map');
  // Zoom all the way to the maximum tile resolution.
