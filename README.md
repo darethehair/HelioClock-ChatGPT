@@ -129,6 +129,7 @@ Release highlights are curated in [`release-notes.json`](release-notes.json). Wh
 
 | Release | Highlights |
 | --- | --- |
+| **v132** | Unify fullscreen Controls across all eight dashboard panels on desktop and mobile, including Almanac and Observation Notes; move remaining optional Moon, chart, Earth, and local-map controls into hideable groups, with coverage regression tests. |
 | **v131** | Restore city labels on Physical Earth maps, consolidate Moon and Orrery controls in compact fullscreen, and show previous/next lunar perigee and apogee with geocentric distance trend in the Astronomical Almanac. |
 | **v130** | Align the rotatable 3D Moon's initial and restored Earth-facing presentation with the 2D Moon's parallactic horizon tilt. Apply the same screen roll to the NASA globe image, coordinate grid, feature labels and pointer mapping while preserving free yaw/pitch rotation. |
 | **v129** | Improve 2D/3D lunar visual consistency: reuse the original near-side LRO photo within the rotatable globe, smoothly blend to genuine global imagery at the limb, and match coordinate-grid stroke weight, label styling and zoom spacing. |
