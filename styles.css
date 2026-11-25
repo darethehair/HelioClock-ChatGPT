@@ -969,3 +969,39 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d08a;outline-offse
 #moon-3d-status{width:100%;color:#ffcf91;line-height:1.45;font-size:10px}
 .moon-panel .moon-stage:has(#moon:not([hidden])){touch-action:none}
 .moon-panel:fullscreen.mobile-plot-fullscreen>.moon-3d-controls{display:none}
+
+
+/* Universal fullscreen control toggles (v132).  Preserve the active
+   visualization and fullscreen exit button while hiding optional UI. */
+.panel:fullscreen:not(.mobile-plot-fullscreen)>.mobile-plot-settings{
+ display:block;position:fixed;top:15px;right:110px;z-index:111;
+ padding:8px 11px;background:#173750;color:#e9f4ff;
+ border:1px solid #6386a3;border-radius:7px;font-size:12px;
+}
+.panel:fullscreen.fullscreen-controls-collapsed .fullscreen-optional-control{
+ display:none!important;
+}
+.panel:fullscreen.fullscreen-controls-collapsed>.panel-heading{display:none}
+.panel:fullscreen.fullscreen-controls-collapsed>canvas{
+ height:calc(100vh - 115px)!important;
+}
+.moon-panel:fullscreen.fullscreen-controls-collapsed>.moon-stage{
+ height:calc(100vh - 120px);min-height:0;
+}
+.panel:fullscreen.mobile-plot-fullscreen>.mobile-fullscreen-drawer>.local-sun-map-zoom{
+ position:static;display:flex;flex-direction:row;align-items:center;
+}
+.panel:fullscreen.mobile-plot-fullscreen>.mobile-fullscreen-drawer>.local-sun-map-zoom button{
+ background:#edf3f7;color:#19374b;
+}
+.panel:fullscreen.mobile-plot-fullscreen.almanac-panel,
+.panel:fullscreen.mobile-plot-fullscreen.details-panel{
+ overflow:hidden;
+}
+.panel:fullscreen.mobile-plot-fullscreen.almanac-panel>#almanac-content,
+.panel:fullscreen.mobile-plot-fullscreen.details-panel>.notes-grid{
+ flex:1 1 auto;min-height:0;overflow:auto;
+}
+.panel:fullscreen.mobile-plot-fullscreen.details-panel>.notes-grid{
+ display:grid;align-content:start;
+}
