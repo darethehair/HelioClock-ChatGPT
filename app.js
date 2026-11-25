@@ -2431,13 +2431,23 @@ const dockNext=timeDock.nextSibling;
 // comments return them to their exact prior position on exit or resize.
 const compactFullscreenQuery=window.matchMedia('(max-width: 1050px)');
 const compactControlSelectors={
- 'chart-panel':['.solar-chart-legend','.solar-chart-summary','.solar-time-position','.chart-footer'],
- 'earth-panel':['.earth-tools','.earth-political-tools','.earth-twilight-controls','.earth-overlay-tools','.iss-map-tools','.solar-trail-tools','.map-legend'],
- 'local-sun-panel':['.local-sun-controls','.local-sun-readout','.local-sun-help'],
+ 'chart-panel':['.solar-chart-legend','.solar-chart-summary','.solar-time-position','.chart-footer','.solar-chart-inspector'],
+ 'earth-panel':['.earth-tools','.earth-political-tools','.earth-twilight-controls','.earth-overlay-tools','.iss-map-tools','.solar-trail-tools','.earth-pick-help','.map-legend'],
+ 'local-sun-panel':['.local-sun-controls','.local-sun-readout','.local-sun-help','.local-sun-map-zoom'],
  'sky-panel':['.celestial-finder','.sky-light-controls','.sky-observatory-toolbar','.sky-sidereal-toolbar','.sky-debug-tools','.sky-options','.solar-trail-tools','.planet-trail-tools','.iss-sky-tools','.sky-cursor-readout','.celestial-readout','.sky-legend'],
- 'moon-panel':['.eclipse-explorer','.disc-view-select','.moon-3d-controls','.earthshine-toggle','.moon-view-tools','.lunar-feature-controls','.lunar-feature-status','.moon-orientation','.solar-observation-note','.moon-bottom'],
- 'orrery-panel':['.orrery-controls','.orrery-events','.orrery-minor-body-controls','.orrery-comet-tools','.orrery-inspection','.orrery-orbit-geometry','.planet-legend']
+ 'moon-panel':['.eclipse-explorer','.disc-view-select','.moon-3d-controls','.earthshine-toggle','.moon-view-tools','.lunar-feature-controls','.lunar-feature-status','.disc-coordinate-readout','.disc-coordinate-warning','.moon-orientation','.solar-observation-note','.moon-bottom'],
+ 'orrery-panel':['.orrery-controls','.orrery-events','.orrery-minor-body-controls','.orrery-comet-tools','.orrery-inspection','.orrery-orbit-geometry','.planet-legend'],
+ 'almanac-panel':['.almanac-tools'],
+ 'details-panel':['.fineprint']
 };
+// The same selector inventory drives both compact drawers and desktop visibility.
+for(const panel of document.querySelectorAll('.panel')){
+ const kind=[...panel.classList].find(name=>compactControlSelectors[name]);
+ if(!kind)continue;
+ for(const selector of compactControlSelectors[kind]){
+  for(const node of panel.querySelectorAll(selector))node.classList.add('fullscreen-optional-control');
+ }
+}
 let mobileFullscreenRestore=[],mobileFullscreenPanel=null,mobileDrawer=null;
 function restoreMobileFullscreenControls(){
  for(const [node,marker] of mobileFullscreenRestore){
@@ -2486,9 +2496,14 @@ function syncMobileFullscreenControls(){
 }
 document.querySelectorAll('.mobile-plot-settings').forEach(button=>{
  button.addEventListener('click',()=>{
-  const panel=button.closest('.panel'),isOpen=!panel.classList.contains('mobile-controls-open');
-  panel.classList.toggle('mobile-controls-open',isOpen);
-  if(mobileDrawer)mobileDrawer.hidden=!isOpen;
+  const panel=button.closest('.panel');
+  const isCompact=mobileFullscreenPanel===panel;
+  const isOpen=isCompact?!panel.classList.contains('mobile-controls-open'):
+   panel.classList.contains('fullscreen-controls-collapsed');
+  if(isCompact){
+   panel.classList.toggle('mobile-controls-open',isOpen);
+   if(mobileDrawer)mobileDrawer.hidden=!isOpen;
+  }else panel.classList.toggle('fullscreen-controls-collapsed',!isOpen);
   button.setAttribute('aria-expanded',String(isOpen));
   button.textContent=isOpen?'✕ Close':'⚙ Controls';
   requestAnimationFrame(render);
@@ -2513,6 +2528,14 @@ document.addEventListener('fullscreenchange',()=>{
   button.textContent=active?'⤢ Exit':'⛶ Expand';button.setAttribute('aria-pressed',String(active));
  }
  syncMobileFullscreenControls();
+ // On wide screens the same toggle hides optional controls in place.
+ for(const panel of document.querySelectorAll('.panel.fullscreen-controls-collapsed'))
+  panel.classList.remove('fullscreen-controls-collapsed');
+ if(activePanel&&!mobileFullscreenPanel&&activePanel.querySelector('.mobile-plot-settings')){
+  activePanel.classList.add('fullscreen-controls-collapsed');
+  const button=activePanel.querySelector('.mobile-plot-settings');
+  button.textContent='⚙ Controls';button.setAttribute('aria-expanded','false');
+ }
  syncFullscreenNavigation();
  if(!activePanel)compactFullscreenAtEntry=false;
  requestAnimationFrame(render);
